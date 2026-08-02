@@ -352,7 +352,7 @@ Items can have these statuses:
 
 - JWT tokens in cookies: `wta_at` (access), `wta_rt` (refresh)
 - Custom headers: `wetrakr-api-country`, `wetrakr-api-language`
-- Rate limit: 100,000 requests / 60 seconds
+- Rate limit: 300 requests / 60 seconds
 - CORS enabled with credentials
 
 ## Account State (2026-08-02)
