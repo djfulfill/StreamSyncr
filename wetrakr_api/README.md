@@ -209,6 +209,27 @@ for item in items:
     tmdb_id = item["ids"]["tmdb"]["id"]   # ← use this for unwatch
 ```
 
+## Integrations
+
+### Discord (OAuth2)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `get_discord_status()` | `GET /proxy/integrations/discord` | Check connection status |
+| `get_discord_connect_url()` | `GET /proxy/integrations/discord/connect` | Get OAuth2 authorize URL |
+| `connect_discord(code, state)` | `POST /proxy/integrations/discord/callback` | Complete OAuth2 flow |
+| `disconnect_discord()` | `DELETE /proxy/integrations/discord` | Disconnect Discord |
+
+### Trakt
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `get_trakt_status()` | `GET /proxy/integrations/trakt` | Check connection status |
+
+**See [DISCORD_OAUTH2_GUIDE.md](../DISCORD_OAUTH2_GUIDE.md) for full implementation guide.**
+
+---
+
 ## API Reference
 
 ### User

@@ -407,6 +407,32 @@ class WeTrakrClient:
         return self._get(f"{media_type}/{tmdb_id}/reviews",
                          {"limit": limit, "page": page, "sort": sort})
 
+    # ── Integrations ──────────────────────────────────────────────────────
+
+    def get_integration_status(self, provider: str) -> dict:
+        """Check connection status for a provider (discord, trakt, etc)."""
+        return self._get(f"integrations/{provider}")
+
+    def get_discord_status(self) -> dict:
+        """Check if Discord is connected."""
+        return self.get_integration_status("discord")
+
+    def get_discord_connect_url(self) -> dict:
+        """Get Discord OAuth2 authorize URL."""
+        return self._get("integrations/discord/connect")
+
+    def connect_discord(self, code: str, state: str) -> dict:
+        """Complete Discord OAuth2 flow with auth code and state."""
+        return self._post("integrations/discord/callback", {"code": code, "state": state})
+
+    def disconnect_discord(self) -> dict:
+        """Disconnect Discord account."""
+        return self._delete("integrations/discord")
+
+    def get_trakt_status(self) -> dict:
+        """Check if Trakt is connected."""
+        return self.get_integration_status("trakt")
+
     # ── List Membership ───────────────────────────────────────────────────
 
     def set_list_membership(self, tmdb_id: int, list_ids: list,
@@ -449,6 +475,9 @@ if __name__ == "__main__":
         "watching": lambda: client.get_watching(),
         "plantowatch": lambda: client.get_plantowatch(),
         "nowplaying": lambda: client.get_nowplaying(),
+        "discord": lambda: client.get_discord_status(),
+        "discord-connect": lambda: client.get_discord_connect_url(),
+        "trakt": lambda: client.get_trakt_status(),
     }
 
     cmd = sys.argv[1] if len(sys.argv) > 1 else "profile"
