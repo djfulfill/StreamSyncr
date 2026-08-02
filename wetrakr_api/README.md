@@ -280,6 +280,18 @@ for item in items:
 | `get_list_items(list_id)` | `GET /account/lists/{id}/items` | Items from a list |
 | `get_all_list_items(list_id)` | `GET /account/lists/{id}/items` | All items (auto-paginates) |
 
+### Social
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `get_user_by_id(user_id)` | `GET /users/{id}` | Get user by ID (includes VIP status) |
+| `get_followers()` | `GET /account/followers` | List your followers |
+| `get_following()` | `GET /account/following` | List users you follow |
+| `get_follow_requests()` | `GET /account/followers/requests` | Pending follow requests |
+| `get_blocked_users()` | `GET /account/blocked` | Blocked users |
+| `follow_user(user_id)` | `POST /users/{id}/follow` | Follow a user |
+| `unfollow_user(user_id)` | `DELETE /users/{id}/follow` | Unfollow a user |
+
 ### Tracking (Write)
 
 | Method | Endpoint | ID Type | Description |
@@ -325,6 +337,13 @@ for item in items:
 | POST | `/proxy/reviews/{id}/unlike` | Unlike a review |
 | POST | `/proxy/account/lists/item/{type}/{id}` | Bulk list membership (TMDB id) |
 | PUT | `/proxy/account/preferences/pinned-media` | Pin to profile (INTERNAL id) |
+| GET | `/proxy/users/{id}` | Get user by ID |
+| GET | `/proxy/account/followers` | List followers |
+| GET | `/proxy/account/following` | List following |
+| GET | `/proxy/account/followers/requests` | Pending follow requests |
+| GET | `/proxy/account/blocked` | Blocked users |
+| POST | `/proxy/users/{id}/follow` | Follow user |
+| DELETE | `/proxy/users/{id}/follow` | Unfollow user |
 
 ## Payload Formats
 

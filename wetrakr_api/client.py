@@ -31,6 +31,11 @@ Endpoints (2026-08-02):
   PUT  /proxy/account/preferences/pinned-media    → pin to profile (INTERNAL id)
   POST /proxy/users/{id}/follow                   → follow user
   DELETE /proxy/users/{id}/follow                 → unfollow user
+  GET  /proxy/users/{id}                          → get user by ID
+  GET  /proxy/account/followers                   → list followers
+  GET  /proxy/account/following                   → list following
+  GET  /proxy/account/followers/requests          → pending follow requests
+  GET  /proxy/account/blocked                     → blocked users
 """
 
 import requests
@@ -383,6 +388,26 @@ class WeTrakrClient:
 
     # ── Social ────────────────────────────────────────────────────────────
 
+    def get_user_by_id(self, user_id: int) -> dict:
+        """Get user profile by ID (includes plan/VIP status)."""
+        return self._get(f"users/{user_id}")
+
+    def get_followers(self) -> list:
+        """Get list of users following you."""
+        return self._get("account/followers")
+
+    def get_following(self) -> list:
+        """Get list of users you follow."""
+        return self._get("account/following")
+
+    def get_follow_requests(self) -> list:
+        """Get pending follow requests received."""
+        return self._get("account/followers/requests")
+
+    def get_blocked_users(self) -> list:
+        """Get list of blocked users."""
+        return self._get("account/blocked")
+
     def follow_user(self, user_id: int) -> dict:
         """Follow a user."""
         return self._post(f"users/{user_id}/follow", {})
@@ -478,6 +503,10 @@ if __name__ == "__main__":
         "discord": lambda: client.get_discord_status(),
         "discord-connect": lambda: client.get_discord_connect_url(),
         "trakt": lambda: client.get_trakt_status(),
+        "followers": lambda: client.get_followers(),
+        "following": lambda: client.get_following(),
+        "follow-requests": lambda: client.get_follow_requests(),
+        "blocked": lambda: client.get_blocked_users(),
     }
 
     cmd = sys.argv[1] if len(sys.argv) > 1 else "profile"
