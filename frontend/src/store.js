@@ -65,7 +65,7 @@ const useStore = create(
       setIsLoading: (loading) => set({ isLoading: loading }),
     }),
     {
-      name: 'wetrakr-storage',
+      name: 'streamsync-storage',
       partialize: (state) => ({
         wetrakr: state.wetrakr,
         trakt: state.trakt,

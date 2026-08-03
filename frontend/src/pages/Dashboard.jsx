@@ -54,7 +54,7 @@ export default function Dashboard() {
             <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight mb-3">
               Welcome to{' '}
               <span className="bg-gradient-to-r from-glow via-ember to-rose bg-clip-text text-transparent">
-                WeTrakr
+                StreamSync
               </span>
             </h1>
             <p className="text-mist text-lg max-w-xl">
@@ -75,7 +75,7 @@ export default function Dashboard() {
       {/* Service cards */}
       {connectedCount < 3 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {!wetrakr.connected && <ServicePrompt name="WeTrakr" color="glow" path="/settings" />}
+          {!wetrakr.connected && <ServicePrompt name="StreamSync" color="glow" path="/settings" />}
           {!trakt.connected && <ServicePrompt name="Trakt" color="flame" path="/settings" />}
           {!tmdbState.connected && <ServicePrompt name="TMDB" color="mint" path="/settings" />}
         </div>
