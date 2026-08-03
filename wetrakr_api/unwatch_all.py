@@ -10,8 +10,8 @@ import os
 import time
 import sys
 
-ACCESS_TOKEN = os.environ.get("WETRAKR_ACCESS_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOiJkYXNoYm9hcmQiLCJ1c2VyX2lkIjo2Nzk3LCJlbWFpbCI6ImRqZnVsZmlsbEBnbWFpbC5jb20iLCJpc19hZG1pbiI6ZmFsc2UsImlhdCI6MTc4NTYwMjgxMiwiZXhwIjoxNzg1Nzc1NjEyfQ.DH1u7R4L3rYK3-r80edTAK-GpCnsoTtO81lEBsOgZE8")
-REFRESH_TOKEN = os.environ.get("WETRAKR_REFRESH_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOiJkYXNoYm9hcmQiLCJ1c2VyX2lkIjo2Nzk3LCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc4NTYwMjgxMiwiZXhwIjoxNzg4MTk0ODEyfQ.eb9P3_fCt7U_kj4Y2nYIq9XdsJYIPvl6ty3OACdDHA0")
+ACCESS_TOKEN = os.environ.get("WETRAKR_ACCESS_TOKEN")
+REFRESH_TOKEN = os.environ.get("WETRAKR_REFRESH_TOKEN")
 
 HEADERS = {
     "accept": "application/json, text/plain, */*",
