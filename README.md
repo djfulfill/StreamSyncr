@@ -16,6 +16,7 @@ A unified streaming tracker — sync your watch history across 10+ services.
 | [Simkl](https://simkl.com) | `simkl_api/` | Client ID + OAuth | ✅ Full client |
 | [Jellyfin](https://jellyfin.org) | `jellyfin_api/` | API key | ✅ Full client |
 | [Kodi](https://kodi.tv) | `kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
+| [Sofa Sidekick](https://sofasidekick.com) | `sofasidekick_api/` | Cookie | ✅ Full client |
 
 ## Tools
 
@@ -184,6 +185,23 @@ c.get_library_stats()
 c.get_imdb_ids()
 ```
 
+### Sofa Sidekick
+
+```python
+from sofasidekick_api import SofaSidekickClient
+
+c = SofaSidekickClient(session_id="your_session_id")
+c.me()
+c.get_shows()
+c.get_movies()
+c.get_stats()
+c.search("Breaking Bad")
+c.get_upcoming(days=7)
+c.add_show(tvdb_id=289590)
+c.mark_episode_watched(episode_id=12345)
+c.mark_movie_watched(movie_id=10880)
+```
+
 ---
 
 ## CLI Commands
@@ -286,6 +304,8 @@ StreamSyncr/
 ├── jellyfin_api/
 │   └── __init__.py
 ├── kodi_api/
+│   └── __init__.py
+├── sofasidekick_api/
 │   └── __init__.py
 ├── imdb_to_tmdb.py
 ├── ROADMAP.md

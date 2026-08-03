@@ -42,7 +42,7 @@
 - [ ] **MyAnimeList (MAL)** — Legacy anime database
 - [ ] **Kitsu** — Anime tracking with social features
 - [ ] **TV Time** — TV tracking (shutting down July 2026, migrate users)
-- [ ] **Sofa Sidekick** — Private show & movie tracker (TV Time replacement, web app)
+- [x] **Sofa Sidekick** — Private show & movie tracker (TV Time replacement)
 
 ## API Reference
 
@@ -91,11 +91,12 @@
 - **Workaround**: Third-party wrappers (RapidAPI, Apify)
 - **Alternative**: Use TMDB watch providers (already integrated)
 
-### Sofa Sidekick (web app, beta)
-- **URL**: https://app.sofasidekick.com
-- **Status**: Beta (waitlist open)
+### Sofa Sidekick (undocumented, cookie-based)
+- **Base URL**: `https://app.sofasidekick.com/api`
+- **Auth**: Cookie-based (`session_id`, `cf_clearance`, `__cf_bm`)
 - **Data source**: TheTVDB
-- **Features**: Up next, watchlist, statuses, ratings, physical media tracking
-- **API**: No public API yet — web app only
-- **Import**: TV Time CSV import supported
-- **Note**: Private tracker, no social features. Good TV Time alternative.
+- **Key endpoints**: `shows`, `movies`, `watchlist`, `search`, `stats`, `upcoming`, `history`, `auth/me`
+- **Show operations**: follow/unfollow, mark episode watched/unwatched, update status
+- **Movie operations**: add/remove, mark watched/unwatched
+- **Stats**: episodes watched, watch time, most watched shows, busiest month
+- **Cloudflare protected**: May need periodic cookie refresh
