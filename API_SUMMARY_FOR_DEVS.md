@@ -1,14 +1,14 @@
-# WeTrakr API — Reverse Engineering Summary
+# WeTrakr API — Technical Summary
 
 **Date:** 2026-08-02  
-**Status:** Beta app, no public API  
+**Status:** Beta app  
 **Source:** Browser network request analysis
 
 ---
 
 ## Overview
 
-This document summarizes all discovered API endpoints, authentication methods, and issues found during reverse engineering of the WeTrakr beta application. The goal is to assist the development team in building an official API.
+This document summarizes all discovered API endpoints, authentication methods, and issues found during analysis of the WeTrakr beta application. The goal is to assist the development team in building an official API.
 
 ---
 

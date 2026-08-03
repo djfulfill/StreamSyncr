@@ -1,23 +1,23 @@
 ---
-name: wetrakr
+name: streamsyncr
 description: |
-  WeTrakr API integration — reverse-engineered Python client for wetrakr.com.
+  StreamSyncr — unified streaming tracker with WeTrakr, Trakt, and TMDB integration.
   Also converts Trakt JSON exports to IMDb CSV.
   
   TRIGGER when:
-  - User mentions WeTrakr, wetrakr, or streaming tracker
+  - User mentions StreamSyncr, WeTrakr, or streaming tracker
   - User wants to mark shows/movies as watched
-  - User wants to manage their WeTrakr profile or lists
-  - User wants to search for movies/shows on WeTrakr
+  - User wants to manage their streaming profile or lists
+  - User wants to search for movies/shows
   - User wants to favorite or unfavorite items
   - User wants to see their watching stats or history
-  - User wants to follow/unfollow users on WeTrakr
+  - User wants to follow/unfollow users
   - User has Trakt JSON exports and wants IMDb CSV
   - User mentions Trakt collections, Trakt export, or Stremio export
   - User wants to convert tracking data to CSV with IMDb URLs
 ---
 
-# WeTrakr API Integration
+# StreamSyncr
 
 ## Quick Start
 

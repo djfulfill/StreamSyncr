@@ -1,8 +1,6 @@
 # WeTrakr API Client
 
-Reverse-engineered Python client for [WeTrakr](https://wetrakr.com) — a streaming tracker in super beta with no public API.
-
-**This is not official.** Endpoints were captured from browser network requests and may break at any time.
+Python client for [WeTrakr](https://wetrakr.com) — a streaming tracker with no public API.
 
 ---
 

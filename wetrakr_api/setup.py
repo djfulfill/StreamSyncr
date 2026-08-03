@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="wetrakr-api",
     version="0.1.0",
-    description="Unofficial WeTrakr API client (reverse-engineered)",
+    description="WeTrakr API client for StreamSyncr",
     packages=find_packages(),
     py_modules=["client", "mark_watched"],
     install_requires=["requests>=2.28.0"],

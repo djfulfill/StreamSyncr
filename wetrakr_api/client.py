@@ -1,6 +1,5 @@
 """
-WeTrakr API Client — Reverse-engineered from browser network requests.
-Super beta, no official API — these endpoints are captured from the web app.
+WeTrakr API Client — Python client for the WeTrakr streaming tracker.
 
 CRITICAL: Marking uses INTERNAL IDs, unwatching uses TMDB IDs.
 See README.md for full documentation.

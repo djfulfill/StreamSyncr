@@ -1,12 +1,12 @@
-# WeTrakr API Suite
+# StreamSyncr
 
-A collection of Python clients for streaming tracker APIs, plus tools for data conversion and a unified React frontend.
+A unified streaming tracker — sync your watch history across WeTrakr, Trakt, and TMDB.
 
 ## Overview
 
 | Module | Description | Auth |
 |--------|-------------|------|
-| `wetrakr_api/` | Reverse-engineered [WeTrakr](https://wetrakr.com) client | JWT cookies |
+| `wetrakr_api/` | [WeTrakr](https://wetrakr.com) client | JWT cookies |
 | `trakt_api/` | Full [Trakt.tv](https://trakt.tv) API client with scrobbling | API key + token |
 | `tmdb_api/` | Full [TMDB](https://themoviedb.org) API client | API key |
 | `imdb_to_tmdb.py` | IMDb → TMDB ID converter | TMDB API key |
@@ -41,9 +41,7 @@ export TMDB_API_KEY="your_tmdb_key"
 
 ## WeTrakr API
 
-Reverse-engineered Python client for [WeTrakr](https://wetrakr.com) — a streaming tracker with no public API.
-
-**This is not official.** Endpoints were captured from browser network requests and may break at any time.
+Python client for [WeTrakr](https://wetrakr.com) — a streaming tracker with no public API.
 
 ### Getting Your Tokens
 
@@ -359,4 +357,4 @@ wetrakr/
 
 ## License
 
-MIT — Use at your own risk. WeTrakr API is unofficial.
+MIT
