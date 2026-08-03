@@ -1,0 +1,318 @@
+const TMDB_IMG = 'https://image.tmdb.org/t/p';
+
+export const tmdbImage = (path, size = 'w500') => {
+  if (!path) return null;
+  return `${TMDB_IMG}/${size}${path}`;
+};
+
+export const tmdbBackdrop = (path, size = 'w1280') => {
+  if (!path) return null;
+  return `${TMDB_IMG}/${size}${path}`;
+};
+
+// WeTrakr API
+export const wetrakr = {
+  async search(query, tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+      body: JSON.stringify({ query, page: 1 }),
+    });
+    return res.json();
+  },
+
+  async getWatched(tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/tracking', {
+      headers: {
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+    });
+    return res.json();
+  },
+
+  async getProfile(tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/user', {
+      headers: {
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+    });
+    return res.json();
+  },
+
+  async markWatched(id, type, tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/tracking', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+      body: JSON.stringify({
+        tracking_type: 1,
+        id,
+        type,
+        app: 'web',
+      }),
+    });
+    return res.json();
+  },
+
+  async unwatch(tmdbId, type, tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/tracking/remove', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+      body: JSON.stringify({ id: tmdbId, type }),
+    });
+    return res.json();
+  },
+
+  async getFavorites(tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/favorites', {
+      headers: {
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+    });
+    return res.json();
+  },
+
+  async favorite(id, type, tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/favorites', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+      body: JSON.stringify({ id, type }),
+    });
+    return res.json();
+  },
+
+  async getLists(tokens) {
+    const res = await fetch('/api/wetrakr/api/v2/account/lists', {
+      headers: {
+        'wetrakr-api-country': 'US',
+        'wetrakr-api-language': 'en-US',
+        Cookie: `wta_at=${tokens.accessToken}; wta_rt=${tokens.refreshToken}`,
+      },
+    });
+    return res.json();
+  },
+};
+
+// Trakt API
+export const trakt = {
+  async me(token, apiKey) {
+    const res = await fetch('/api/trakt/users/me', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async collection(token, apiKey) {
+    const res = await fetch('/api/trakt/sync/collection', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async history(token, apiKey) {
+    const res = await fetch('/api/trakt/sync/history', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async watchlist(token, apiKey) {
+    const res = await fetch('/api/trakt/sync/watchlist', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async ratings(token, apiKey) {
+    const res = await fetch('/api/trakt/sync/ratings', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async favorites(token, apiKey) {
+    const res = await fetch('/api/trakt/sync/favorites', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async search(query, token, apiKey) {
+    const res = await fetch(`/api/trakt/search/movie,show?query=${encodeURIComponent(query)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async trending(token, apiKey) {
+    const res = await fetch('/api/trakt/movies/trending', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async markWatched(ids, token, apiKey) {
+    const res = await fetch('/api/trakt/scrobble/start', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        movie: ids,
+        progress: 100,
+        watched_at: new Date().toISOString(),
+      }),
+    });
+    return res.json();
+  },
+
+  async lists(token, apiKey) {
+    const res = await fetch('/api/trakt/users/me/lists', {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+
+  async listItems(listId, token, apiKey) {
+    const res = await fetch(`/api/trakt/users/me/lists/${listId}/items`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        Authorization: `Bearer ${token}`,
+        'trakt-api-key': apiKey,
+      },
+    });
+    return res.json();
+  },
+};
+
+// TMDB API
+export const tmdb = {
+  async search(query, apiKey) {
+    const res = await fetch(`/api/tmdb/3/search/multi?query=${encodeURIComponent(query)}&api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async movie(id, apiKey) {
+    const res = await fetch(`/api/tmdb/3/movie/${id}?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async tv(id, apiKey) {
+    const res = await fetch(`/api/tmdb/3/tv/${id}?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async trending(apiKey) {
+    const res = await fetch(`/api/tmdb/3/trending/all/week?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async popular(apiKey) {
+    const res = await fetch(`/api/tmdb/3/movie/popular?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async topRated(apiKey) {
+    const res = await fetch(`/api/tmdb/3/movie/top_rated?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async nowPlaying(apiKey) {
+    const res = await fetch(`/api/tmdb/3/movie/now_playing?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async movieCredits(id, apiKey) {
+    const res = await fetch(`/api/tmdb/3/movie/${id}/credits?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async tvCredits(id, apiKey) {
+    const res = await fetch(`/api/tmdb/3/tv/${id}/credits?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async movieWatchProviders(id, apiKey) {
+    const res = await fetch(`/api/tmdb/3/movie/${id}/watch/providers?api_key=${apiKey}`);
+    return res.json();
+  },
+
+  async genres(apiKey) {
+    const res = await fetch(`/api/tmdb/3/genre/movie/list?api_key=${apiKey}`);
+    return res.json();
+  },
+};

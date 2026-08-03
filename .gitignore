@@ -24,3 +24,4 @@ Thumbs.db
 *.env
 .env
 tokens.json
+node_modules/\ndist/\n.env

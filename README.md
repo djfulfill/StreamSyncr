@@ -1,6 +1,6 @@
 # WeTrakr API Suite
 
-A collection of Python clients for streaming tracker APIs, plus tools for data conversion.
+A collection of Python clients for streaming tracker APIs, plus tools for data conversion and a unified React frontend.
 
 ## Overview
 
@@ -11,6 +11,7 @@ A collection of Python clients for streaming tracker APIs, plus tools for data c
 | `tmdb_api/` | Full [TMDB](https://themoviedb.org) API client | API key |
 | `imdb_to_tmdb.py` | IMDb → TMDB ID converter | TMDB API key |
 | `trakt_to_csv.py` | Trakt JSON export → IMDb CSV converter | None |
+| `frontend/` | React frontend - unified dashboard | Local storage |
 
 ---
 
