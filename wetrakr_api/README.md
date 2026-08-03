@@ -11,7 +11,7 @@ Reverse-engineered Python client for [WeTrakr](https://wetrakr.com) — a stream
 ### What You Need
 
 1. **Python 3** installed on your computer
-2. **Your WeTrakr username** (e.g., `djfulfill`)
+2. **Your WeTrakr username** (e.g., `user`)
 3. **Two JWT tokens** from your browser (explained below)
 4. **List IDs** from the URLs on your lists page
 
@@ -391,7 +391,7 @@ After reverse engineering and testing:
 - `GET /filters/auto/sys:watched` returns `state: null` (empty)
 
 **Test data:**
-- User: `djfulfill` (user_id: 6797)
+- User: `user` (user_id: 12345)
 - List: Cyber Crimes (list_id: 19884) — 34 movies, 5 shows marked as watched
 - Profile stats: `movies.watched: 34, shows.watched: 5, episodes.watched: 178`
 - Individual items (e.g., Hackers tmdb=10428): `status: "none"` via API, but shows watched on website

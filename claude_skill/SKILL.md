@@ -296,10 +296,10 @@ t.popular_movies()
 # Social
 t.following()                      # who you follow
 t.followers()                      # who follows you
-t.follow_user("alberdev")          # follow by username
-t.unfollow_user("alberdev")        # unfollow
-t.is_following("alberdev")         # check
-t.user_profile("alberdev")         # get profile
+t.follow_user("user")          # follow by username
+t.unfollow_user("user")        # unfollow
+t.is_following("user")         # check
+t.user_profile("user")         # get profile
 
 # Watched
 t.history()                        # watch history
@@ -360,10 +360,10 @@ python -m trakt_api.cli scrobble-start 4977
 python -m trakt_api.cli scrobble-stop 4977 --progress 100.0
 python -m trakt_api.cli following
 python -m trakt_api.cli followers
-python -m trakt_api.cli follow alberdev
-python -m trakt_api.cli unfollow alberdev
-python -m trakt_api.cli is-following alberdev
-python -m trakt_api.cli user alberdev
+python -m trakt_api.cli follow user
+python -m trakt_api.cli unfollow user
+python -m trakt_api.cli is-following user
+python -m trakt_api.cli user user
 ```
 
 ## TMDB API Client

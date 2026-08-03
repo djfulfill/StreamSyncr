@@ -26,7 +26,7 @@ pip install requests
 # WeTrakr
 export WETRAKR_ACCESS_TOKEN="your_wta_at"
 export WETRAKR_REFRESH_TOKEN="your_wta_rt"
-export WETRAKR_USERNAME="djfulfill"
+export WETRAKR_USERNAME="user"
 
 # Trakt
 export TRAKT_API_KEY="your_api_key"
@@ -167,7 +167,7 @@ python -m trakt_api.cli watched
 python -m trakt_api.cli favorites
 python -m trakt_api.cli ratings
 python -m trakt_api.cli following
-python -m trakt_api.cli follow alberdev
+python -m trakt_api.cli follow user
 python -m trakt_api.cli scrobble-start 4977
 python -m trakt_api.cli scrobble-stop 4977 --progress 100.0
 python -m trakt_api.cli search "Swordfish"

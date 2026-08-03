@@ -50,7 +50,7 @@ def get_all_list_items(list_id):
 
 
 def get_watched_counts():
-    profile = get("frontend/users/djfulfill")
+    profile = get("frontend/users/user")
     t = profile["profile_stats"]["tracking"]
     return t["movies"]["watched"], t["shows"]["watched"]
 

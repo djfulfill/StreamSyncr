@@ -30,7 +30,7 @@ wta_rt={JWT_REFRESH_TOKEN}
 ### JWT Token Structure
 - **Access Token (`wta_at`):** Expires ~2 days
 - **Refresh Token (`wta_rt`):** Expires ~30 days
-- **Payload:** `{client_id: "dashboard", user_id: 6797, email: "...", is_admin: false}`
+- **Payload:** `{client_id: "dashboard", user_id: 12345, email: "...", is_admin: false}`
 
 ---
 

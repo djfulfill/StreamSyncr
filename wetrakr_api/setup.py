@@ -8,6 +8,6 @@ setup(
     py_modules=["client", "mark_watched"],
     install_requires=["requests>=2.28.0"],
     python_requires=">=3.8",
-    author="djfulfill",
+    author="user",
     license="MIT",
 )
