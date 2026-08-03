@@ -168,6 +168,34 @@ Remove ALL tracking from your account:
 python unwatch_all.py
 ```
 
+## Trakt JSON → IMDb CSV
+
+Convert any Trakt JSON export into an IMDb-ready CSV. Supports three formats:
+
+- **Trakt Collections** (directory of `collection-movies-*.json`, `collection-episodes-*.json`, `collection-shows.json`)
+- **Lunova Export** (single JSON with `watched_movies`, `watchlist`, `collection`, etc.)
+- **Stremio/MetaHub Export** (array of `{id, type, name, releaseInfo}`)
+
+```bash
+python trakt_to_csv.py /path/to/Trakt\ Collections/          # directory of JSONs
+python trakt_to_csv.py /path/to/trakt-export.json             # single export file
+python trakt_to_csv.py /path/to/files/ -o custom.csv          # custom output name
+python trakt_to_csv.py /path/to/files/ --types movies         # movies only
+python trakt_to_csv.py /path/to/files/ --types shows episodes # shows + episodes
+```
+
+Output columns: `type, title, year, imdb_id, imdb_url, show, season, episode_number`
+
+```python
+from trakt_to_csv import convert
+
+# Auto-detect format, write CSV
+convert("/home/user/Trakt Collections/")
+
+# Filter to movies only
+convert("trakt-export.json", "movies_only.csv", types=["movies"])
+```
+
 ## Getting Your Tokens (Advanced)
 
 1. Log into [wetrakr.com](https://wetrakr.com)
