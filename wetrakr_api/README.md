@@ -168,34 +168,6 @@ Remove ALL tracking from your account:
 python unwatch_all.py
 ```
 
-## Trakt JSON → IMDb CSV
-
-Convert any Trakt JSON export into an IMDb-ready CSV. Supports three formats:
-
-- **Trakt Collections** (directory of `collection-movies-*.json`, `collection-episodes-*.json`, `collection-shows.json`)
-- **Lunova Export** (single JSON with `watched_movies`, `watchlist`, `collection`, etc.)
-- **Stremio/MetaHub Export** (array of `{id, type, name, releaseInfo}`)
-
-```bash
-python trakt_to_csv.py /path/to/Trakt\ Collections/          # directory of JSONs
-python trakt_to_csv.py /path/to/trakt-export.json             # single export file
-python trakt_to_csv.py /path/to/files/ -o custom.csv          # custom output name
-python trakt_to_csv.py /path/to/files/ --types movies         # movies only
-python trakt_to_csv.py /path/to/files/ --types shows episodes # shows + episodes
-```
-
-Output columns: `type, title, year, imdb_id, imdb_url, show, season, episode_number`
-
-```python
-from trakt_to_csv import convert
-
-# Auto-detect format, write CSV
-convert("/home/user/Trakt Collections/")
-
-# Filter to movies only
-convert("trakt-export.json", "movies_only.csv", types=["movies"])
-```
-
 ## Getting Your Tokens (Advanced)
 
 1. Log into [wetrakr.com](https://wetrakr.com)
@@ -236,27 +208,6 @@ for item in items:
     internal_id = item["id"]              # ← use this for mark_watched
     tmdb_id = item["ids"]["tmdb"]["id"]   # ← use this for unwatch
 ```
-
-## Integrations
-
-### Discord (OAuth2)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `get_discord_status()` | `GET /proxy/integrations/discord` | Check connection status |
-| `get_discord_connect_url()` | `GET /proxy/integrations/discord/connect` | Get OAuth2 authorize URL |
-| `connect_discord(code, state)` | `POST /proxy/integrations/discord/callback` | Complete OAuth2 flow |
-| `disconnect_discord()` | `DELETE /proxy/integrations/discord` | Disconnect Discord |
-
-### Trakt
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `get_trakt_status()` | `GET /proxy/integrations/trakt` | Check connection status |
-
-**See [DISCORD_OAUTH2_GUIDE.md](../DISCORD_OAUTH2_GUIDE.md) for full implementation guide.**
-
----
 
 ## API Reference
 
@@ -308,18 +259,6 @@ for item in items:
 | `get_list_items(list_id)` | `GET /account/lists/{id}/items` | Items from a list |
 | `get_all_list_items(list_id)` | `GET /account/lists/{id}/items` | All items (auto-paginates) |
 
-### Social
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `get_user_by_id(user_id)` | `GET /users/{id}` | Get user by ID (includes VIP status) |
-| `get_followers()` | `GET /account/followers` | List your followers |
-| `get_following()` | `GET /account/following` | List users you follow |
-| `get_follow_requests()` | `GET /account/followers/requests` | Pending follow requests |
-| `get_blocked_users()` | `GET /account/blocked` | Blocked users |
-| `follow_user(user_id)` | `POST /users/{id}/follow` | Follow a user |
-| `unfollow_user(user_id)` | `DELETE /users/{id}/follow` | Unfollow a user |
-
 ### Tracking (Write)
 
 | Method | Endpoint | ID Type | Description |
@@ -365,13 +304,6 @@ for item in items:
 | POST | `/proxy/reviews/{id}/unlike` | Unlike a review |
 | POST | `/proxy/account/lists/item/{type}/{id}` | Bulk list membership (TMDB id) |
 | PUT | `/proxy/account/preferences/pinned-media` | Pin to profile (INTERNAL id) |
-| GET | `/proxy/users/{id}` | Get user by ID |
-| GET | `/proxy/account/followers` | List followers |
-| GET | `/proxy/account/following` | List following |
-| GET | `/proxy/account/followers/requests` | Pending follow requests |
-| GET | `/proxy/account/blocked` | Blocked users |
-| POST | `/proxy/users/{id}/follow` | Follow user |
-| DELETE | `/proxy/users/{id}/follow` | Unfollow user |
 
 ## Payload Formats
 

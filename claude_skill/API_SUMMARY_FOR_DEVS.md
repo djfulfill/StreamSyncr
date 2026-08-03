@@ -315,7 +315,7 @@ The Trakt integration link redirects to `trakt.tv/welcome` instead of `app.trakt
 
 ## Testing Notes
 
-- **Rate Limit:** 100,000 requests per 60 seconds (very generous)
+- **Rate Limit:** 300 requests per 60 seconds
 - **CORS:** Enabled with credentials
 - **Content-Type:** `application/json`
 - **Auth:** Cookie-based JWT (not Bearer token)
