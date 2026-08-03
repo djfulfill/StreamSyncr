@@ -1,3 +1,5 @@
+![Description](./StreamSyncr-banner.png)
+
 # StreamSyncr
 
 A unified streaming tracker — sync your watch history across 11+ services, with a self-hosted Stremio addon.
