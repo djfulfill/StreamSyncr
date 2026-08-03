@@ -1,7 +1,7 @@
 # StreamSyncr Roadmap
 
 ## Completed
-- [x] WeTrakr API client (reverse-engineered)
+- [x] WeTrakr API client (unofficial)
 - [x] Trakt API client (official)
 - [x] TMDB API client (official)
 - [x] IMDb GraphQL client (read + write)
@@ -72,7 +72,7 @@
 - **Cloudflare protected**: Requires browser-like headers, may need periodic cookie refresh
 - **Film code format**: Short alphanumeric `lid` (e.g., `1Y0m` for Swordfish)
 
-### Serializd (undocumented, reverse-engineered)
+### Serializd (unofficial, community-maintained)
 - **Library**: `serializd-py` (Python)
 - **Auth**: Token-based
 - **Status**: Community-maintained, may break
