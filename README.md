@@ -1,38 +1,84 @@
 # StreamSyncr
 
-A unified streaming tracker — sync your watch history across 10+ services.
+A unified streaming tracker — sync your watch history across 11+ services, with a self-hosted Stremio addon.
+
+## Architecture
+
+```
+StreamSyncr/
+├── apis/                        # API clients (11 services)
+│   ├── anilist_api/             # AniList (anime tracking)
+│   ├── imdb_api/                # IMDb (lists, ratings)
+│   ├── jellyfin_api/            # Jellyfin (media server)
+│   ├── kodi_api/                # Kodi (JSON-RPC)
+│   ├── letterboxd_api/          # Letterboxd (film tracking)
+│   ├── plex_api/                # Plex (media server)
+│   ├── simkl_api/               # Simkl (tracking)
+│   ├── sofasidekick_api/        # Sofa Sidekick (TV tracking)
+│   ├── tmdb_api/                # TMDB (metadata, search)
+│   ├── trakt_api/               # Trakt (universal tracking)
+│   ├── wetrakr_api/             # WeTrakr (watch tracking)
+│   └── utils/                   # Shared utilities
+├── addon/                       # Stremio addon (port 7800)
+│   ├── server.py                # FastAPI server
+│   ├── auth/configure.py        # Web config page
+│   ├── catalogs/                # Catalog handlers
+│   ├── metadata/                # Metadata enricher
+│   ├── streams/                 # Debrid stream resolver
+│   └── manifest.json            # Addon manifest
+├── frontend/                    # React + Vite dashboard (port 3030)
+├── sync_engine/                 # Cross-platform sync
+├── docs/                        # Documentation
+│   ├── skills/                  # Claude skill + API summary
+│   ├── ROADMAP.md
+│   └── ...
+└── README.md
+```
 
 ## Services
 
 | Service | Module | Auth Type | Status |
 |---------|--------|-----------|--------|
-| [WeTrakr](https://wetrakr.com) | `wetrakr_api/` | Cookie (JWT) | ✅ Full client |
-| [Trakt](https://trakt.tv) | `trakt_api/` | API key + token | ✅ Full client |
-| [TMDB](https://themoviedb.org) | `tmdb_api/` | API key | ✅ Full client |
-| [IMDb](https://www.imdb.com) | `imdb_api/` | Cookie (GraphQL) | ✅ Full client |
-| [Letterboxd](https://letterboxd.com) | `letterboxd_api/` | Cookie (undocumented) | ✅ Lists + ratings |
-| [Plex](https://plex.tv) | `plex_api/` | Token | ✅ Full client |
-| [AniList](https://anilist.co) | `anilist_api/` | Optional OAuth | ✅ Full client |
-| [Simkl](https://simkl.com) | `simkl_api/` | Client ID + OAuth | ✅ Full client |
-| [Jellyfin](https://jellyfin.org) | `jellyfin_api/` | API key | ✅ Full client |
-| [Kodi](https://kodi.tv) | `kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
-| [Sofa Sidekick](https://sofasidekick.com) | `sofasidekick_api/` | Cookie | ✅ Full client |
+| [WeTrakr](https://wetrakr.com) | `apis/wetrakr_api/` | Cookie (JWT) | ✅ Full client |
+| [Trakt](https://trakt.tv) | `apis/trakt_api/` | API key + token | ✅ Full client |
+| [TMDB](https://themoviedb.org) | `apis/tmdb_api/` | API key | ✅ Full client |
+| [IMDb](https://www.imdb.com) | `apis/imdb_api/` | Cookie (GraphQL) | ✅ Full client |
+| [Letterboxd](https://letterboxd.com) | `apis/letterboxd_api/` | Cookie (undocumented) | ✅ Lists + ratings |
+| [Plex](https://plex.tv) | `apis/plex_api/` | Token | ✅ Full client |
+| [AniList](https://anilist.co) | `apis/anilist_api/` | Optional OAuth | ✅ Full client |
+| [Simkl](https://simkl.com) | `apis/simkl_api/` | Client ID + OAuth | ✅ Full client |
+| [Jellyfin](https://jellyfin.org) | `apis/jellyfin_api/` | API key | ✅ Full client |
+| [Kodi](https://kodi.tv) | `apis/kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
+| [Sofa Sidekick](https://sofasidekick.com) | `apis/sofasidekick_api/` | Cookie | ✅ Full client |
 
-## Tools
+## Stremio Addon
 
-| Tool | Description |
-|------|-------------|
-| `imdb_to_tmdb.py` | IMDb → TMDB ID converter |
-| `trakt_to_csv.py` | Trakt JSON → IMDb CSV converter |
-| `frontend/` | React + Vite dashboard |
+Self-hosted Stremio addon with hybrid auth — public catalogs + user-configured private catalogs and streams.
 
----
-
-## Quick Start
+### Quick Start
 
 ```bash
-pip install requests
+cd addon
+pip install -r requirements.txt
+
+# Start server
+screen -dmS stremio python3 -c "from server import app; import uvicorn; uvicorn.run(app, host='0.0.0.0', port=7800)"
 ```
+
+### URLs
+
+- **Configure:** http://localhost:7800/configure
+- **Manifest:** http://localhost:7800/manifest.json
+
+### Features
+
+- **17 public catalogs** (Trakt, TMDB, AniList, Simkl trending/popular)
+- **User catalogs** (WeTrakr, Sofa Sidekick, Trakt watchlists)
+- **Debrid streams** (Real-Debrid, TorBox, AllDebrid)
+- **Multi-source metadata** (TMDB + IMDb enrichment)
+- **Web config UI** — collapsible sections for all 11 services
+
+## Python Usage
 
 ### Environment Variables
 
@@ -50,185 +96,78 @@ export TRAKT_TOKEN="your_bearer_token"
 export TMDB_API_KEY="your_tmdb_key"
 ```
 
----
-
-## Python Usage
-
-### WeTrakr
+### Quick Examples
 
 ```python
-from wetrakr_api.client import WeTrakrClient
-
+# WeTrakr
+from apis.wetrakr_api.client import WeTrakrClient
 c = WeTrakrClient()
 c.search("Inception")
-c.mark_watched(internal_id, "movie")   # uses INTERNAL id
-c.unwatch(tmdb_id, "movie")           # uses TMDB id
-c.favorite(internal_id, "movie")
-c.get_lists()
-```
+c.mark_watched(internal_id, "movie")
 
-### Trakt
-
-```python
-from trakt_api import TraktClient
-
+# Trakt
+from apis.trakt_api import TraktClient
 t = TraktClient()
 t.search("Swordfish")
 t.mark_watched_now(movies=[4977])
-t.rate(8, movies=[4977])
-t.lists()
-t.collection()
-t.history()
-t.following()
-t.scrobble_start(4977)
-```
-
-### TMDB
-
-```python
-from tmdb_api import TMDBClient
-
-t = TMDBClient()
-t.search_movie("Swordfish", year=2001)
-t.movie(9705)
-t.movie_watch_providers(9705)
-t.list_create(session_id, "My List")
-t.collection_items(10)
-```
-
-### IMDb
-
-```python
-from imdb_api import IMDbClient
-
-c = IMDbClient()
-c.get_lists()
-c.get_ratings()
-c.create_list("My List")
-c.add_to_list("ls123", "tt0244244")
-c.rate_title("tt0244244", 8)
-```
-
-### Letterboxd
-
-```python
-from letterboxd_api import LetterboxdClient
-
-c = LetterboxdClient(cookies="...", csrf_token="...")
-films = c.search_film("Swordfish")  # returns lid codes
-c.create_list("My List", film_lids=["1Y0m", "1WhU"])
-c.add_to_list("WfRB8", ["1Y0m"])
-c.mark_watched("1Y0m")
-```
-
-### Plex
-
-```python
-from plex_api import PlexClient
-
-c = PlexClient(base_url="http://localhost:32400", token="your_token")
-c.get_libraries()
-c.get_watch_history()
-c.mark_watched(rating_key)
-c.rate(rating_key, 8)
-```
-
-### AniList
-
-```python
-from anilist_api import AniListClient
-
-c = AniListClient()
-c.search_anime("Naruto")
-c.get_trending()
-c.get_user_anime_list("username", status="COMPLETED")
-c.save_anime_list_entry(media_id=1, status="COMPLETED", score=9)
-```
-
-### Simkl
-
-```python
-from simkl_api import SimklClient
-
-c = SimklClient(client_id="your_client_id")
-c.search("Breaking Bad", media_type="show")
-c.trending_shows()
-c.add_to_history(movies=[SimklClient.make_item(simkl_id)])
-```
-
-### Jellyfin
-
-```python
-from jellyfin_api import JellyfinClient
-
-c = JellyfinClient(base_url="http://localhost:8096", api_key="your_key", user_id="user_id")
-c.get_libraries()
-c.get_watch_history()
-c.mark_watched(item_id)
-c.search("Breaking Bad")
-```
-
-### Kodi
-
-```python
-from kodi_api import KodiClient
-
-c = KodiClient("http://192.168.1.50:8080")
-c.ping()
-c.get_movies()
-c.get_shows()
-c.get_episodes(show_id=1, season=1)
-c.search_movies("Inception")
-c.mark_movie_watched(123)
-c.get_watched_movies()
-c.get_library_stats()
-c.get_imdb_ids()
-```
-
-### Sofa Sidekick
-
-```python
-from sofasidekick_api import SofaSidekickClient
-
-c = SofaSidekickClient(session_id="your_session_id")
-c.me()
-c.get_shows()
-c.get_movies()
-c.get_stats()
-c.search("Breaking Bad")
-c.get_upcoming(days=7)
-c.add_show(tvdb_id=289590)
-c.mark_episode_watched(episode_id=12345)
-c.mark_movie_watched(movie_id=10880)
-```
-
----
-
-## CLI Commands
-
-```bash
-# Trakt
-python -m trakt_api.cli me
-python -m trakt_api.cli lists
-python -m trakt_api.cli search "Swordfish"
-python -m trakt_api.cli trending
-python -m trakt_api.cli scrobble-start 4977
 
 # TMDB
-python -m tmdb_api.cli search "Swordfish"
-python -m tmdb_api.cli movie 9705
-python -m tmdb_api.cli watch-providers 9705
+from apis.tmdb_api import TMDBClient
+t = TMDBClient()
+t.search_movie("Swordfish", year=2001)
 
-# IMDb → TMDB converter
-python imdb_to_tmdb.py tt0244244
-python imdb_to_tmdb.py --batch tt0244244 tt0133093
+# IMDb
+from apis.imdb_api import IMDbClient
+c = IMDbClient()
+c.get_lists()
+c.rate_title("tt0244244", 8)
 
-# Trakt → CSV converter
-python trakt_to_csv.py /path/to/trakt/files/
-python trakt_to_csv.py export.json --imdb --rating
+# Letterboxd
+from apis.letterboxd_api import LetterboxdClient
+c = LetterboxdClient(cookies="...", csrf_token="...")
+films = c.search_film("Swordfish")
+
+# Plex
+from apis.plex_api import PlexClient
+c = PlexClient(base_url="http://localhost:32400", token="your_token")
+c.get_libraries()
+
+# AniList
+from apis.anilist_api import AniListClient
+c = AniListClient()
+c.search_anime("Naruto")
+
+# Simkl
+from apis.simkl_api import SimklClient
+c = SimklClient(client_id="your_client_id")
+c.search("Breaking Bad", media_type="show")
+
+# Jellyfin
+from apis.jellyfin_api import JellyfinClient
+c = JellyfinClient(base_url="http://localhost:8096", api_key="your_key", user_id="user_id")
+c.get_libraries()
+
+# Kodi
+from apis.kodi_api import KodiClient
+c = KodiClient("http://192.168.1.50:8080")
+c.get_movies()
+
+# Sofa Sidekick
+from apis.sofasidekick_api import SofaSidekickClient
+c = SofaSidekickClient(session_id="your_session_id")
+c.get_shows()
 ```
 
----
+## Frontend
+
+React + Vite + Tailwind dashboard on port 3030.
+
+```bash
+cd frontend
+npm install
+npm run dev    # http://localhost:3030
+npm run build  # production build
+```
 
 ## Critical Notes
 
@@ -249,68 +188,6 @@ python trakt_to_csv.py export.json --imdb --rating
 ### Simkl Sync Model
 - Two-phase: initial pull + incremental via `date_from`
 - Batch writes to avoid rate_limit errors
-
----
-
-## Frontend
-
-React + Vite + Tailwind dashboard running on port 3030.
-
-```bash
-cd frontend
-npm install
-npm run dev    # http://localhost:3030
-npm run build  # production build
-```
-
-### Features
-- 8 services in Settings page (WeTrakr, Trakt, TMDB, IMDb, Plex, AniList, Simkl, Jellyfin)
-- Service status dots in sidebar
-- Unified library with grid/list modes
-- Search across TMDB
-- IMDb page (lists, ratings, recently viewed)
-- Movie/show detail pages with TMDB metadata
-- Cross-platform sync engine
-
----
-
-## Files
-
-```
-StreamSyncr/
-├── wetrakr_api/
-│   ├── client.py
-│   ├── trakt_to_csv.py
-│   ├── mark_watched.py
-│   ├── unwatch_all.py
-│   └── README.md
-├── trakt_api/
-│   ├── client.py
-│   └── cli.py
-├── tmdb_api/
-│   ├── client.py
-│   └── cli.py
-├── imdb_api/
-│   ├── client.py
-│   └── operations.py
-├── letterboxd_api/
-│   └── __init__.py
-├── plex_api/
-│   └── __init__.py
-├── anilist_api/
-│   └── __init__.py
-├── simkl_api/
-│   └── __init__.py
-├── jellyfin_api/
-│   └── __init__.py
-├── kodi_api/
-│   └── __init__.py
-├── sofasidekick_api/
-│   └── __init__.py
-├── imdb_to_tmdb.py
-├── ROADMAP.md
-└── README.md
-```
 
 ---
 

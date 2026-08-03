@@ -1,0 +1,39 @@
+{
+    "id": "com.streamsyncr.addon",
+    "version": "1.0.0",
+    "name": "StreamSyncr",
+    "description": "Unified streaming addon — trending, catalogs, and streams from 10+ services",
+    "types": ["movie", "series"],
+    "catalogs": [
+        { "type": "movie", "id": "trakt-trending", "name": "Trakt Trending", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "trakt-popular", "name": "Trakt Popular", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "tmdb-trending", "name": "TMDB Trending", "extra": [{ "name": "search", "isRequired": false }, { "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "tmdb-popular", "name": "TMDB Popular", "extra": [{ "name": "search", "isRequired": false }, { "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "tmdb-top-rated", "name": "TMDB Top Rated", "extra": [{ "name": "search", "isRequired": false }, { "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "tmdb-now-playing", "name": "Now Playing", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "tmdb-upcoming", "name": "Upcoming", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "simkl-trending", "name": "Simkl Trending", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "movie", "id": "simkl-popular", "name": "Simkl Popular" },
+        { "type": "series", "id": "trakt-trending-shows", "name": "Trakt Trending Shows", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "series", "id": "trakt-popular-shows", "name": "Trakt Popular Shows", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "series", "id": "tmdb-trending-tv", "name": "TMDB Trending TV", "extra": [{ "name": "search", "isRequired": false }, { "name": "skip", "isRequired": false }] },
+        { "type": "series", "id": "tmdb-popular-tv", "name": "TMDB Popular TV", "extra": [{ "name": "search", "isRequired": false }, { "name": "skip", "isRequired": false }] },
+        { "type": "series", "id": "simkl-trending-shows", "name": "Simkl Trending Shows", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "series", "id": "simkl-popular-shows", "name": "Simkl Popular Shows" },
+        { "type": "series", "id": "anilist-trending", "name": "AniList Trending", "extra": [{ "name": "skip", "isRequired": false }] },
+        { "type": "series", "id": "anilist-popular", "name": "AniList Popular", "extra": [{ "name": "skip", "isRequired": false }] }
+    ],
+    "resources": [
+        "catalog",
+        "meta",
+        {
+            "name": "stream",
+            "types": ["movie", "series"],
+            "idPrefixes": ["tt"]
+        }
+    ],
+    "behaviorHints": {
+        "configurable": true,
+        "configurationRequired": false
+    }
+}
