@@ -336,7 +336,7 @@ convert("export.json", "imdb.csv", imdb=True, rating=True)
 ## Files
 
 ```
-wetrakr/
+StreamSyncr/
 ├── wetrakr_api/
 │   ├── client.py           # WeTrakr API client
 │   ├── trakt_to_csv.py     # Trakt → IMDb CSV converter
