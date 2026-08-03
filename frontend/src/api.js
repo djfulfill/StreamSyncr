@@ -317,6 +317,113 @@ export const tmdb = {
   },
 };
 
+// Plex API (via Python backend)
+export const plex = {
+  async getLibraries(config) {
+    const res = await fetch('/api/plex/libraries', {
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async getHistory(config, libraryId) {
+    const res = await fetch('/api/plex/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...config, libraryId }),
+    });
+    return res.json();
+  },
+  async search(config, query) {
+    const res = await fetch('/api/plex/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...config, query }),
+    });
+    return res.json();
+  },
+};
+
+// AniList API
+export const anilist = {
+  async search(query, accessToken) {
+    const res = await fetch('/api/anilist/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, accessToken }),
+    });
+    return res.json();
+  },
+  async trending() {
+    const res = await fetch('/api/anilist/trending');
+    return res.json();
+  },
+  async getLists(username, accessToken) {
+    const res = await fetch('/api/anilist/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, accessToken }),
+    });
+    return res.json();
+  },
+};
+
+// Simkl API
+export const simkl = {
+  async search(query, config) {
+    const res = await fetch('/api/simkl/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, ...config }),
+    });
+    return res.json();
+  },
+  async trending(config) {
+    const res = await fetch('/api/simkl/trending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async history(config) {
+    const res = await fetch('/api/simkl/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+};
+
+// Jellyfin API
+export const jellyfin = {
+  async getLibraries(config) {
+    const res = await fetch('/api/jellyfin/libraries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async getHistory(config) {
+    const res = await fetch('/api/jellyfin/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async search(config, query) {
+    const res = await fetch('/api/jellyfin/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...config, query }),
+    });
+    return res.json();
+  },
+};
+
 // IMDb API
 export const imdb = {
   async graphql(query, variables = {}) {

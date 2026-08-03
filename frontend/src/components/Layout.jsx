@@ -14,9 +14,20 @@ const navItems = [
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const { wetrakr, trakt, tmdb, imdb } = useStore();
+  const { wetrakr, trakt, tmdb, imdb, plex, anilist, simkl, jellyfin } = useStore();
 
-  const connectedCount = [wetrakr.connected, trakt.connected, tmdb.connected, imdb.connected].filter(Boolean).length;
+  const services = [
+    { name: 'StreamSyncr', connected: wetrakr.connected, color: 'bg-glow' },
+    { name: 'Trakt', connected: trakt.connected, color: 'bg-flame' },
+    { name: 'TMDB', connected: tmdb.connected, color: 'bg-mint' },
+    { name: 'IMDb', connected: imdb.connected, color: 'bg-ember' },
+    { name: 'Plex', connected: plex.connected, color: 'bg-ember' },
+    { name: 'AniList', connected: anilist.connected, color: 'bg-flame' },
+    { name: 'Simkl', connected: simkl.connected, color: 'bg-mint' },
+    { name: 'Jellyfin', connected: jellyfin.connected, color: 'bg-glow' },
+  ];
+
+  const connectedCount = services.filter(s => s.connected).length;
 
   return (
     <div className="flex h-screen">
@@ -66,13 +77,12 @@ export default function Layout({ children }) {
             Connected
           </div>
           <div className="flex lg:flex-col gap-2">
-            <ServiceDot name="StreamSyncr" connected={wetrakr.connected} color="bg-glow" />
-            <ServiceDot name="Trakt" connected={trakt.connected} color="bg-flame" />
-            <ServiceDot name="TMDB" connected={tmdb.connected} color="bg-mint" />
-            <ServiceDot name="IMDb" connected={imdb.connected} color="bg-ember" />
+            {services.map((s) => (
+              <ServiceDot key={s.name} name={s.name} connected={s.connected} color={s.color} />
+            ))}
           </div>
           <div className="hidden lg:block mt-3 text-xs text-mist">
-            {connectedCount}/4 services
+            {connectedCount}/{services.length} services
           </div>
         </div>
       </aside>

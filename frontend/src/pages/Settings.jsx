@@ -7,7 +7,7 @@ const services = [
   {
     id: 'wetrakr',
     name: 'StreamSyncr',
-    description: 'Reverse-engineered API. Tokens expire after ~2 days.',
+    description: 'Unofficial API. Tokens expire after ~2 days.',
     color: 'glow',
     gradient: 'from-glow to-[#a29bfe]',
     fields: [
@@ -57,6 +57,58 @@ const services = [
     ],
     docsUrl: 'https://www.imdb.com',
   },
+  {
+    id: 'plex',
+    name: 'Plex',
+    description: 'Official API. Use your Plex token and server URL.',
+    color: 'ember',
+    gradient: 'from-ember to-[#e5a00d]',
+    fields: [
+      { key: 'baseUrl', label: 'Server URL (e.g. http://localhost:32400)', type: 'text' },
+      { key: 'token', label: 'Plex Token', type: 'password' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+    ],
+    docsUrl: 'https://plex.tv',
+  },
+  {
+    id: 'anilist',
+    name: 'AniList',
+    description: 'Official GraphQL API. No auth needed for reads; OAuth for writes.',
+    color: 'flame',
+    gradient: 'from-flame to-[#02a9ff]',
+    fields: [
+      { key: 'accessToken', label: 'Access Token (optional)', type: 'password' },
+      { key: 'username', label: 'Username', type: 'text' },
+    ],
+    docsUrl: 'https://anilist.co',
+  },
+  {
+    id: 'simkl',
+    name: 'Simkl',
+    description: 'Official API. Client ID required; OAuth for user data.',
+    color: 'mint',
+    gradient: 'from-mint to-[#1a73e8]',
+    fields: [
+      { key: 'clientId', label: 'Client ID', type: 'password' },
+      { key: 'accessToken', label: 'Access Token (optional)', type: 'password' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+    ],
+    docsUrl: 'https://simkl.com',
+  },
+  {
+    id: 'jellyfin',
+    name: 'Jellyfin',
+    description: 'Official API. Requires API key from admin dashboard.',
+    color: 'glow',
+    gradient: 'from-glow to-[#9b59b6]',
+    fields: [
+      { key: 'baseUrl', label: 'Server URL (e.g. http://localhost:8096)', type: 'text' },
+      { key: 'apiKey', label: 'API Key', type: 'password' },
+      { key: 'userId', label: 'User ID', type: 'password' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+    ],
+    docsUrl: 'https://jellyfin.org',
+  },
 ];
 
 export default function Settings() {
@@ -99,6 +151,16 @@ export default function Settings() {
               store.connectTrakt(data.username, data.token, data.apiKey);
             } else if (service.id === 'tmdb') {
               store.connectTMDB(data.username, data.apiKey);
+            } else if (service.id === 'imdb') {
+              store.connectIMDb(data.sessionId, data.atMain, data.sessionToken, data.ubidMain, data.sessAtMain);
+            } else if (service.id === 'plex') {
+              store.connectPlex(data.username, data.token, data.baseUrl);
+            } else if (service.id === 'anilist') {
+              store.connectAniList(data.username, data.accessToken);
+            } else if (service.id === 'simkl') {
+              store.connectSimkl(data.username, data.accessToken, data.clientId);
+            } else if (service.id === 'jellyfin') {
+              store.connectJellyfin(data.username, data.apiKey, data.userId, data.baseUrl);
             }
           }}
           onDisconnect={() => store.disconnectService(service.id)}

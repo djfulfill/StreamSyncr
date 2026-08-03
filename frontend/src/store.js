@@ -9,6 +9,10 @@ const useStore = create(
       trakt: { connected: false, username: null, token: null, apiKey: null },
       tmdb: { connected: false, username: null, apiKey: null },
       imdb: { connected: false, sessionId: null, atMain: null, sessionToken: null, ubidMain: null, sessAtMain: null },
+      plex: { connected: false, username: null, token: null, baseUrl: null },
+      anilist: { connected: false, username: null, accessToken: null },
+      simkl: { connected: false, username: null, accessToken: null, clientId: null },
+      jellyfin: { connected: false, username: null, apiKey: null, userId: null, baseUrl: null },
 
       // Library state
       library: [],
@@ -37,6 +41,18 @@ const useStore = create(
 
       connectIMDb: (sessionId, atMain, sessionToken, ubidMain = null, sessAtMain = null) =>
         set({ imdb: { connected: true, sessionId, atMain, sessionToken, ubidMain, sessAtMain } }),
+
+      connectPlex: (username, token, baseUrl) =>
+        set({ plex: { connected: true, username, token, baseUrl } }),
+
+      connectAniList: (username, accessToken) =>
+        set({ anilist: { connected: true, username, accessToken } }),
+
+      connectSimkl: (username, accessToken, clientId) =>
+        set({ simkl: { connected: true, username, accessToken, clientId } }),
+
+      connectJellyfin: (username, apiKey, userId, baseUrl) =>
+        set({ jellyfin: { connected: true, username, apiKey, userId, baseUrl } }),
 
       disconnectService: (service) =>
         set((state) => ({
@@ -75,6 +91,10 @@ const useStore = create(
         trakt: state.trakt,
         tmdb: state.tmdb,
         imdb: state.imdb,
+        plex: state.plex,
+        anilist: state.anilist,
+        simkl: state.simkl,
+        jellyfin: state.jellyfin,
         library: state.library,
         watchlist: state.watchlist,
         favorites: state.favorites,
