@@ -4,7 +4,7 @@ import { RefreshCw, ArrowRight, Check, AlertCircle, Loader2, Film, Tv, Clock } f
 import useStore from '../store';
 
 const syncSteps = [
-  { id: 'wetrakr', label: 'Fetch from StreamSync', service: 'wetrakr' },
+  { id: 'wetrakr', label: 'Fetch from StreamSyncr', service: 'wetrakr' },
   { id: 'trakt', label: 'Fetch from Trakt', service: 'trakt' },
   { id: 'tmdb', label: 'Enrich with TMDB', service: 'tmdb' },
   { id: 'merge', label: 'Merge & deduplicate', service: null },
@@ -18,7 +18,7 @@ export default function Sync() {
   const [results, setResults] = useState(null);
 
   const connectedServices = [
-    wetrakr.connected && 'StreamSync',
+    wetrakr.connected && 'StreamSyncr',
     trakt.connected && 'Trakt',
     tmdbState.connected && 'TMDB',
   ].filter(Boolean);
@@ -68,7 +68,7 @@ export default function Sync() {
       >
         <h3 className="font-display font-semibold text-snow mb-4">Connected Services</h3>
         <div className="grid grid-cols-3 gap-4">
-          <ServiceStatus name="StreamSync" connected={wetrakr.connected} username={wetrakr.username} />
+          <ServiceStatus name="StreamSyncr" connected={wetrakr.connected} username={wetrakr.username} />
           <ServiceStatus name="Trakt" connected={trakt.connected} username={trakt.username} />
           <ServiceStatus name="TMDB" connected={tmdbState.connected} username={tmdbState.username} />
         </div>

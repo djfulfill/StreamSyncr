@@ -1,4 +1,4 @@
-# StreamSync Frontend
+# StreamSyncr Frontend
 
 Unified streaming tracker dashboard built with React + Vite + Tailwind CSS.
 

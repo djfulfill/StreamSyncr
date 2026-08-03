@@ -27,7 +27,7 @@ export default function Layout({ children }) {
             <Clapperboard className="w-5 h-5 text-void" />
           </div>
           <span className="hidden lg:block font-display font-bold text-xl tracking-tight">
-            StreamSync
+            StreamSyncr
           </span>
         </div>
 
@@ -65,7 +65,7 @@ export default function Layout({ children }) {
             Connected
           </div>
           <div className="flex lg:flex-col gap-2">
-            <ServiceDot name="StreamSync" connected={wetrakr.connected} color="bg-glow" />
+            <ServiceDot name="StreamSyncr" connected={wetrakr.connected} color="bg-glow" />
             <ServiceDot name="Trakt" connected={trakt.connected} color="bg-flame" />
             <ServiceDot name="TMDB" connected={tmdb.connected} color="bg-mint" />
           </div>

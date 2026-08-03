@@ -6,7 +6,7 @@ import useStore from '../store';
 const services = [
   {
     id: 'wetrakr',
-    name: 'StreamSync',
+    name: 'StreamSyncr',
     description: 'Reverse-engineered API. Tokens expire after ~2 days.',
     color: 'glow',
     gradient: 'from-glow to-[#a29bfe]',
