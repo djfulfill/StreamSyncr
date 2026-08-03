@@ -396,6 +396,58 @@ export const simkl = {
   },
 };
 
+// Kodi API
+export const kodi = {
+  async ping(config) {
+    const res = await fetch('/api/kodi/ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async getMovies(config) {
+    const res = await fetch('/api/kodi/movies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async getShows(config) {
+    const res = await fetch('/api/kodi/shows', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async getEpisodes(config) {
+    const res = await fetch('/api/kodi/episodes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+  async search(config, query) {
+    const res = await fetch('/api/kodi/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...config, query }),
+    });
+    return res.json();
+  },
+  async getStats(config) {
+    const res = await fetch('/api/kodi/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+};
+
 // Jellyfin API
 export const jellyfin = {
   async getLibraries(config) {

@@ -109,6 +109,19 @@ const services = [
     ],
     docsUrl: 'https://jellyfin.org',
   },
+  {
+    id: 'kodi',
+    name: 'Kodi',
+    description: 'JSON-RPC API. Enable in Settings → Services → Control.',
+    color: 'mint',
+    gradient: 'from-mint to-[#1778e0]',
+    fields: [
+      { key: 'baseUrl', label: 'Server URL (e.g. http://192.168.1.50:8080)', type: 'text' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+      { key: 'password', label: 'Password (optional)', type: 'password' },
+    ],
+    docsUrl: 'https://kodi.tv',
+  },
 ];
 
 export default function Settings() {
@@ -161,6 +174,8 @@ export default function Settings() {
               store.connectSimkl(data.username, data.accessToken, data.clientId);
             } else if (service.id === 'jellyfin') {
               store.connectJellyfin(data.username, data.apiKey, data.userId, data.baseUrl);
+            } else if (service.id === 'kodi') {
+              store.connectKodi(data.username, data.baseUrl);
             }
           }}
           onDisconnect={() => store.disconnectService(service.id)}

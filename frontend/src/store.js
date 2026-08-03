@@ -13,6 +13,7 @@ const useStore = create(
       anilist: { connected: false, username: null, accessToken: null },
       simkl: { connected: false, username: null, accessToken: null, clientId: null },
       jellyfin: { connected: false, username: null, apiKey: null, userId: null, baseUrl: null },
+      kodi: { connected: false, username: null, baseUrl: null },
 
       // Library state
       library: [],
@@ -53,6 +54,9 @@ const useStore = create(
 
       connectJellyfin: (username, apiKey, userId, baseUrl) =>
         set({ jellyfin: { connected: true, username, apiKey, userId, baseUrl } }),
+
+      connectKodi: (username, baseUrl) =>
+        set({ kodi: { connected: true, username, baseUrl } }),
 
       disconnectService: (service) =>
         set((state) => ({
@@ -95,6 +99,7 @@ const useStore = create(
         anilist: state.anilist,
         simkl: state.simkl,
         jellyfin: state.jellyfin,
+        kodi: state.kodi,
         library: state.library,
         watchlist: state.watchlist,
         favorites: state.favorites,

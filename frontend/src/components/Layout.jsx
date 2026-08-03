@@ -14,7 +14,7 @@ const navItems = [
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const { wetrakr, trakt, tmdb, imdb, plex, anilist, simkl, jellyfin } = useStore();
+  const { wetrakr, trakt, tmdb, imdb, plex, anilist, simkl, jellyfin, kodi } = useStore();
 
   const services = [
     { name: 'StreamSyncr', connected: wetrakr.connected, color: 'bg-glow' },
@@ -25,6 +25,7 @@ export default function Layout({ children }) {
     { name: 'AniList', connected: anilist.connected, color: 'bg-flame' },
     { name: 'Simkl', connected: simkl.connected, color: 'bg-mint' },
     { name: 'Jellyfin', connected: jellyfin.connected, color: 'bg-glow' },
+    { name: 'Kodi', connected: kodi.connected, color: 'bg-mint' },
   ];
 
   const connectedCount = services.filter(s => s.connected).length;

@@ -10,6 +10,7 @@
 - [x] AniList GraphQL client (anime/manga, user lists)
 - [x] Simkl API client (TV/movie/anime, sync)
 - [x] Jellyfin API client (watch history, ratings)
+- [x] Kodi JSON-RPC client (movies, shows, episodes, library stats)
 - [x] React frontend (Dashboard, Library, Search, Sync, Settings)
 - [x] IMDb frontend integration (proxy server, page, settings)
 

@@ -15,6 +15,7 @@ A unified streaming tracker — sync your watch history across 10+ services.
 | [AniList](https://anilist.co) | `anilist_api/` | Optional OAuth | ✅ Full client |
 | [Simkl](https://simkl.com) | `simkl_api/` | Client ID + OAuth | ✅ Full client |
 | [Jellyfin](https://jellyfin.org) | `jellyfin_api/` | API key | ✅ Full client |
+| [Kodi](https://kodi.tv) | `kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
 
 ## Tools
 
@@ -166,6 +167,23 @@ c.mark_watched(item_id)
 c.search("Breaking Bad")
 ```
 
+### Kodi
+
+```python
+from kodi_api import KodiClient
+
+c = KodiClient("http://192.168.1.50:8080")
+c.ping()
+c.get_movies()
+c.get_shows()
+c.get_episodes(show_id=1, season=1)
+c.search_movies("Inception")
+c.mark_movie_watched(123)
+c.get_watched_movies()
+c.get_library_stats()
+c.get_imdb_ids()
+```
+
 ---
 
 ## CLI Commands
@@ -266,6 +284,8 @@ StreamSyncr/
 ├── simkl_api/
 │   └── __init__.py
 ├── jellyfin_api/
+│   └── __init__.py
+├── kodi_api/
 │   └── __init__.py
 ├── imdb_to_tmdb.py
 ├── ROADMAP.md
