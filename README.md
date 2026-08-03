@@ -1,17 +1,28 @@
 # StreamSyncr
 
-A unified streaming tracker — sync your watch history across WeTrakr, Trakt, and TMDB.
+A unified streaming tracker — sync your watch history across 10+ services.
 
-## Overview
+## Services
 
-| Module | Description | Auth |
-|--------|-------------|------|
-| `wetrakr_api/` | [WeTrakr](https://wetrakr.com) client | JWT cookies |
-| `trakt_api/` | Full [Trakt.tv](https://trakt.tv) API client with scrobbling | API key + token |
-| `tmdb_api/` | Full [TMDB](https://themoviedb.org) API client | API key |
-| `imdb_to_tmdb.py` | IMDb → TMDB ID converter | TMDB API key |
-| `trakt_to_csv.py` | Trakt JSON export → IMDb CSV converter | None |
-| `frontend/` | React frontend - unified dashboard | Local storage |
+| Service | Module | Auth Type | Status |
+|---------|--------|-----------|--------|
+| [WeTrakr](https://wetrakr.com) | `wetrakr_api/` | Cookie (JWT) | ✅ Full client |
+| [Trakt](https://trakt.tv) | `trakt_api/` | API key + token | ✅ Full client |
+| [TMDB](https://themoviedb.org) | `tmdb_api/` | API key | ✅ Full client |
+| [IMDb](https://www.imdb.com) | `imdb_api/` | Cookie (GraphQL) | ✅ Full client |
+| [Letterboxd](https://letterboxd.com) | `letterboxd_api/` | Cookie (undocumented) | ✅ Lists + ratings |
+| [Plex](https://plex.tv) | `plex_api/` | Token | ✅ Full client |
+| [AniList](https://anilist.co) | `anilist_api/` | Optional OAuth | ✅ Full client |
+| [Simkl](https://simkl.com) | `simkl_api/` | Client ID + OAuth | ✅ Full client |
+| [Jellyfin](https://jellyfin.org) | `jellyfin_api/` | API key | ✅ Full client |
+
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| `imdb_to_tmdb.py` | IMDb → TMDB ID converter |
+| `trakt_to_csv.py` | Trakt JSON → IMDb CSV converter |
+| `frontend/` | React + Vite dashboard |
 
 ---
 
@@ -39,314 +50,191 @@ export TMDB_API_KEY="your_tmdb_key"
 
 ---
 
-## WeTrakr API
+## Python Usage
 
-Python client for [WeTrakr](https://wetrakr.com) — a streaming tracker with no public API.
-
-### Getting Your Tokens
-
-1. Go to [wetrakr.com](https://wetrakr.com) and log in
-2. Open DevTools (F12) → Application tab → Cookies
-3. Copy `wta_at` (access) and `wta_rt` (refresh)
-4. Tokens expire after ~2 days
-
-### Usage
+### WeTrakr
 
 ```python
 from wetrakr_api.client import WeTrakrClient
 
 c = WeTrakrClient()
-
-# Profile
-c.get_user()
-
-# Search
 c.search("Inception")
-
-# Mark watched (uses INTERNAL id from list items)
-c.mark_watched(internal_id, "movie", use_release_date=True)
-
-# Unwatch (uses TMDB id)
-c.unwatch(tmdb_id, "movie")
-
-# Favorites
+c.mark_watched(internal_id, "movie")   # uses INTERNAL id
+c.unwatch(tmdb_id, "movie")           # uses TMDB id
 c.favorite(internal_id, "movie")
-c.unfavorite(tmdb_id, "movie")
-
-# Lists
 c.get_lists()
-c.get_list_items(list_id)
 ```
 
-### Critical: ID Types
-
-WeTrakr has TWO different IDs:
-- **TMDB ID** — from The Movie Database (e.g., `27205`)
-- **Internal ID** — WeTrakr's own ID (e.g., `212517`)
-
-| Operation | Use Which ID? |
-|-----------|--------------|
-| Mark watched | Internal ID |
-| Unwatch | TMDB ID |
-| Favorite | Internal ID |
-| Unfavorite | TMDB ID |
-
----
-
-## Trakt API
-
-Full client for the [Trakt.tv](https://trakt.tv) API with scrobbling, lists, social features, and ratings.
-
-### Usage
+### Trakt
 
 ```python
 from trakt_api import TraktClient
 
 t = TraktClient()
-
-# Profile
-t.me()
-
-# Lists
-t.lists()
-t.list_items(list_id)
-t.add_to_list("My Favorites", movies=[4977])
-t.remove_from_list("My Favorites", movies=[4977])
-t.movie_in_lists(4977)
-
-# Collection
-t.collection()
-t.add_to_collection(movies=[{"ids": {"trakt": 4977}}])
-
-# Watchlist
-t.watchlist()
-t.add_to_watchlist(movies=[4977])
-
-# History
-t.history()
-t.get_watched_movies()
-t.mark_watched_now(movies=[4977])
-
-# Ratings
-t.ratings()
-t.rate(8, movies=[4977])
-
-# Favorites
-t.get_favorites()
-t.favorite(movies=[4977])
-
-# Social
-t.following()
-t.followers()
-t.follow_user("username")
-t.unfollow_user("username")
-
-# Scrobbling
-t.scrobble_start(4977)
-t.scrobble_pause(4977, progress=50.0)
-t.scrobble_stop(4977, progress=100.0)
-
-# Search
 t.search("Swordfish")
-t.search_movie("Swordfish", year=2001)
-
-# Trending
-t.trending_movies()
-t.popular_movies()
+t.mark_watched_now(movies=[4977])
+t.rate(8, movies=[4977])
+t.lists()
+t.collection()
+t.history()
+t.following()
+t.scrobble_start(4977)
 ```
 
-### CLI
-
-```bash
-python -m trakt_api.cli me
-python -m trakt_api.cli lists
-python -m trakt_api.cli collection
-python -m trakt_api.cli watchlist
-python -m trakt_api.cli watched
-python -m trakt_api.cli favorites
-python -m trakt_api.cli ratings
-python -m trakt_api.cli following
-python -m trakt_api.cli follow user
-python -m trakt_api.cli scrobble-start 4977
-python -m trakt_api.cli scrobble-stop 4977 --progress 100.0
-python -m trakt_api.cli search "Swordfish"
-python -m trakt_api.cli trending
-python -m trakt_api.cli add-to-list "My List" 4977 1234
-python -m trakt_api.cli rate 8 4977
-```
-
----
-
-## TMDB API
-
-Full client for [The Movie Database](https://themoviedb.org) API.
-
-### Usage
+### TMDB
 
 ```python
 from tmdb_api import TMDBClient
 
 t = TMDBClient()
-
-# Search
 t.search_movie("Swordfish", year=2001)
-t.search_tv("Breaking Bad")
-t.find_by_imdb("tt0244244")
-
-# Trending / Popular
-t.trending_movies()
-t.popular_movies()
-t.top_rated_movies()
-t.now_playing()
-t.upcoming()
-
-# Details
 t.movie(9705)
-t.movie_credits(9705)
-t.movie_similar(9705)
 t.movie_watch_providers(9705)
-
-# TV
-t.tv(1396)
-t.tv_season(1396, 1)
-
-# Genres
-t.genres_movie()
-
-# Discover
-t.discover_movies(genre=28, year=2024)
-
-# Lists (requires session_id)
-t.list_details(7101656)
-t.list_items(7101656)
 t.list_create(session_id, "My List")
-t.list_add_items(7101656, session_id, [9705])
-t.list_check_item(7101656, 9705)
-t.collection_items(10)  # Star Wars collection
+t.collection_items(10)
 ```
 
-### CLI
+### IMDb
+
+```python
+from imdb_api import IMDbClient
+
+c = IMDbClient()
+c.get_lists()
+c.get_ratings()
+c.create_list("My List")
+c.add_to_list("ls123", "tt0244244")
+c.rate_title("tt0244244", 8)
+```
+
+### Letterboxd
+
+```python
+from letterboxd_api import LetterboxdClient
+
+c = LetterboxdClient(cookies="...", csrf_token="...")
+films = c.search_film("Swordfish")  # returns lid codes
+c.create_list("My List", film_lids=["1Y0m", "1WhU"])
+c.add_to_list("WfRB8", ["1Y0m"])
+c.mark_watched("1Y0m")
+```
+
+### Plex
+
+```python
+from plex_api import PlexClient
+
+c = PlexClient(base_url="http://localhost:32400", token="your_token")
+c.get_libraries()
+c.get_watch_history()
+c.mark_watched(rating_key)
+c.rate(rating_key, 8)
+```
+
+### AniList
+
+```python
+from anilist_api import AniListClient
+
+c = AniListClient()
+c.search_anime("Naruto")
+c.get_trending()
+c.get_user_anime_list("username", status="COMPLETED")
+c.save_anime_list_entry(media_id=1, status="COMPLETED", score=9)
+```
+
+### Simkl
+
+```python
+from simkl_api import SimklClient
+
+c = SimklClient(client_id="your_client_id")
+c.search("Breaking Bad", media_type="show")
+c.trending_shows()
+c.add_to_history(movies=[SimklClient.make_item(simkl_id)])
+```
+
+### Jellyfin
+
+```python
+from jellyfin_api import JellyfinClient
+
+c = JellyfinClient(base_url="http://localhost:8096", api_key="your_key", user_id="user_id")
+c.get_libraries()
+c.get_watch_history()
+c.mark_watched(item_id)
+c.search("Breaking Bad")
+```
+
+---
+
+## CLI Commands
 
 ```bash
+# Trakt
+python -m trakt_api.cli me
+python -m trakt_api.cli lists
+python -m trakt_api.cli search "Swordfish"
+python -m trakt_api.cli trending
+python -m trakt_api.cli scrobble-start 4977
+
+# TMDB
 python -m tmdb_api.cli search "Swordfish"
 python -m tmdb_api.cli movie 9705
-python -m tmdb_api.cli trending
-python -m tmdb_api.cli popular
-python -m tmdb_api.cli genres
-python -m tmdb_api.cli cast 9705
 python -m tmdb_api.cli watch-providers 9705
-python -m tmdb_api.cli collection-items 10
-python -m tmdb_api.cli list 7101656
-```
 
----
-
-## IMDb → TMDB Converter
-
-Convert IMDb IDs to TMDB IDs, URLs, and poster images.
-
-### Usage
-
-```bash
-# Single ID
+# IMDb → TMDB converter
 python imdb_to_tmdb.py tt0244244
+python imdb_to_tmdb.py --batch tt0244244 tt0133093
 
-# Batch
-python imdb_to_tmdb.py --batch tt0244244 tt0133093 tt0062622
-
-# Text file (one ID per line)
-python imdb_to_tmdb.py --file imdb_ids.txt
-
-# CSV with IMDb column
-python imdb_to_tmdb.py --csv movies.csv --column imdb_id
-```
-
-### Python
-
-```python
-from imdb_to_tmdb import convert_id, batch_convert, convert_csv
-
-result = convert_id("tt0244244")
-# {'tmdb_id': 9705, 'title': 'Swordfish', 'poster': '...', 'url': '...'}
-
-results = batch_convert(["tt0244244", "tt0133093"])
-convert_csv("movies.csv", "output.csv")
+# Trakt → CSV converter
+python trakt_to_csv.py /path/to/trakt/files/
+python trakt_to_csv.py export.json --imdb --rating
 ```
 
 ---
 
-## Trakt CSV Converter
+## Critical Notes
 
-Convert Trakt JSON exports to IMDb CSV format.
+### WeTrakr ID Types
+- **Mark watched**: Use internal ID (`item["id"]`)
+- **Unwatch/Favorite**: Use TMDB ID (`item["ids"]["tmdb"]["id"]`)
+- Mixing them causes silent failures.
 
-### Supported Formats
+### Letterboxd Film Codes
+- Search: `GET /s/autocompletefilm?q={query}` → returns `lid`
+- List ops use `lid` codes (e.g., `1Y0m` = Swordfish)
+- Cloudflare protected — cookies expire periodically
 
-1. **Trakt Collections** — `collection-movies-*.json` files
-2. **Lunova Export** — single JSON with `watched_movies`, `collection`, etc.
-3. **Stremio/MetaHub** — array of `{id, type, name}`
+### Trakt Rate Limits
+- 300 requests / 60 seconds
+- Scrobble stop returns 409 Conflict on success
 
-### Usage
-
-```bash
-# Auto-detect format
-python trakt_to_csv.py /path/to/trakt/files/
-
-# Filter to movies only
-python trakt_to_csv.py export.json --types movies
-
-# IMDb playlist format
-python trakt_to_csv.py export.json --imdb
-
-# Include ratings
-python trakt_to_csv.py export.json --imdb --rating
-
-# Include release dates
-python trakt_to_csv.py export.json --imdb --release-date
-```
-
-### Python
-
-```python
-from trakt_to_csv import convert
-
-convert("/path/to/Trakt Collections/")
-convert("export.json", "movies.csv", types=["movies"])
-convert("export.json", "imdb.csv", imdb=True, rating=True)
-```
+### Simkl Sync Model
+- Two-phase: initial pull + incremental via `date_from`
+- Batch writes to avoid rate_limit errors
 
 ---
 
 ## Frontend
 
-React dashboard for StreamSyncr with:
-- Connect WeTrakr, Trakt, TMDB services
-- Unified library view with grid/list modes
-- Search across all services
-- Cross-platform sync engine
-- Movie/show detail pages with TMDB metadata
+React + Vite + Tailwind dashboard running on port 3030.
 
 ```bash
 cd frontend
 npm install
 npm run dev    # http://localhost:3030
+npm run build  # production build
 ```
 
----
-
-## API Comparison
-
-| Feature | WeTrakr | Trakt | TMDB |
-|---------|---------|-------|------|
-| Scrobbling | ❌ | ✅ | ❌ |
-| Lists | ✅ | ✅ | ✅ |
-| Ratings | ❌ | ✅ | ✅ (session) |
-| Favorites | ✅ | ✅ | ✅ (session) |
-| Follow Users | ✅ | ✅ | ❌ |
-| Watch History | ✅ | ✅ | ❌ |
-| Search | ✅ | ✅ | ✅ |
-| Trending | ✅ | ✅ | ✅ |
-| Streaming Providers | ❌ | ❌ | ✅ |
-| Poster Images | ❌ | ❌ | ✅ |
+### Features
+- 8 services in Settings page (WeTrakr, Trakt, TMDB, IMDb, Plex, AniList, Simkl, Jellyfin)
+- Service status dots in sidebar
+- Unified library with grid/list modes
+- Search across TMDB
+- IMDb page (lists, ratings, recently viewed)
+- Movie/show detail pages with TMDB metadata
+- Cross-platform sync engine
 
 ---
 
@@ -355,22 +243,33 @@ npm run dev    # http://localhost:3030
 ```
 StreamSyncr/
 ├── wetrakr_api/
-│   ├── client.py           # WeTrakr API client
-│   ├── trakt_to_csv.py     # Trakt → IMDb CSV converter
-│   ├── mark_watched.py     # Bulk mark-watched script
-│   ├── unwatch_all.py      # Bulk unwatch script
-│   └── README.md           # WeTrakr API docs
+│   ├── client.py
+│   ├── trakt_to_csv.py
+│   ├── mark_watched.py
+│   ├── unwatch_all.py
+│   └── README.md
 ├── trakt_api/
-│   ├── client.py           # Trakt API client
-│   └── cli.py              # CLI for Trakt
+│   ├── client.py
+│   └── cli.py
 ├── tmdb_api/
-│   ├── client.py           # TMDB API client
-│   └── cli.py              # CLI for TMDB
-├── frontend/
-│   ├── src/                # React app
-│   └── ...                 # Vite config, package.json, etc.
-├── imdb_to_tmdb.py         # IMDb → TMDB converter
-└── README.md               # This file
+│   ├── client.py
+│   └── cli.py
+├── imdb_api/
+│   ├── client.py
+│   └── operations.py
+├── letterboxd_api/
+│   └── __init__.py
+├── plex_api/
+│   └── __init__.py
+├── anilist_api/
+│   └── __init__.py
+├── simkl_api/
+│   └── __init__.py
+├── jellyfin_api/
+│   └── __init__.py
+├── imdb_to_tmdb.py
+├── ROADMAP.md
+└── README.md
 ```
 
 ---
