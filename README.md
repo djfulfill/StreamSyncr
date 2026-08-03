@@ -316,6 +316,23 @@ convert("export.json", "imdb.csv", imdb=True, rating=True)
 
 ---
 
+## Frontend
+
+React dashboard for StreamSyncr with:
+- Connect WeTrakr, Trakt, TMDB services
+- Unified library view with grid/list modes
+- Search across all services
+- Cross-platform sync engine
+- Movie/show detail pages with TMDB metadata
+
+```bash
+cd frontend
+npm install
+npm run dev    # http://localhost:3030
+```
+
+---
+
 ## API Comparison
 
 | Feature | WeTrakr | Trakt | TMDB |
@@ -349,6 +366,9 @@ StreamSyncr/
 ├── tmdb_api/
 │   ├── client.py           # TMDB API client
 │   └── cli.py              # CLI for TMDB
+├── frontend/
+│   ├── src/                # React app
+│   └── ...                 # Vite config, package.json, etc.
 ├── imdb_to_tmdb.py         # IMDb → TMDB converter
 └── README.md               # This file
 ```
