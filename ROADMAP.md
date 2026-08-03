@@ -16,7 +16,12 @@
 
 ## In Progress
 - [ ] Serializd API integration (TV tracking)
-- [ ] Frontend sync page (bidirectional sync UI)
+
+## Completed (Phase 2)
+- [x] Sync engine core (ID resolution, conflict resolution strategies)
+- [x] Sync engine operations (watched, ratings, favorites push to all services)
+- [x] Frontend Sync page (strategy selection, dry run, progress, change preview)
+- [x] 4 resolution strategies: watched overrides, newest wins, service priority, most complete
 
 ## Planned
 
@@ -24,10 +29,11 @@
 - [ ] **JustWatch** — Where to stream content (unofficial GraphQL)
 - [ ] **TVMaze** — TV show metadata (free, no auth)
 
-### Phase 2: Cross-Platform Sync
-- [ ] Bidirectional sync engine
-- [ ] Conflict resolution
-- [ ] Background sync service
+### Phase 2: Cross-Platform Sync ✅
+- [x] Bidirectional sync engine (`sync_engine/`)
+- [x] Conflict resolution (4 strategies)
+- [x] Frontend sync page with progress tracking
+- [ ] Background sync service (auto-sync on interval)
 - [ ] Sync history/audit log
 
 ### Phase 3: Additional Services
