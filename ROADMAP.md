@@ -42,7 +42,7 @@
 - [ ] **MyAnimeList (MAL)** — Legacy anime database
 - [ ] **Kitsu** — Anime tracking with social features
 - [ ] **TV Time** — TV tracking (shutting down July 2026, migrate users)
-- [ ] **Kinopoisk** — Russian movie database
+- [ ] **Sofa Sidekick** — Private show & movie tracker (TV Time replacement, web app)
 
 ## API Reference
 
@@ -90,3 +90,12 @@
 - **Note**: No official public API
 - **Workaround**: Third-party wrappers (RapidAPI, Apify)
 - **Alternative**: Use TMDB watch providers (already integrated)
+
+### Sofa Sidekick (web app, beta)
+- **URL**: https://app.sofasidekick.com
+- **Status**: Beta (waitlist open)
+- **Data source**: TheTVDB
+- **Features**: Up next, watchlist, statuses, ratings, physical media tracking
+- **API**: No public API yet — web app only
+- **Import**: TV Time CSV import supported
+- **Note**: Private tracker, no social features. Good TV Time alternative.
