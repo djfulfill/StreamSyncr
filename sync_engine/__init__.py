@@ -12,6 +12,7 @@ Usage:
 from .engine import SyncEngine, SyncResult, SyncItem
 from .resolver import CanonicalItem, build_key, items_match, merge_items
 from .resolution import ResolutionStrategy, resolve_all, resolve_watched, resolve_rating, resolve_favorite
+from .background import BackgroundSync, SyncLog
 
 __all__ = [
     "SyncEngine",
@@ -19,6 +20,8 @@ __all__ = [
     "SyncItem",
     "CanonicalItem",
     "ResolutionStrategy",
+    "BackgroundSync",
+    "SyncLog",
     "build_key",
     "items_match",
     "merge_items",

@@ -544,3 +544,49 @@ export const imdb = {
     });
   },
 };
+
+// Sync API
+export const syncApi = {
+  async runSync(config) {
+    const res = await fetch('/api/sync/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+
+  async getLog(limit = 50, offset = 0) {
+    const res = await fetch(`/api/sync/log?limit=${limit}&offset=${offset}`);
+    return res.json();
+  },
+
+  async getStats() {
+    const res = await fetch('/api/sync/stats');
+    return res.json();
+  },
+
+  async clearLog() {
+    const res = await fetch('/api/sync/log', { method: 'DELETE' });
+    return res.json();
+  },
+
+  async getBackgroundStatus() {
+    const res = await fetch('/api/sync/background/status');
+    return res.json();
+  },
+
+  async startBackground(config) {
+    const res = await fetch('/api/sync/background/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    return res.json();
+  },
+
+  async stopBackground() {
+    const res = await fetch('/api/sync/background/stop', { method: 'POST' });
+    return res.json();
+  },
+};

@@ -22,6 +22,8 @@
 - [x] Sync engine operations (watched, ratings, favorites push to all services)
 - [x] Frontend Sync page (strategy selection, dry run, progress, change preview)
 - [x] 4 resolution strategies: watched overrides, newest wins, service priority, most complete
+- [x] Background sync service (configurable interval, start/stop)
+- [x] Sync history/audit log (JSONL append-only, stats, clear)
 
 ## Planned
 
@@ -33,8 +35,8 @@
 - [x] Bidirectional sync engine (`sync_engine/`)
 - [x] Conflict resolution (4 strategies)
 - [x] Frontend sync page with progress tracking
-- [ ] Background sync service (auto-sync on interval)
-- [ ] Sync history/audit log
+- [x] Background sync service (auto-sync on interval)
+- [x] Sync history/audit log
 
 ### Phase 3: Additional Services
 - [ ] **MyAnimeList (MAL)** — Legacy anime database
