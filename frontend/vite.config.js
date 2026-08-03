@@ -22,6 +22,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/tmdb/, ''),
       },
+      '/api/imdb': {
+        target: 'http://localhost:3031',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/imdb/, ''),
+      },
     },
   },
 })

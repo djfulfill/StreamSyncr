@@ -8,6 +8,7 @@ const useStore = create(
       wetrakr: { connected: false, username: null, accessToken: null, refreshToken: null },
       trakt: { connected: false, username: null, token: null, apiKey: null },
       tmdb: { connected: false, username: null, apiKey: null },
+      imdb: { connected: false, sessionId: null, atMain: null, sessionToken: null, ubidMain: null, sessAtMain: null },
 
       // Library state
       library: [],
@@ -33,6 +34,9 @@ const useStore = create(
 
       connectTMDB: (username, apiKey) =>
         set({ tmdb: { connected: true, username, apiKey } }),
+
+      connectIMDb: (sessionId, atMain, sessionToken, ubidMain = null, sessAtMain = null) =>
+        set({ imdb: { connected: true, sessionId, atMain, sessionToken, ubidMain, sessAtMain } }),
 
       disconnectService: (service) =>
         set((state) => ({
@@ -70,6 +74,7 @@ const useStore = create(
         wetrakr: state.wetrakr,
         trakt: state.trakt,
         tmdb: state.tmdb,
+        imdb: state.imdb,
         library: state.library,
         watchlist: state.watchlist,
         favorites: state.favorites,

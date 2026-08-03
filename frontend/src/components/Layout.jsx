@@ -8,14 +8,15 @@ const navItems = [
   { path: '/library', icon: Film, label: 'Library' },
   { path: '/search', icon: Search, label: 'Search' },
   { path: '/sync', icon: RefreshCw, label: 'Sync' },
+  { path: '/imdb', icon: Tv, label: 'IMDb' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const { wetrakr, trakt, tmdb } = useStore();
+  const { wetrakr, trakt, tmdb, imdb } = useStore();
 
-  const connectedCount = [wetrakr.connected, trakt.connected, tmdb.connected].filter(Boolean).length;
+  const connectedCount = [wetrakr.connected, trakt.connected, tmdb.connected, imdb.connected].filter(Boolean).length;
 
   return (
     <div className="flex h-screen">
@@ -68,9 +69,10 @@ export default function Layout({ children }) {
             <ServiceDot name="StreamSyncr" connected={wetrakr.connected} color="bg-glow" />
             <ServiceDot name="Trakt" connected={trakt.connected} color="bg-flame" />
             <ServiceDot name="TMDB" connected={tmdb.connected} color="bg-mint" />
+            <ServiceDot name="IMDb" connected={imdb.connected} color="bg-ember" />
           </div>
           <div className="hidden lg:block mt-3 text-xs text-mist">
-            {connectedCount}/3 services
+            {connectedCount}/4 services
           </div>
         </div>
       </aside>

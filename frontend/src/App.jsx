@@ -7,6 +7,7 @@ import Search from './pages/Search';
 import Sync from './pages/Sync';
 import Settings from './pages/Settings';
 import Detail from './pages/Detail';
+import IMDb from './pages/IMDb';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/search" element={<Search />} />
               <Route path="/sync" element={<Sync />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/imdb" element={<IMDb />} />
               <Route path="/detail/:type/:id" element={<Detail />} />
             </Routes>
           </AnimatePresence>

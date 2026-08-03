@@ -42,6 +42,21 @@ const services = [
     ],
     docsUrl: 'https://themoviedb.org',
   },
+  {
+    id: 'imdb',
+    name: 'IMDb',
+    description: 'Lists, ratings, and watchlist sync via GraphQL API.',
+    color: 'ember',
+    gradient: 'from-ember to-[#d4a80a]',
+    fields: [
+      { key: 'sessionId', label: 'Session ID (session-id)', type: 'password' },
+      { key: 'atMain', label: 'AT Main (at-main)', type: 'password' },
+      { key: 'sessionToken', label: 'Session Token', type: 'password' },
+      { key: 'ubidMain', label: 'UBID Main (optional)', type: 'password' },
+      { key: 'sessAtMain', label: 'Sess AT Main (optional)', type: 'password' },
+    ],
+    docsUrl: 'https://www.imdb.com',
+  },
 ];
 
 export default function Settings() {

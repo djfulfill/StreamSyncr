@@ -316,3 +316,72 @@ export const tmdb = {
     return res.json();
   },
 };
+
+// IMDb API
+export const imdb = {
+  async graphql(query, variables = {}) {
+    const res = await fetch('/api/imdb/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    return res.json();
+  },
+
+  async getLists() {
+    const query = `query YourListsSidebar { currentUser { lists { edges { node { id name { originalText text } items { total } } } } } }`;
+    return this.graphql(query);
+  },
+
+  async getRatings() {
+    const query = `query PersonalizedUserData { currentUser { ratings { edges { node { id titleText year releaseDate { year month day } rating { currentRating } } } } } }`;
+    return this.graphql(query);
+  },
+
+  async getRecentlyViewed() {
+    const query = `query RVI_Items { recentlyViewedItems { items { id titleText releaseYear { year } rating { aggregateRating } } } }`;
+    return this.graphql(query);
+  },
+
+  async createList(name, description = '') {
+    const query = `mutation CreateList($input: CreateListInput!) { createList(input: $input) { list { id name { originalText } } } }`;
+    return this.graphql(query, {
+      input: { name, description, listType: 'WATCH_LIST', allowDuplicates: false },
+    });
+  },
+
+  async addToList(listId, itemId) {
+    const query = `mutation AddItemToList($input: AddItemToListInput!) { addItemToList(input: $input) { list { id } } }`;
+    return this.graphql(query, {
+      input: { listId, item: { itemElementId: itemId } },
+    });
+  },
+
+  async removeFromList(listId, itemId) {
+    const query = `mutation RemoveElementFromList($input: RemoveElementFromListInput!) { removeElementFromList(input: $input) { list { id } } }`;
+    return this.graphql(query, {
+      input: { listId, itemId },
+    });
+  },
+
+  async rateTitle(itemId, rating) {
+    const query = `mutation RateTitle($input: RateTitleInput!) { rateTitle(input: $input) { code } }`;
+    return this.graphql(query, {
+      input: { itemId, rating },
+    });
+  },
+
+  async deleteRating(itemId) {
+    const query = `mutation DeleteTitleRating($input: DeleteTitleRatingInput!) { deleteTitleRating(input: $input) { code } }`;
+    return this.graphql(query, {
+      input: { itemId },
+    });
+  },
+
+  async deleteList(listId) {
+    const query = `mutation DeleteList($input: DeleteListInput!) { deleteList(input: $input) { code } }`;
+    return this.graphql(query, {
+      input: { listId },
+    });
+  },
+};
