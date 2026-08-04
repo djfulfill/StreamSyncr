@@ -40,20 +40,35 @@ StreamSyncr/
 
 ## Services
 
+### Tracking & Lists
+
 | Service | Module | Auth Type | Status |
 |---------|--------|-----------|--------|
-| [WeTrakr](https://wetrakr.com) | `apis/wetrakr_api/` | Cookie (JWT) | ✅ Full client |
 | [Trakt](https://trakt.tv) | `apis/trakt_api/` | API key + token | ✅ Full client |
 | [TMDB](https://themoviedb.org) | `apis/tmdb_api/` | API key | ✅ Full client |
-| [IMDb](https://www.imdb.com) | `apis/imdb_api/` | Cookie (GraphQL) | ✅ Full client |
-| [Letterboxd](https://letterboxd.com) | `apis/letterboxd_api/` | Cookie (undocumented) | ✅ Search + list CRUD |
-| [Plex](https://plex.tv) | `apis/plex_api/` | Token | ✅ Full client |
-| [AniList](https://anilist.co) | `apis/anilist_api/` | Optional OAuth | ✅ Full client |
-| [Simkl](https://simkl.com) | `apis/simkl_api/` | Client ID + OAuth | ✅ Full client |
-| [Jellyfin](https://jellyfin.org) | `apis/jellyfin_api/` | API key | ✅ Full client |
-| [Kodi](https://kodi.tv) | `apis/kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
+| [IMDb](https://www.imdb.com) | `apis/imdb_api/` | Cookie (GraphQL) | ✅ Recently viewed, lists, ratings |
+| [WeTrakr](https://wetrakr.com) | `apis/wetrakr_api/` | Cookie (JWT) | ✅ Favorites, watchlist, ratings |
+| [AniList](https://anilist.co) | `apis/anilist_api/` | Optional OAuth | ✅ Trending, popular |
+| [Simkl](https://simkl.com) | `apis/simkl_api/` | Client ID + OAuth | ✅ Trending, popular |
 | [MDBList](https://mdblist.com) | `apis/mdblist_api/` | API key | ✅ Lists + search |
 | [Sofa Sidekick](https://sofasidekick.com) | `apis/sofasidekick_api/` | Cookie (3 cookies) | ✅ Movies + upcoming |
+| [Letterboxd](https://letterboxd.com) | `apis/letterboxd_api/` | Cookie (undocumented) | ✅ Search + list CRUD |
+
+### Media Servers
+
+| Service | Module | Auth Type | Status |
+|---------|--------|-----------|--------|
+| [Plex](https://plex.tv) | `apis/plex_api/` | Token | ✅ Full client |
+| [Jellyfin](https://jellyfin.org) | `apis/jellyfin_api/` | API key | ✅ Full client |
+| [Kodi](https://kodi.tv) | `apis/kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
+
+### Debrid Services (Stream Sources)
+
+| Service | Module | Auth Type | Status |
+|---------|--------|-----------|--------|
+| [Real-Debrid](https://real-debrid.com) | `apis/realdebrid_api/` | API token | ✅ Torrents, unrestricted links |
+| [TorBox](https://torbox.app) | `apis/torbox_api/` | API key | ✅ Torrents, unrestricted links |
+| [AllDebrid](https://alldebrid.com) | `apis/alldebrid_api/` | API key | ✅ Torrents, unrestricted links |
 
 ## Stremio Addon
 
@@ -97,7 +112,26 @@ PYTHONPATH=/home/philip/StreamSyncr/apis:/home/philip/StreamSyncr/addon \
 - Sofa Sidekick Movies/Upcoming (from library)
 - MDBList — dynamic catalogs from user's lists
 - Trakt Watchlist/Favorites
+- IMDb Recently Viewed/Lists/Ratings
 - Letterboxd — search catalog (read endpoints Cloudflare-protected)
+
+### Streams (Debrid)
+
+When a user selects a title, the addon resolves streams from:
+- **Real-Debrid** — Torrents, unrestricted links
+- **TorBox** — Torrents, unrestricted links  
+- **AllDebrid** — Torrents, unrestricted links
+
+### Data Export
+
+Export all user data from connected services as JSON:
+
+```bash
+# Export data
+curl -s http://localhost:7800/api/export/{token} > export.json
+```
+
+**Supported services:** Trakt, Simkl, WeTrakr, Sofa Sidekick, Plex, Jellyfin, AniList, MDBList, IMDb
 
 ---
 
@@ -229,6 +263,42 @@ PYTHONPATH=/home/philip/StreamSyncr/apis:/home/philip/StreamSyncr/addon \
 - **Auth:** None (HTTP basic optional)
 - **Key methods:** `VideoLibrary.GetMovies`, `VideoLibrary.GetTVShows`
 
+### Real-Debrid (REST, documented)
+
+- **Base URL:** `https://api.real-debrid.com/rest/1.0`
+- **Auth:** Bearer token (`Authorization: Bearer YOUR_TOKEN`)
+- **Key endpoints:**
+  - `GET /torrents` — list torrents
+  - `POST /torrents/addMagnet` — add magnet link
+  - `GET /torrents/{id}` — torrent info
+  - `POST /torrents/{id}/selectFiles` — select files
+  - `GET /unrestrict/link` — unrestricted download link
+  - `GET /user` — user info (limits, points)
+- **Rate limits:** 120 requests / minute
+
+### TorBox (REST, documented)
+
+- **Base URL:** `https://api.torbox.app/v1`
+- **Auth:** API key (`Authorization: Bearer YOUR_API_KEY`)
+- **Key endpoints:**
+  - `GET /torrents/list` — list torrents
+  - `POST /torrents/createlink` — create download link
+  - `GET /torrents/{id}` — torrent info
+  - `GET /usenet/list` — list usenet downloads
+  - `GET /user` — user info
+- **Rate limits:** Varies by plan
+
+### AllDebrid (REST, documented)
+
+- **Base URL:** `https://api.alldebrid.com/v4`
+- **Auth:** API key (`?agent=StreamSyncr&apikey=YOUR_KEY`)
+- **Key endpoints:**
+  - `GET /magnet/upload` — add magnet link
+  - `GET /magnet/status` — check magnet status
+  - `GET /link/unlock` — unrestricted download link
+  - `GET /user` — user info (limits, premium status)
+- **Rate limits:** 120 requests / minute
+
 ---
 
 ## Python Usage
@@ -250,6 +320,15 @@ export TMDB_API_KEY="your_tmdb_key"
 
 # MDBList
 export MDBLIST_API_KEY="your_mdblist_key"
+
+# Real-Debrid
+export REALDEBRID_TOKEN="your_api_token"
+
+# TorBox
+export TORBOX_API_KEY="your_api_key"
+
+# AllDebrid
+export ALLDEBRID_API_KEY="your_api_key"
 ```
 
 ### Quick Examples
@@ -319,6 +398,24 @@ from apis.mdblist_api import MDBListClient
 m = MDBListClient()
 m.my_lists()
 m.list_items(1176)
+
+# Real-Debrid
+from apis.realdebrid_api import RealDebridClient
+c = RealDebridClient(token="your_token")
+c.add_magnet("magnet:?xt=...")
+c.unrestrict_link("https://real-debrid.com/d/...")
+
+# TorBox
+from apis.torbox_api import TorBoxClient
+c = TorBoxClient(api_key="your_api_key")
+c.list_torrents()
+c.create_download_link(torrent_id=123, file_id=1)
+
+# AllDebrid
+from apis.alldebrid_api import AllDebridClient
+c = AllDebridClient(api_key="your_api_key")
+c.upload_magnet("magnet:?xt=...")
+c.unrestrict_link("https://alldebrid.com/d/...")
 ```
 
 ---
