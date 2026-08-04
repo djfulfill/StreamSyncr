@@ -15,8 +15,11 @@ def _extract_year(item: dict) -> int:
     return int(date[:4]) if date else None
 
 
-def enrich(tmdb_id: int, media_type: str = "movie") -> Optional[dict]:
-    tmdb = TMDBClient()
+def enrich(tmdb_id: int, media_type: str = "movie", api_key: str = None) -> Optional[dict]:
+    tmdb = TMDBClient(api_key=api_key or os.environ.get("TMDB_API_KEY", ""))
+
+    if not tmdb.api_key:
+        return None
 
     if media_type == "movie":
         base = tmdb.movie(tmdb_id)

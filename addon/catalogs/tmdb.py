@@ -1,13 +1,14 @@
 import sys
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from tmdb_api import TMDBClient
 
 
-def _get_client() -> TMDBClient:
-    return TMDBClient()
+def _get_client(api_key: str = None) -> TMDBClient:
+    """Get TMDB client with explicit key, falling back to env var."""
+    return TMDBClient(api_key=api_key or os.environ.get("TMDB_API_KEY", ""))
 
 
 def _item_to_meta(item: dict, stremio_type: str) -> dict:
@@ -39,43 +40,43 @@ def _extract_year(item: dict) -> int:
     return int(date[:4]) if date else None
 
 
-def trending_movies(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def trending_movies(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.trending_movies(limit=limit + skip)
     return [_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
 
 
-def popular_movies(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def popular_movies(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.popular_movies(limit=limit + skip)
     return [_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
 
 
-def top_rated_movies(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def top_rated_movies(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.top_rated_movies(limit=limit + skip)
     return [_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
 
 
-def now_playing(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def now_playing(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.now_playing()
     return [_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
 
 
-def upcoming(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def upcoming(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.upcoming()
     return [_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
 
 
-def trending_tv(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def trending_tv(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.trending_tv(limit=limit + skip)
     return [_item_to_meta(i, "series") for i in items[skip:skip + limit]]
 
 
-def popular_tv(skip: int = 0, limit: int = 20) -> List[Dict]:
-    client = _get_client()
+def popular_tv(api_key: str = None, skip: int = 0, limit: int = 20) -> List[Dict]:
+    client = _get_client(api_key)
     items = client.popular_tv(limit=limit + skip)
     return [_item_to_meta(i, "series") for i in items[skip:skip + limit]]

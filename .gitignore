@@ -25,3 +25,5 @@ Thumbs.db
 .env
 tokens.json
 node_modules/\ndist/\n.env
+scripts/.server.pid
+scripts/.streamsync.pid

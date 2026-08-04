@@ -20,6 +20,8 @@ class TorBoxClient:
         req = Request(url, data=body, method=method)
         req.add_header("Authorization", f"Bearer {self.api_key}")
         req.add_header("Content-Type", "application/json")
+        req.add_header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36")
+        req.add_header("Accept", "application/json")
 
         try:
             with urlopen(req) as resp:
@@ -33,16 +35,27 @@ class TorBoxClient:
         return self._request("POST", "/api/torrents/createurl", data={"url": magnet})
 
     def get_torrents(self) -> List[Dict]:
-        return self._request("GET", "/api/torrents/mylist")
+        result = self._request("GET", "/api/torrents/mylist")
+        # TorBox wraps responses in {success, data, detail}
+        if isinstance(result, dict) and "data" in result:
+            return result["data"]
+        if isinstance(result, list):
+            return result
+        return []
 
     def get_torrent_info(self, torrent_id: int) -> Dict:
-        return self._request("GET", f"/api/torrents/details/{torrent_id}")
+        result = self._request("GET", f"/api/torrents/torrentinfo", params={"id": torrent_id})
+        if isinstance(result, dict) and "data" in result:
+            return result["data"]
+        return result
 
     def get_download_link(self, torrent_id: int, file_id: int = None) -> str:
-        params = {}
+        params = {"id": torrent_id}
         if file_id:
             params["file_id"] = file_id
-        result = self._request("GET", f"/api/torrents/{torrent_id}/download", params=params)
+        result = self._request("GET", "/api/torrents/requestdl", params=params)
+        if isinstance(result, dict) and "data" in result:
+            return result["data"]
         return result.get("data", "")
 
     def resolve_imdb(self, imdb_id: str) -> List[Dict]:

@@ -40,6 +40,9 @@ class SofaSidekickClient:
     def _get(self, path):
         res = self.session.get(f"{self.BASE}/{path}", timeout=self.timeout)
         res.raise_for_status()
+        ct = res.headers.get("content-type", "")
+        if "text/html" in ct:
+            raise ValueError(f"Cloudflare blocked: /api/{path} returned HTML instead of JSON")
         return res.json()
 
     def _post(self, path, data=None):

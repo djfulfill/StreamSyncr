@@ -4,6 +4,9 @@ WeTrakr API Client — Python client for the WeTrakr streaming tracker.
 CRITICAL: Marking uses INTERNAL IDs, unwatching uses TMDB IDs.
 See README.md for full documentation.
 
+BROKEN (2026-08-02): All /filters/auto/sys:* endpoints return state: null.
+Use list-based approach instead: get_lists() → get_list_items(list_id).
+
 Endpoints (2026-08-02):
   GET  /proxy/frontend/users/{username}           → user profile
   GET  /proxy/frontend/movies/{tmdb_id}           → movie detail
@@ -335,10 +338,6 @@ class WeTrakrClient:
         """Remove item from favorites. Uses TMDB id (same as unwatch)."""
         key = "movies" if media_type == "movie" else "shows"
         return self._post("account/favorites/remove", {key: [{"id": tmdb_id}]})
-
-    def get_favorites(self) -> dict:
-        """Get all favorites."""
-        return self._get("account/favorites")
 
     def favorite_batch(self, items: list) -> dict:
         """Add multiple items to favorites. Uses INTERNAL ids (same as mark_watched). Sends in batches of 100."""

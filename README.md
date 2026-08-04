@@ -2,18 +2,19 @@
 
 # StreamSyncr
 
-A unified streaming tracker — sync your watch history across 11+ services, with a self-hosted Stremio addon.
+A unified streaming tracker — sync your watch history across 12+ services, with a self-hosted Stremio addon.
 
 ## Architecture
 
 ```
 StreamSyncr/
-├── apis/                        # API clients (11 services)
+├── apis/                        # API clients (12 services)
 │   ├── anilist_api/             # AniList (anime tracking)
 │   ├── imdb_api/                # IMDb (lists, ratings)
 │   ├── jellyfin_api/            # Jellyfin (media server)
 │   ├── kodi_api/                # Kodi (JSON-RPC)
 │   ├── letterboxd_api/          # Letterboxd (film tracking)
+│   ├── mdblist_api/             # MDBList (multi-rating lists)
 │   ├── plex_api/                # Plex (media server)
 │   ├── simkl_api/               # Simkl (tracking)
 │   ├── sofasidekick_api/        # Sofa Sidekick (TV tracking)
@@ -45,13 +46,14 @@ StreamSyncr/
 | [Trakt](https://trakt.tv) | `apis/trakt_api/` | API key + token | ✅ Full client |
 | [TMDB](https://themoviedb.org) | `apis/tmdb_api/` | API key | ✅ Full client |
 | [IMDb](https://www.imdb.com) | `apis/imdb_api/` | Cookie (GraphQL) | ✅ Full client |
-| [Letterboxd](https://letterboxd.com) | `apis/letterboxd_api/` | Cookie (undocumented) | ✅ Lists + ratings |
+| [Letterboxd](https://letterboxd.com) | `apis/letterboxd_api/` | Cookie (undocumented) | ✅ Search + list CRUD |
 | [Plex](https://plex.tv) | `apis/plex_api/` | Token | ✅ Full client |
 | [AniList](https://anilist.co) | `apis/anilist_api/` | Optional OAuth | ✅ Full client |
 | [Simkl](https://simkl.com) | `apis/simkl_api/` | Client ID + OAuth | ✅ Full client |
 | [Jellyfin](https://jellyfin.org) | `apis/jellyfin_api/` | API key | ✅ Full client |
 | [Kodi](https://kodi.tv) | `apis/kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
-| [Sofa Sidekick](https://sofasidekick.com) | `apis/sofasidekick_api/` | Cookie | ✅ Full client |
+| [MDBList](https://mdblist.com) | `apis/mdblist_api/` | API key | ✅ Lists + search |
+| [Sofa Sidekick](https://sofasidekick.com) | `apis/sofasidekick_api/` | Cookie (3 cookies) | ✅ Movies + upcoming |
 
 ## Stremio Addon
 
@@ -63,22 +65,171 @@ Self-hosted Stremio addon with hybrid auth — public catalogs + user-configured
 cd addon
 pip install -r requirements.txt
 
-# Start server
-screen -dmS stremio python3 -c "from server import app; import uvicorn; uvicorn.run(app, host='0.0.0.0', port=7800)"
+# Start server (with API modules on path)
+cd addon
+PYTHONPATH=/home/philip/StreamSyncr/apis:/home/philip/StreamSyncr/addon \
+  screen -dmS stremio python3 server.py
 ```
 
 ### URLs
 
 - **Configure:** http://localhost:7800/configure
 - **Manifest:** http://localhost:7800/manifest.json
+- **Token Manifest:** http://localhost:7800/{token}/manifest.json
 
-### Features
+### Flow
 
-- **17 public catalogs** (Trakt, TMDB, AniList, Simkl trending/popular)
-- **User catalogs** (WeTrakr, Sofa Sidekick, Trakt watchlists)
-- **Debrid streams** (Real-Debrid, TorBox, AllDebrid)
-- **Multi-source metadata** (TMDB + IMDb enrichment)
-- **Web config UI** — collapsible sections for all 11 services
+1. User visits `/configure`
+2. Enters API keys and tokens for desired services
+3. Gets a token-based manifest URL
+4. Adds the URL to Stremio
+
+### Catalogs (30 total)
+
+**Public (no auth required):**
+- Trakt Trending/Popular (movies + shows)
+- TMDB Trending/Popular/Top Rated/Now Playing/Upcoming (movies + TV)
+- Simkl Trending/Popular (movies + shows + anime)
+- AniList Trending/Popular (anime)
+
+**Private (user-configured):**
+- WeTrakr Favorites/Watchlist (from user lists)
+- Sofa Sidekick Movies/Upcoming (from library)
+- MDBList — dynamic catalogs from user's lists
+- Trakt Watchlist/Favorites
+- Letterboxd — search catalog (read endpoints Cloudflare-protected)
+
+---
+
+## API Reference
+
+### WeTrakr (REST, unofficial)
+
+- **Base URL:** `https://wetrakr.com/proxy`
+- **Auth:** JWT cookies (`wta_at`, `wta_rt`) + custom headers
+- **Headers:** `wetrakr-api-country: US`, `wetrakr-api-language: en-US`
+- **Key endpoints:**
+  - `GET /proxy/frontend/users/{username}` — profile
+  - `GET /proxy/frontend/movies/{tmdb_id}` — movie detail
+  - `GET /proxy/frontend/shows/{tmdb_id}` — show detail
+  - `GET /proxy/search/all?q=&type=` — search
+  - `GET /proxy/account/lists` — user lists (18+ lists)
+  - `GET /proxy/account/lists/{id}/items` — list items
+  - `POST /proxy/account/tracking` — mark watched (INTERNAL id)
+  - `POST /proxy/account/tracking/remove/all` — unwatch (TMDB id)
+- **BROKEN (2026-08-02):** All `/filters/auto/sys:*` endpoints return `state: null`
+- **Workaround:** Use list-based approach: `get_lists()` → `get_list_items(list_id)`
+- **ID types:** Mark watched = internal ID, unwatch/favorite = TMDB ID
+
+### Trakt (REST, documented)
+
+- **Base URL:** `https://api.trakt.tv`
+- **Auth:** Client ID (`trakt-api-key`) + Bearer token (`trakt-api-version: 2`)
+- **Key endpoints:**
+  - `GET /search/{id_type}/{id}` — search by IMDb/TMDb
+  - `GET /movies/trending` — trending movies
+  - `GET /shows/trending` — trending shows
+  - `GET /sync/watchlist` — user watchlist
+  - `POST /scrobble/stop` — mark watched
+- **Rate limits:** 300 requests / 60 seconds
+- **Scrobble:** Stop returns 409 Conflict on success
+
+### TMDB (REST, documented)
+
+- **Base URL:** `https://api.themoviedb.org/3`
+- **Auth:** API key (query param or header)
+- **Key endpoints:**
+  - `GET /trending/movie/week` — trending movies
+  - `GET /movie/popular` — popular movies
+  - `GET /tv/popular` — popular TV
+  - `GET /search/movie?query=` — search movies
+  - `GET /movie/{id}/watch/providers` — streaming availability
+
+### Letterboxd (undocumented, cookie-based)
+
+- **Base URL:** `https://letterboxd.com`
+- **Auth:** Cookie-based + CSRF token
+- **Required cookies:**
+  - `cf_clearance` — Cloudflare clearance
+  - `letterboxd.user.CURRENT` — user session
+  - `com.xk72.webparts.csrf` — CSRF token (also used as `x-csrf-token` header)
+- **Working endpoints:**
+  - `GET /s/autocompletefilm?q={query}` — search films (returns `lid` codes)
+  - `POST /api/v0/lists` — create list
+  - `PATCH /api/v0/lists` — add to list
+  - `DELETE /api/v0/lists` — remove from list
+  - `POST /ajax/film:{lid}/filmlistentry` — mark watched
+  - `POST /film/{slug}/add-to-watchlist/` — add to watchlist
+- **Blocked endpoints (Cloudflare):** diary, watchlist read, ratings, user data
+- **Film codes:** Short alphanumeric `lid` (e.g., `1skk` = Inception)
+
+### MDBList (REST, documented)
+
+- **Base URL:** `https://api.mdblist.com`
+- **Auth:** API key (`apikey` query param)
+- **Key endpoints:**
+  - `GET /user` — user profile
+  - `GET /lists/user` — user lists
+  - `GET /lists/{listid}/items` — list items
+  - `GET /search/{media_type}?query=` — search movies/shows
+  - `GET /{provider}/{media_type}/{media_id}` — get by IMDb/TMDb/TVDB
+- **Rate limits:** 1,000/day (free), up to 250,000/day (VIP)
+
+### Sofa Sidekick (undocumented, cookie-based)
+
+- **Base URL:** `https://app.sofasidekick.com/api`
+- **Auth:** Cookie-based (`session_id`, `cf_clearance`, `__cf_bm`)
+- **Working endpoints:**
+  - `GET /movies` — user's movie library (235 items)
+  - `GET /upcoming?days=30` — upcoming episodes
+  - `GET /stats` — watch stats
+  - `GET /account` — user profile
+- **Blocked endpoints (Cloudflare):** `/api/shows`, `/api/watchlist`, `/api/history`
+- **Data source:** TheTVDB for metadata
+
+### AniList (GraphQL, documented)
+
+- **Endpoint:** `https://graphql.anilist.co`
+- **Auth:** Optional OAuth2 (90 req/min without auth)
+- **Key queries:** `Page`, `Media`, `MediaListCollection`, `Viewer`
+- **Mutations:** `SaveMediaListEntry`, `DeleteMediaListEntry`, `ToggleFavourite`
+
+### Simkl (REST, documented)
+
+- **Base URL:** `https://api.simkl.com`
+- **Auth:** Client ID + optional OAuth2
+- **Key endpoints:**
+  - `GET /sync/history` — watch history
+  - `GET /sync/all-items` — all items
+  - `GET /sync/activities` — activity feed
+- **Sync model:** Two-phase — initial pull + incremental via `date_from`
+- **Rate limit:** Batch writes to avoid `rate_limit` errors
+
+### Jellyfin (REST, documented)
+
+- **Base URL:** `http://<server>:8096`
+- **Auth:** API key (`X-Emby-Token`)
+- **Key endpoints:**
+  - `GET /Users/{id}/Items` — library items
+  - `GET /Shows/{id}/Episodes` — show episodes
+  - `GET /Items/{id}/Played` — mark played
+
+### Plex (REST, documented)
+
+- **Base URL:** `http://<server>:32400`
+- **Auth:** Token-based (`X-Plex-Token`)
+- **Key endpoints:**
+  - `GET /library/sections` — library sections
+  - `GET /library/metadata/{id}` — item details
+  - `POST /:/scrobble` — mark watched
+
+### Kodi (JSON-RPC)
+
+- **Base URL:** `http://<host>:8080/jsonrpc`
+- **Auth:** None (HTTP basic optional)
+- **Key methods:** `VideoLibrary.GetMovies`, `VideoLibrary.GetTVShows`
+
+---
 
 ## Python Usage
 
@@ -96,6 +247,9 @@ export TRAKT_TOKEN="your_bearer_token"
 
 # TMDB
 export TMDB_API_KEY="your_tmdb_key"
+
+# MDBList
+export MDBLIST_API_KEY="your_mdblist_key"
 ```
 
 ### Quick Examples
@@ -128,6 +282,7 @@ c.rate_title("tt0244244", 8)
 from apis.letterboxd_api import LetterboxdClient
 c = LetterboxdClient(cookies="...", csrf_token="...")
 films = c.search_film("Swordfish")
+c.create_list("My List", film_lids=["1skk", "eDGs"])
 
 # Plex
 from apis.plex_api import PlexClient
@@ -156,9 +311,17 @@ c.get_movies()
 
 # Sofa Sidekick
 from apis.sofasidekick_api import SofaSidekickClient
-c = SofaSidekickClient(session_id="your_session_id")
-c.get_shows()
+c = SofaSidekickClient(session_id="...", cf_clearance="...", cf_bm="...")
+c.get_movies()  # 235 items
+
+# MDBList
+from apis.mdblist_api import MDBListClient
+m = MDBListClient()
+m.my_lists()
+m.list_items(1176)
 ```
+
+---
 
 ## Frontend
 
@@ -171,25 +334,40 @@ npm run dev    # http://localhost:3030
 npm run build  # production build
 ```
 
+---
+
 ## Critical Notes
 
 ### WeTrakr ID Types
-- **Mark watched**: Use internal ID (`item["id"]`)
-- **Unwatch/Favorite**: Use TMDB ID (`item["ids"]["tmdb"]["id"]`)
+- **Mark watched:** Use internal ID (`item["id"]`)
+- **Unwatch/Favorite:** Use TMDB ID (`item["ids"]["tmdb"]["id"]`)
 - Mixing them causes silent failures.
 
-### Letterboxd Film Codes
-- Search: `GET /s/autocompletefilm?q={query}` → returns `lid`
-- List ops use `lid` codes (e.g., `1Y0m` = Swordfish)
-- Cloudflare protected — cookies expire periodically
+### WeTrakr Filter Endpoints Broken
+- All `/filters/auto/sys:*` endpoints return `state: null` (server-side bug)
+- **Workaround:** Use list-based approach: `get_lists()` → `get_list_items(list_id)`
 
-### Trakt Rate Limits
-- 300 requests / 60 seconds
-- Scrobble stop returns 409 Conflict on success
+### Letterboxd Cloudflare
+- Read endpoints (diary, watchlist, ratings) are Cloudflare-protected
+- Write endpoints (create list, mark watched, add to watchlist) work
+- Search works: `GET /s/autocompletefilm?q={query}` → returns `lid` codes
+- Cookies expire periodically — users need to refresh from browser
 
-### Simkl Sync Model
-- Two-phase: initial pull + incremental via `date_from`
-- Batch writes to avoid rate_limit errors
+### Sofa Sidekick Cloudflare
+- `/api/movies` and `/api/upcoming` work
+- `/api/shows` and `/api/watchlist` are Cloudflare-blocked
+- Movies: 235 items with TVDB IDs, posters, years
+- Upcoming: shows with next episode dates
+
+### Trakt Token Format
+- User's `trakt_token` may be a cookie string (`value; cf_clearance=...`)
+- Clean Bearer token needed for `TraktClient`
+- Pass both `api_key` and `token` to catalog handlers
+
+### MDBList Path-Based Endpoints
+- Search: `GET /search/{media_type}?query={query}`
+- By provider: `GET /{provider}/{media_type}/{media_id}`
+- List items: `GET /lists/{listid}/items` (IDs use `ids.imdb` not `ids.imdbid`)
 
 ---
 

@@ -51,6 +51,9 @@ CONFIGURE_HTML = """
         .service-card { background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px; }
         .service-card h3 { font-size: 14px; margin-bottom: 4px; }
         .service-card p { font-size: 11px; color: #6a6a8a; }
+        .btn-connect { padding: 10px 16px; background: #2a2a4a; color: #ccc; border: 1px solid #3a3a5a; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .btn-connect:hover { background: #e94560; color: #fff; border-color: #e94560; }
+        .btn-connect.connected { background: #2ecc71; color: #fff; border-color: #2ecc71; }
     </style>
 </head>
 <body>
@@ -98,8 +101,16 @@ CONFIGURE_HTML = """
             <div class="section-body">
                 <div class="field">
                     <label>Trakt Token</label>
-                    <input type="password" id="trakt_token" placeholder="For watchlist, favorites, ratings">
-                    <div class="help">Get your token at <a href="https://trakt.tv/oauth/authorize" target="_blank">trakt.tv</a></div>
+                    <div style="display:flex;gap:8px;">
+                        <input type="password" id="trakt_token" placeholder="Auto-filled by OAuth, or paste manually" style="flex:1;">
+                        <button onclick="connectOAuth('trakt')" id="btn-trakt" class="btn-connect">Connect</button>
+                    </div>
+                    <div class="help">One-clicked redirects to <a href="https://app.trakt.tv" target="_blank">app.trakt.tv</a> to authorize, then auto-fills your token</div>
+                </div>
+                <div class="field">
+                    <label>Trakt Client ID</label>
+                    <input type="text" id="trakt_client_id" placeholder="Your Trakt API client_id">
+                    <div class="help">Get from <a href="https://app.trakt.tv/settings/apps/api" target="_blank">app.trakt.tv/settings/apps/api</a></div>
                 </div>
                 <div class="field">
                     <label>Simkl Client ID</label>
@@ -153,6 +164,14 @@ CONFIGURE_HTML = """
                     <label>Session ID</label>
                     <input type="password" id="sofasidekick_session_id" placeholder="Your Sofa Sidekick session">
                     <div class="help">Find in browser cookies after logging in to <a href="https://app.sofasidekick.com" target="_blank">sofasidekick.com</a></div>
+                </div>
+                <div class="field">
+                    <label>CF Clearance <span style="color:#666;font-weight:normal">(optional)</span></label>
+                    <input type="password" id="sofasidekick_cf_clearance" placeholder="cf_clearance cookie">
+                </div>
+                <div class="field">
+                    <label>CF Bot Manager <span style="color:#666;font-weight:normal">(optional)</span></label>
+                    <input type="password" id="sofasidekick_cf_bm" placeholder="__cf_bm cookie">
                 </div>
             </div>
         </div>
@@ -208,6 +227,17 @@ CONFIGURE_HTML = """
             </div>
             <div class="section-body">
                 <div class="field">
+                    <label>TMDB API Key</label>
+                    <input type="password" id="tmdb_api_key" placeholder="Required for metadata, posters, ratings">
+                    <div class="help">Get free API key at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org/settings/api</a></div>
+                </div>
+                <div class="divider"></div>
+                <div class="field">
+                    <label>IMDb API Key</label>
+                    <input type="password" id="imdb_api_key" placeholder="Optional — for IMDb ratings + metadata">
+                    <div class="help">Get your API key from <a href="https://developer.imdb.com" target="_blank">developer.imdb.com</a></div>
+                </div>
+                <div class="field">
                     <label>IMDb Session ID</label>
                     <input type="password" id="imdb_session_id" placeholder="For IMDb ratings + watchlist">
                     <div class="help">Get from browser cookies after logging in to IMDb</div>
@@ -219,12 +249,29 @@ CONFIGURE_HTML = """
                 <div class="divider"></div>
                 <div class="field">
                     <label>Letterboxd Cookies</label>
-                    <input type="password" id="letterboxd_cookies" placeholder="For Letterboxd lists + ratings">
-                    <div class="help">Get from browser cookies after logging in to Letterboxd</div>
+                    <input type="password" id="letterboxd_cookies" placeholder="cf_clearance + letterboxd.user.CURRENT + com.xk72.webparts.csrf">
+                    <div class="help">Browser cookies from <a href="https://letterboxd.com" target="_blank">letterboxd.com</a> — need all three</div>
                 </div>
                 <div class="field">
                     <label>Letterboxd CSRF Token</label>
-                    <input type="password" id="letterboxd_csrf" placeholder="Optional — for Letterboxd auth">
+                    <input type="password" id="letterboxd_csrf" placeholder="Value of com.xk72.webparts.csrf cookie">
+                </div>
+            </div>
+        </div>
+
+        <!-- MDBList -->
+        <div class="section">
+            <div class="section-header" onclick="toggleSection(this)">
+                <span class="icon">📋</span>
+                <h2>MDBList</h2>
+                <span class="badge optional">Optional</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="field">
+                    <label>MDBList API Key</label>
+                    <input type="password" id="mdblist_api_key" placeholder="For multi-rating lists + search">
+                    <div class="help">Get your free API key at <a href="https://mdblist.com/preferences/#api" target="_blank">mdblist.com/preferences/#api</a></div>
                 </div>
             </div>
         </div>
@@ -248,9 +295,11 @@ CONFIGURE_HTML = """
 
         const FIELDS = [
             'realdebrid_key', 'torbox_key', 'alldebrid_key',
-            'trakt_token', 'simkl_client_id', 'anilist_token',
+            'trakt_token', 'trakt_client_id', 'simkl_client_id', 'anilist_token',
+            'tmdb_api_key', 'imdb_api_key',
+            'mdblist_api_key',
             'wetrakr_username', 'wetrakr_access_token', 'wetrakr_refresh_token',
-            'sofasidekick_session_id',
+            'sofasidekick_session_id', 'sofasidekick_cf_clearance', 'sofasidekick_cf_bm',
             'plex_token', 'plex_url',
             'jellyfin_api_key', 'jellyfin_url', 'jellyfin_user_id',
             'kodi_url',
@@ -287,21 +336,98 @@ CONFIGURE_HTML = """
             return config;
         }
 
-        function saveConfig() {
+        // ── OAuth: One-Click Connect ─────────────────────
+
+        let oauthPopup = null;
+
+        async function connectOAuth(service) {
+            const btn = document.getElementById('btn-' + service);
+            btn.textContent = 'Connecting...';
+            btn.disabled = true;
+
+            // Open the OAuth authorize endpoint in a popup
+            const url = `${BASE_URL}/api/oauth/${service}/authorize`;
+            const w = 600, h = 700;
+            const left = (screen.width - w) / 2;
+            const top = (screen.height - h) / 2;
+            oauthPopup = window.open(url, 'oauth_' + service,
+                `width=${w},height=${h},left=${left},top=${top}`);
+
+            // Reset button after timeout (popup blocked or cancelled)
+            setTimeout(() => {
+                if (oauthPopup && !oauthPopup.closed) return;
+                btn.textContent = 'Connect';
+                btn.disabled = false;
+            }, 6000);
+        }
+
+        // Listen for OAuth token from callback popup
+        window.addEventListener('message', function(e) {
+            if (!e.data || !e.data.service) return;
+            const {service, field_id, token, error} = e.data;
+            const btn = document.getElementById('btn-' + service);
+
+            if (token) {
+                const field = document.getElementById(field_id);
+                if (field) field.value = token;
+                if (btn) {
+                    btn.textContent = '✓ Connected';
+                    btn.classList.add('connected');
+                    btn.disabled = false;
+                }
+                const status = document.getElementById('status');
+                status.className = 'status show success';
+                status.textContent = `${service.charAt(0).toUpperCase() + service.slice(1)} connected! Token auto-filled.`;
+            } else {
+                if (btn) {
+                    btn.textContent = 'Connect';
+                    btn.disabled = false;
+                }
+                const status = document.getElementById('status');
+                status.className = 'status show';
+                status.style.color = '#e74c3c';
+                status.textContent = `Failed: ${error || 'unknown'}`;
+            }
+        });
+
+        function encodeConfigToken(config) {
+            const json = JSON.stringify(config, Object.keys(config).sort());
+            return btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        async function saveConfig() {
             const config = getConfig();
             localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
 
-            const configParam = encodeURIComponent(JSON.stringify(config));
-            const installUrl = `${BASE_URL}/manifest.json?config=${configParam}`;
-
             const status = document.getElementById('status');
-            status.className = 'status show success';
-            status.innerHTML = `
-                <strong>Configuration saved!</strong><br>
-                Copy this URL and add it to Stremio:<br>
-                <code style="display:block;margin-top:8px;padding:8px;background:#0f0f1a;border-radius:4px;word-break:break-all;font-size:11px">${installUrl}</code>
-                <br><button onclick="copyUrl('${installUrl}')" style="margin-top:8px;padding:6px 12px;background:#e94560;color:#fff;border:none;border-radius:4px;cursor:pointer">Copy URL</button>
-            `;
+            status.className = 'status show';
+            status.style.color = '#f39c12';
+            status.textContent = 'Saving configuration securely...';
+
+            try {
+                // POST config to server, get back an opaque token — API keys NEVER appear in the URL
+                const resp = await fetch(`${BASE_URL}/api/save-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                const data = await resp.json();
+                const token = data.token;
+
+                const installUrl = `${BASE_URL}/${token}/manifest.json`;
+
+                status.className = 'status show success';
+                status.innerHTML = `
+                    <strong>Configuration saved!</strong><br>
+                    Copy this URL and add it to Stremio:<br>
+                    <code style="display:block;margin-top:8px;padding:8px;background:#0f0f1a;border-radius:4px;word-break:break-all;font-size:11px">${installUrl}</code>
+                    <br><button onclick="copyUrl('${installUrl}')" style="margin-top:8px;padding:6px 12px;background:#e94560;color:#fff;border:none;border-radius:4px;cursor:pointer">Copy URL</button>
+                `;
+            } catch (err) {
+                status.className = 'status show';
+                status.style.color = '#e74c3c';
+                status.textContent = 'Failed to save: ' + err.message;
+            }
         }
 
         function copyUrl(url) {

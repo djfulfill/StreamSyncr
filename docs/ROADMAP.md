@@ -1,18 +1,21 @@
 # StreamSyncr Roadmap
 
 ## Completed
-- [x] WeTrakr API client (unofficial)
-- [x] Trakt API client (official)
-- [x] TMDB API client (official)
-- [x] IMDb GraphQL client (read + write)
-- [x] Letterboxd API client (undocumented, list CRUD)
+- [x] WeTrakr API client (unofficial, JWT cookies)
+- [x] Trakt API client (official, API key + token)
+- [x] TMDB API client (official, API key)
+- [x] IMDb GraphQL client (read + write, cookie-based)
+- [x] Letterboxd API client (undocumented, search + list CRUD, Cloudflare-protected reads)
 - [x] Plex API client (watch history, ratings, libraries)
 - [x] AniList GraphQL client (anime/manga, user lists)
 - [x] Simkl API client (TV/movie/anime, sync)
 - [x] Jellyfin API client (watch history, ratings)
 - [x] Kodi JSON-RPC client (movies, shows, episodes, library stats)
+- [x] MDBList API client (multi-rating lists, search, path-based endpoints)
+- [x] Sofa Sidekick API client (movies, upcoming, stats, cookie-based)
 - [x] React frontend (Dashboard, Library, Search, Sync, Settings)
 - [x] IMDb frontend integration (proxy server, page, settings)
+- [x] Stremio addon (30 catalogs, token-based auth, configure page)
 
 ## In Progress
 - [ ] Serializd API integration (TV tracking)
@@ -72,14 +75,16 @@
 - **Key endpoints**: `/Users/{id}/Items`, `/Shows/{id}/Episodes`, `/Items/{id}/Played`
 - **Plugins**: Playback Reporting, Trakt, Simkl sync available
 
-### Letterboxd (undocumented, internal API)
+### Letterboxd (undocumented, cookie-based)
 - **Base URL**: `https://letterboxd.com`
 - **Auth**: Cookie-based (`cf_clearance`, `letterboxd.user.CURRENT`, `com.xk72.webparts.csrf`)
+- **Required cookies**: 3 cookies from browser after logging in
+- **CSRF token**: `com.xk72.webparts.csrf` value (used as `x-csrf-token` header)
+- **Working endpoints**: Search, create list, add to list, remove from list, mark watched, add to watchlist
+- **Blocked endpoints (Cloudflare)**: Diary, watchlist read, ratings, user data
 - **Film lookup**: `GET /s/autocompletefilm?q={query}` → returns `lid` (Letterboxd ID)
 - **List create**: `POST /api/v0/lists` with `entries` array using `lid` codes
-- **List update**: `PATCH /api/v0/lists` with `lists` and `listables` arrays
-- **Cloudflare protected**: Requires browser-like headers, may need periodic cookie refresh
-- **Film code format**: Short alphanumeric `lid` (e.g., `1Y0m` for Swordfish)
+- **Film code format**: Short alphanumeric `lid` (e.g., `1skk` = Inception, `eDGs` = The Batman)
 
 ### Serializd (unofficial, community-maintained)
 - **Library**: `serializd-py` (Python)
@@ -95,8 +100,19 @@
 - **Base URL**: `https://app.sofasidekick.com/api`
 - **Auth**: Cookie-based (`session_id`, `cf_clearance`, `__cf_bm`)
 - **Data source**: TheTVDB
-- **Key endpoints**: `shows`, `movies`, `watchlist`, `search`, `stats`, `upcoming`, `history`, `auth/me`
+- **Working endpoints**: `movies` (235 items), `upcoming`, `stats`, `account`
+- **Blocked endpoints (Cloudflare)**: `shows`, `watchlist`, `history`
 - **Show operations**: follow/unfollow, mark episode watched/unwatched, update status
 - **Movie operations**: add/remove, mark watched/unwatched
 - **Stats**: episodes watched, watch time, most watched shows, busiest month
-- **Cloudflare protected**: May need periodic cookie refresh
+
+### MDBList (REST, documented)
+- **Base URL**: `https://api.mdblist.com`
+- **Auth**: API key (`apikey` query param) or OAuth 2.0
+- **Path-based endpoints**:
+  - `GET /search/{media_type}?query={query}` — search movies/shows
+  - `GET /{provider}/{media_type}/{media_id}` — get by IMDb/TMDb/TVDB
+  - `GET /lists/{listid}/items` — list items (IDs use `ids.imdb` not `ids.imdbid`)
+- **Key endpoints**: `/user`, `/lists/user`, `/lists/{listid}/items`
+- **Lists**: User's lists become dynamic Stremio catalogs
+- **Rate limits**: 1,000/day (free), up to 250,000/day (VIP)

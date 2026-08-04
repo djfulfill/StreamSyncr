@@ -20,6 +20,9 @@ class AniListClient:
         req = Request(self.ENDPOINT, data=body, method="POST")
         req.add_header("Content-Type", "application/json")
         req.add_header("Accept", "application/json")
+        req.add_header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36")
+        req.add_header("Origin", "https://anilist.co")
+        req.add_header("Referer", "https://anilist.co/")
         if self.access_token:
             req.add_header("Authorization", f"Bearer {self.access_token}")
 
