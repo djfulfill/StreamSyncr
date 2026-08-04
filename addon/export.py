@@ -99,6 +99,16 @@ def export_all(user_config: dict) -> Dict[str, Any]:
         except Exception as e:
             export["services"]["jellyfin"] = {"error": str(e)}
 
+    # IMDb
+    if user_config.get("imdb_full_cookies"):
+        try:
+            from imdb_api import IMDbClient
+            client = IMDbClient(full_cookies=user_config["imdb_full_cookies"])
+            imdb_data = _export_imdb(client)
+            export["services"]["imdb"] = imdb_data
+        except Exception as e:
+            export["services"]["imdb"] = {"error": str(e)}
+
     # AniList
     if user_config.get("anilist_token"):
         try:
@@ -348,6 +358,33 @@ def _export_anilist(client) -> Dict[str, Any]:
         items = _safe_fetch(client.get_user_manga_list, None, status)
         if items:
             data["manga"][status] = items
+
+    return data
+
+
+def _export_imdb(client) -> Dict[str, Any]:
+    """Export all IMDb data."""
+    data = {}
+
+    # Lists
+    try:
+        lists = client.get_lists()
+        data["lists"] = []
+        for lst in lists:
+            list_data = {
+                "id": lst.get("id"),
+                "name": lst.get("name", {}).get("originalText", ""),
+                "item_count": lst.get("items", {}).get("total", 0),
+            }
+            data["lists"].append(list_data)
+    except Exception:
+        data["lists"] = []
+
+    # Recently viewed
+    try:
+        data["recently_viewed"] = client.get_recently_viewed(count=50)
+    except Exception:
+        data["recently_viewed"] = []
 
     return data
 

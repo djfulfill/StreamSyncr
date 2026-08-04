@@ -245,18 +245,23 @@ CONFIGURE_HTML = """
                 </div>
                 <div class="divider"></div>
                 <div class="field">
-                    <label>IMDb API Key</label>
-                    <input type="password" id="imdb_api_key" placeholder="Optional — for IMDb ratings + metadata">
-                    <div class="help">Get your API key from <a href="https://developer.imdb.com" target="_blank">developer.imdb.com</a></div>
+                    <label>IMDb API Key <span style="color:#666;font-weight:normal">(optional)</span></label>
+                    <input type="password" id="imdb_api_key" placeholder="Optional — for metadata">
+                    <div class="help">Get from <a href="https://developer.imdb.com" target="_blank">developer.imdb.com</a></div>
+                </div>
+                <div style="background:#1a2a3e;border:1px solid #e94560;border-radius:8px;padding:16px;margin:12px 0;">
+                    <div style="color:#e94560;font-weight:bold;margin-bottom:8px;">IMDb Cookies (Required for lists, ratings, watchlist)</div>
+                    <div class="help" style="margin-bottom:12px;color:#aaa;">
+                        <strong>How to get it:</strong><br>
+                        1. Go to <a href="https://www.imdb.com" target="_blank">imdb.com</a> and log in<br>
+                        2. Press F12 → Network tab → click any request → Headers → Cookie<br>
+                        3. Copy the entire cookie string and paste below
+                    </div>
                 </div>
                 <div class="field">
-                    <label>IMDb Session ID</label>
-                    <input type="password" id="imdb_session_id" placeholder="For IMDb ratings + watchlist">
-                    <div class="help">Get from browser cookies after logging in to IMDb</div>
-                </div>
-                <div class="field">
-                    <label>IMDb At-Main Cookie</label>
-                    <input type="password" id="imdb_at_main" placeholder="Optional — for IMDb auth">
+                    <label>Full Cookie String</label>
+                    <input type="password" id="imdb_full_cookies" placeholder="session-id=...; at-main=...; session-token=...">
+                    <div class="help">Paste entire Cookie header from DevTools → Network → Headers</div>
                 </div>
                 <div class="divider"></div>
                 <div class="field">
@@ -316,7 +321,7 @@ CONFIGURE_HTML = """
             'plex_token', 'plex_url',
             'jellyfin_api_key', 'jellyfin_url', 'jellyfin_user_id',
             'kodi_url',
-            'imdb_session_id', 'imdb_at_main',
+            'imdb_full_cookies',
             'letterboxd_cookies', 'letterboxd_csrf'
         ];
 

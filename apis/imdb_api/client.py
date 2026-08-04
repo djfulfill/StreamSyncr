@@ -58,6 +58,7 @@ DEFAULT_HEADERS = {
     "x-imdb-consent-info": "eyJhZ2VTaWduYWwiOiJBRFVMVCIsImRpc2FibGVDQ0JBIjpmYWxzZSwiaXNHZHByIjpmYWxzZX0",
     "x-imdb-user-country": "US",
     "x-imdb-user-language": "en-US",
+    "x-imdb-weblab-treatment-overrides": "",
 }
 
 
@@ -84,10 +85,10 @@ class IMDbClient:
         self.aws_waf_token = aws_waf_token or os.environ.get("IMDB_AWS_WAF_TOKEN")
         self.full_cookies = full_cookies or os.environ.get("IMDB_COOKIES")
 
-        if not self.session_id or not self.at_main or not self.session_token:
+        if not self.full_cookies and (not self.session_id or not self.at_main or not self.session_token):
             raise ValueError(
                 "IMDb session credentials required. Set IMDB_SESSION_ID, IMDB_AT_MAIN, "
-                "and IMDB_SESSION_TOKEN environment variables."
+                "and IMDB_SESSION_TOKEN environment variables, or provide full_cookies."
             )
 
     def _get_cookies(self) -> str:
@@ -106,6 +107,8 @@ class IMDbClient:
             cookies.append(f"sess-at-main={self.sess_at_main}")
         if self.x_main:
             cookies.append(f"x-main={self.x_main}")
+        if self.aws_waf_token:
+            cookies.append(f"aws-waf-token={self.aws_waf_token}")
         cookies.append("lc-main=en_US")
         cookies.append("session-id-time=2082787201l")
         return "; ".join(cookies)
@@ -113,6 +116,15 @@ class IMDbClient:
     def _get_headers(self) -> Dict[str, str]:
         """Build request headers."""
         headers = DEFAULT_HEADERS.copy()
+        
+        # Extract session-id from cookies if using full_cookies
+        if self.full_cookies and not self.session_id:
+            for part in self.full_cookies.split(";"):
+                part = part.strip()
+                if part.startswith("session-id="):
+                    self.session_id = part.split("=", 1)[1]
+                    break
+        
         headers["x-amzn-sessionid"] = self.session_id
         headers["Cookie"] = self._get_cookies()
         return headers
@@ -127,24 +139,23 @@ class IMDbClient:
         op = OPERATIONS[operation_name]
         headers = self._get_headers()
 
-        body = {
-            "operationName": operation_name,
-            "extensions": {
-                "persistedQuery": {
-                    "sha256Hash": op["hash"],
-                    "version": 1,
-                }
-            },
-        }
-        if variables:
-            body["variables"] = variables
+        # Build query params for GET request
+        import urllib.parse
+        extensions = json.dumps({
+            "persistedQuery": {
+                "sha256Hash": op["hash"],
+                "version": 1,
+            }
+        }, separators=(',', ':'))
 
-        req = Request(
-            BASE_URL,
-            data=json.dumps(body).encode(),
-            headers=headers,
-            method="POST",
-        )
+        params = f"operationName={urllib.parse.quote(operation_name)}&extensions={urllib.parse.quote(extensions)}"
+        if variables:
+            variables_json = json.dumps(variables, separators=(',', ':'))
+            params += f"&variables={urllib.parse.quote(variables_json)}"
+
+        url = f"{BASE_URL}?{params}"
+
+        req = Request(url, headers=headers, method="GET")
         try:
             with urlopen(req) as resp:
                 data = json.loads(resp.read().decode())

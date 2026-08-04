@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 
 from config import config
-from catalogs import trakt, tmdb, anilist, simkl, wetrakr, sofasidekick, mdblist
+from catalogs import trakt, tmdb, anilist, simkl, wetrakr, sofasidekick, mdblist, imdb
 from metadata import enricher
 from streams import resolver
 from auth.configure import CONFIGURE_HTML
@@ -57,6 +57,43 @@ async def export_data(token: str):
     return JSONResponse(result)
 
 
+@app.get("/api/debug/imdb/{token}")
+async def debug_imdb(token: str):
+    """Debug IMDb credentials."""
+    with _store_lock:
+        user_config = _config_store.get(token, {})
+    if not user_config:
+        return JSONResponse({"error": "Invalid token"}, status_code=401)
+
+    has_full_cookies = bool(user_config.get("imdb_full_cookies"))
+
+    result = {
+        "has_full_cookies": has_full_cookies,
+        "all_set": has_full_cookies,
+    }
+
+    if result["all_set"]:
+        try:
+            from imdb_api import IMDbClient
+            client = IMDbClient(full_cookies=user_config["imdb_full_cookies"])
+            lists = client.get_lists()
+            result["lists_count"] = len(lists)
+            result["lists"] = [{"id": l.get("id"), "name": l.get("name", {}).get("originalText", "")} for l in lists[:5]]
+
+            recent = client.get_recently_viewed(count=5)
+            result["recently_viewed_count"] = len(recent)
+            result["recently_viewed"] = [{"id": i.get("id"), "title": i.get("titleText", {}).get("text", "")} for i in recent[:5]]
+
+            result["status"] = "connected"
+        except Exception as e:
+            result["status"] = "error"
+            result["error"] = str(e)
+    else:
+        result["status"] = "missing_credentials"
+
+    return JSONResponse(result)
+
+
 def get_user_config(request: Request) -> dict:
     """Extract user config from the request.
     First checks the path token (secure), then falls back to legacy ?config= query param."""
@@ -97,6 +134,9 @@ CATALOG_HANDLERS = {
     "sofasidekick-watchlist": lambda t, s, c, g: sofasidekick.watchlist(c, skip=s),
     "sofasidekick-upcoming": lambda t, s, c, g: sofasidekick.upcoming(c, skip=s),
     "mdblist-search": lambda t, s, c, g: mdblist.search(g or "", api_key=c.get("mdblist_api_key",""), skip=s) if g else [],
+    "imdb-lists": lambda t, s, c, g: imdb.lists(skip=s, user_config=c),
+    "imdb-recently-viewed": lambda t, s, c, g: imdb.recently_viewed(skip=s, user_config=c),
+    "imdb-ratings": lambda t, s, c, g: imdb.ratings(skip=s, user_config=c),
 }
 
 
@@ -162,6 +202,13 @@ def _build_manifest(data: dict, user_config: dict) -> JSONResponse:
                 })
         except Exception:
             pass
+
+    if user_config.get("imdb_full_cookies"):
+        data["catalogs"].extend([
+            {"type": "movie", "id": "imdb-lists", "name": "IMDb Lists"},
+            {"type": "movie", "id": "imdb-recently-viewed", "name": "IMDb Recently Viewed"},
+            {"type": "movie", "id": "imdb-ratings", "name": "IMDb Ratings"},
+        ])
 
     return JSONResponse(data)
 
