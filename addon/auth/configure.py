@@ -108,14 +108,26 @@ CONFIGURE_HTML = """
                     <div class="help">One-clicked redirects to <a href="https://app.trakt.tv" target="_blank">app.trakt.tv</a> to authorize, then auto-fills your token</div>
                 </div>
                 <div class="field">
-                    <label>Trakt Client ID</label>
-                    <input type="text" id="trakt_client_id" placeholder="Your Trakt API client_id">
-                    <div class="help">Get from <a href="https://app.trakt.tv/settings/apps/api" target="_blank">app.trakt.tv/settings/apps/api</a></div>
+                    <label>Trakt Client ID <span style="color:#e94560;font-weight:bold">★ Required for trending catalogs</span></label>
+                    <input type="text" id="trakt_client_id" placeholder="Your Trakt API client_id" style="border-color:#e94560;">
+                    <div class="help">
+                        <strong>How to get it:</strong><br>
+                        1. Go to <a href="https://app.trakt.tv/settings/apps/api" target="_blank">app.trakt.tv/settings/apps/api</a><br>
+                        2. Click "New Application"<br>
+                        3. Enter any name (e.g. "StreamSyncr")<br>
+                        4. Copy the <code>Client ID</code> (not the secret)
+                    </div>
                 </div>
                 <div class="field">
-                    <label>Simkl Client ID</label>
-                    <input type="text" id="simkl_client_id" placeholder="Optional — for trending + tracking">
-                    <div class="help">Get your client ID at <a href="https://simkl.com/settings/developer" target="_blank">simkl.com/settings/developer</a></div>
+                    <label>Simkl Client ID <span style="color:#e94560;font-weight:bold">★ Required for trending catalogs</span></label>
+                    <input type="text" id="simkl_client_id" placeholder="Your Simkl API client_id" style="border-color:#e94560;">
+                    <div class="help">
+                        <strong>How to get it:</strong><br>
+                        1. Go to <a href="https://simkl.com/settings/developer" target="_blank">simkl.com/settings/developer</a><br>
+                        2. Click "Create New App"<br>
+                        3. Enter any name (e.g. "StreamSyncr")<br>
+                        4. Copy the <code>Client ID</code>
+                    </div>
                 </div>
                 <div class="field">
                     <label>AniList Token (optional)</label>
@@ -279,6 +291,7 @@ CONFIGURE_HTML = """
         <!-- Actions -->
         <div class="actions">
             <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
+            <button class="btn btn-secondary" onclick="exportData()" style="background:#2ecc71;color:#fff">Export Data</button>
             <button class="btn btn-primary" onclick="saveConfig()">Save & Install</button>
         </div>
 
@@ -447,6 +460,52 @@ CONFIGURE_HTML = """
             status.className = 'status show';
             status.style.color = '#f39c12';
             status.textContent = 'Configuration reset.';
+        }
+
+        async function exportData() {
+            const status = document.getElementById('status');
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) {
+                status.className = 'status show';
+                status.style.color = '#e74c3c';
+                status.textContent = 'Save your config first before exporting.';
+                return;
+            }
+
+            // First save to get a token
+            status.className = 'status show';
+            status.style.color = '#f39c12';
+            status.textContent = 'Exporting data from all connected services...';
+
+            try {
+                const config = JSON.parse(saved);
+                const saveResp = await fetch(`${BASE_URL}/api/save-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                const { token } = await saveResp.json();
+
+                const exportResp = await fetch(`${BASE_URL}/api/export/${token}`);
+                const data = await exportResp.json();
+
+                // Download as JSON
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `streamsyncr-export-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                status.className = 'status show success';
+                const serviceCount = Object.keys(data.services).length;
+                status.textContent = `Exported data from ${serviceCount} service${serviceCount !== 1 ? 's' : ''}. Download started.`;
+            } catch (err) {
+                status.className = 'status show';
+                status.style.color = '#e74c3c';
+                status.textContent = 'Export failed: ' + err.message;
+            }
         }
     </script>
 </body>

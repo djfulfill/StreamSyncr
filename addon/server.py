@@ -19,6 +19,7 @@ from auth.oauth import (
     simkl_authorize_url, simkl_exchange_code,
     anilist_authorize_url, anilist_exchange_code,
 )
+from export import export_all
 
 app = FastAPI(title="StreamSyncr Stremio Addon")
 
@@ -42,6 +43,18 @@ async def save_config(request: Request):
     with _store_lock:
         _config_store[token] = config_data
     return JSONResponse({"token": token})
+
+
+@app.get("/api/export/{token}")
+async def export_data(token: str):
+    """Export all user data from connected services."""
+    with _store_lock:
+        user_config = _config_store.get(token, {})
+    if not user_config:
+        return JSONResponse({"error": "Invalid token"}, status_code=401)
+
+    result = export_all(user_config)
+    return JSONResponse(result)
 
 
 def get_user_config(request: Request) -> dict:

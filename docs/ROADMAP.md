@@ -28,6 +28,12 @@
 - [x] Background sync service (configurable interval, start/stop)
 - [x] Sync history/audit log (JSONL append-only, stats, clear)
 
+## Completed (Phase 3)
+- [x] **Data Export** — Export all user data from connected services (JSON download)
+- [x] Export endpoint `/api/export/{token}` — fetches from Trakt, Simkl, WeTrakr, Sofa Sidekick, Plex, Jellyfin, AniList, MDBList
+- [x] Export button on configure page — one-click download of all connected service data
+- [x] AniList catalog fix — added browser headers to bypass Cloudflare
+
 ## Planned
 
 ### Phase 1: Streaming Discovery
