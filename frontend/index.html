@@ -1,14 +1,941 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#06050a" />
-    <title>StreamSyncr - Unified Streaming Tracker</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamSyncr — Sync Your Streams</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #3b82f6;
+            --blue-glow: #60a5fa;
+            --purple: #a855f7;
+            --magenta: #e879f9;
+            --dark: #030712;
+            --dark-card: #0a0f1e;
+            --dark-border: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ─── NAVIGATION ───────────────────────────────────────── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            padding: 1rem 3rem;
+            background: rgba(3, 7, 18, 0.95);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .nav-logo span {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--blue), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--blue), var(--magenta));
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            padding: 0.6rem 1.5rem;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        }
+
+        /* ─── HERO ─────────────────────────────────────────────── */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8rem 2rem 4rem;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--blue), var(--blue-glow), var(--purple), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: gradientShift 4s ease infinite;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .btn-primary {
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 50px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-secondary {
+            padding: 1rem 2.5rem;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--blue);
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateY(-3px);
+        }
+
+        /* ─── WAVEFORM ─────────────────────────────────────────── */
+        .waveform-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            overflow: hidden;
+        }
+
+        .waveform {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+        }
+
+        .waveform svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .wave-line {
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            opacity: 0.6;
+        }
+
+        .wave-line.blue {
+            stroke: var(--blue);
+            filter: drop-shadow(0 0 6px var(--blue));
+        }
+
+        .wave-line.purple {
+            stroke: var(--purple);
+            filter: drop-shadow(0 0 6px var(--purple));
+        }
+
+        .wave-line.magenta {
+            stroke: var(--magenta);
+            filter: drop-shadow(0 0 6px var(--magenta));
+        }
+
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .waveform {
+            animation: waveMove 8s linear infinite;
+        }
+
+        /* ─── SECTIONS ─────────────────────────────────────────── */
+        section {
+            padding: 6rem 2rem;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.05rem;
+        }
+
+        .section-header .accent {
+            background: linear-gradient(135deg, var(--blue), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ─── WHO WE ARE ───────────────────────────────────────── */
+        .who-we-are {
+            background: linear-gradient(180deg, var(--dark) 0%, rgba(10, 15, 30, 1) 100%);
+        }
+
+        .who-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .who-text h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--blue), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .who-text p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .who-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stream-ring {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 2px solid;
+            position: relative;
+            animation: spin 20s linear infinite;
+        }
+
+        .stream-ring:nth-child(1) {
+            border-color: rgba(59, 130, 246, 0.3);
+            width: 280px;
+            height: 280px;
+            animation-direction: reverse;
+        }
+
+        .stream-ring:nth-child(2) {
+            border-color: rgba(168, 85, 247, 0.3);
+            width: 220px;
+            height: 220px;
+        }
+
+        .stream-ring:nth-child(3) {
+            border-color: rgba(232, 121, 249, 0.3);
+            width: 160px;
+            height: 160px;
+            animation-direction: reverse;
+        }
+
+        .stream-ring .node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .stream-ring:nth-child(1) .node { background: var(--blue); box-shadow: 0 0 15px var(--blue); }
+        .stream-ring:nth-child(2) .node { background: var(--purple); box-shadow: 0 0 15px var(--purple); }
+        .stream-ring:nth-child(3) .node { background: var(--magenta); box-shadow: 0 0 15px var(--magenta); }
+
+        .stream-center {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ─── WHAT WE DO ───────────────────────────────────────── */
+        .what-we-do {
+            background: var(--dark);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue), var(--magenta));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(59, 130, 246, 0.1);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .feature-icon.blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue-glow);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .feature-icon.purple {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--purple);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .feature-icon.magenta {
+            background: rgba(232, 121, 249, 0.15);
+            color: var(--magenta);
+            box-shadow: 0 0 20px rgba(232, 121, 249, 0.2);
+        }
+
+        .feature-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* ─── WHY WE DO IT ─────────────────────────────────────── */
+        .why-we-do {
+            background: linear-gradient(180deg, rgba(10, 15, 30, 1) 0%, var(--dark) 100%);
+        }
+
+        .why-content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .why-content .big-quote {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .why-content .big-quote::before,
+        .why-content .big-quote::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--blue), var(--magenta));
+        }
+
+        .why-content .big-quote::before { top: 0; }
+        .why-content .big-quote::after { bottom: 0; }
+
+        .why-pillars {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .pillar {
+            padding: 2rem;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+
+        .pillar h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: var(--blue-glow);
+        }
+
+        .pillar p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ─── SERVICES ─────────────────────────────────────────── */
+        .services {
+            background: var(--dark);
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .service-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.2rem;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .service-pill:hover {
+            border-color: var(--blue);
+            background: rgba(59, 130, 246, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .service-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .service-dot.tracking { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+        .service-dot.server { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
+        .service-dot.debrid { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+
+        .services-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── CTA ──────────────────────────────────────────────── */
+        .cta {
+            background: linear-gradient(180deg, var(--dark) 0%, rgba(10, 15, 30, 1) 100%);
+            text-align: center;
+            padding: 8rem 2rem;
+            position: relative;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto 3rem;
+        }
+
+        /* ─── FOOTER ───────────────────────────────────────────── */
+        footer {
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--dark-border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--blue-glow);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ─── ANIMATIONS ───────────────────────────────────────── */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ─── RESPONSIVE ───────────────────────────────────────── */
+        @media (max-width: 900px) {
+            nav { padding: 1rem 1.5rem; }
+            .nav-links { display: none; }
+            .who-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .who-visual { order: -1; }
+            .features-grid { grid-template-columns: 1fr; }
+            .why-pillars { grid-template-columns: 1fr; }
+            .services-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 2rem; }
+            .hero-buttons { flex-direction: column; width: 100%; max-width: 300px; }
+            .btn-primary, .btn-secondary { width: 100%; text-align: center; }
+            .services-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── NAVIGATION ─────────────────────────────────────────── -->
+<nav id="navbar">
+        <a href="#" class="nav-logo">
+            <span>StreamSyncr</span>
+        </a>
+    <ul class="nav-links">
+        <li><a href="#who">Who We Are</a></li>
+        <li><a href="#what">What We Do</a></li>
+        <li><a href="#why">Why</a></li>
+        <li><a href="#services">Services</a></li>
+    </ul>
+    <a href="#start" class="nav-cta">Get Started</a>
+</nav>
+
+<!-- ─── HERO ───────────────────────────────────────────────── -->
+<section class="hero" id="home">
+    <h1>One Hub.<br><span class="gradient">Every Stream.</span></h1>
+    <p>Stop juggling 10 apps. StreamSyncr connects your tracking, your servers, and your debrid services into a single, unified experience.</p>
+    <div class="hero-buttons">
+        <a href="#start" class="btn-primary">Start Syncing</a>
+        <a href="#what" class="btn-secondary">See How It Works</a>
+    </div>
+
+    <div class="waveform-container">
+        <svg class="waveform" viewBox="0 0 2400 150" preserveAspectRatio="none">
+            <path class="wave-line blue" d="M0,75 Q150,20 300,75 T600,75 T900,75 T1200,75 T1500,75 T1800,75 T2100,75 T2400,75" />
+            <path class="wave-line purple" d="M0,80 Q150,30 300,80 T600,80 T900,80 T1200,80 T1500,80 T1800,80 T2100,80 T2400,80" />
+            <path class="wave-line magenta" d="M0,85 Q150,40 300,85 T600,85 T900,85 T1200,85 T1500,85 T1800,85 T2100,85 T2400,85" />
+        </svg>
+    </div>
+</section>
+
+<!-- ─── WHO WE ARE ─────────────────────────────────────────── -->
+<section class="who-we-are" id="who">
+    <div class="who-grid">
+        <div class="who-text reveal">
+            <h3>Who We Are</h3>
+            <p>We're builders who got tired of the streaming chaos. Five different tracking apps. Three media servers. Two debrid services. No connection between any of them.</p>
+            <p>StreamSyncr was born from a simple idea: <strong>your data should work for you, not against you.</strong> We believe every streamer deserves a unified view of their entertainment — no matter what platforms they use.</p>
+            <p>We're not a corporation. We're a project built by the community, for the community. Open source. Self-hosted. Your data stays yours.</p>
+        </div>
+        <div class="who-visual reveal">
+            <div class="stream-ring">
+                <div class="node"></div>
+            </div>
+            <div class="stream-ring">
+                <div class="node"></div>
+            </div>
+            <div class="stream-ring">
+                <div class="node"></div>
+            </div>
+            <div class="stream-center">SYNC</div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── WHAT WE DO ─────────────────────────────────────────── -->
+<section class="what-we-do" id="what">
+    <div class="section-header reveal">
+        <h2>What <span class="accent">StreamSyncr</span> Does</h2>
+        <p>One addon. Every service. Zero compromise.</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card reveal">
+            <div class="feature-icon blue">⚡</div>
+            <h3>Unified Tracking</h3>
+            <p>Trakt, Simkl, AniList, WeTrakr, Letterboxd, IMDb — all your watch history and lists in one place. No more switching apps.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon purple">🖥️</div>
+            <h3>Media Server Bridge</h3>
+            <p>Plex, Jellyfin, Kodi — your self-hosted libraries connected and synced. See everything you own alongside your streaming services.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon magenta">🔗</div>
+            <h3>Debrid Integration</h3>
+            <p>Real-Debrid, TorBox, AllDebrid — instant stream resolution. Click a title, get a link. No more copy-pasting magnets.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon blue">📺</div>
+            <h3>30+ Catalogs</h3>
+            <p>Trending, popular, your watchlists, your favorites — all surfaced directly in Stremio. Discovery has never been easier.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon purple">📦</div>
+            <h3>Data Export</h3>
+            <p>Export your entire watch history from 9 services as JSON. Your data, your format, your control. Always.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon magenta">🔒</div>
+            <h3>Self-Hosted</h3>
+            <p>Run it on your own machine. Your tokens, your data, your server. No third party sees your watch history.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ─── WHY WE DO IT ───────────────────────────────────────── -->
+<section class="why-we-do" id="why">
+    <div class="section-header reveal">
+        <h2>Why We <span class="accent">Built This</span></h2>
+    </div>
+    <div class="why-content reveal">
+        <div class="big-quote">
+            The streaming world is fragmented. Your entertainment shouldn't be.
+        </div>
+        <div class="why-pillars">
+            <div class="pillar">
+                <h4>Privacy First</h4>
+                <p>Your watch data is personal. We never send it anywhere. Self-hosted means you own it completely.</p>
+            </div>
+            <div class="pillar">
+                <h4>Open Source</h4>
+                <p>No black boxes. Every line of code is visible. Fork it, modify it, contribute to it.</p>
+            </div>
+            <div class="pillar">
+                <h4>Community Driven</h4>
+                <p>Built by streamers, for streamers. Features come from real needs, not corporate roadmaps.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── SERVICES ───────────────────────────────────────────── -->
+<section class="services" id="services">
+    <div class="section-header reveal">
+        <h2>Connected <span class="accent">Services</span></h2>
+        <p>15+ integrations and growing.</p>
+    </div>
+    <div class="services-grid reveal">
+        <div class="service-pill"><span class="service-dot tracking"></span> Trakt</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> Simkl</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> AniList</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> WeTrakr</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> Letterboxd</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> IMDb</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> MDBList</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> Sofa Sidekick</div>
+        <div class="service-pill"><span class="service-dot server"></span> Plex</div>
+        <div class="service-pill"><span class="service-dot server"></span> Jellyfin</div>
+        <div class="service-pill"><span class="service-dot server"></span> Kodi</div>
+        <div class="service-pill"><span class="service-dot debrid"></span> Real-Debrid</div>
+        <div class="service-pill"><span class="service-dot debrid"></span> TorBox</div>
+        <div class="service-pill"><span class="service-dot debrid"></span> AllDebrid</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> TMDB</div>
+    </div>
+    <div class="services-legend">
+        <div class="legend-item"><span class="service-dot tracking"></span> Tracking & Lists</div>
+        <div class="legend-item"><span class="service-dot server"></span> Media Servers</div>
+        <div class="legend-item"><span class="service-dot debrid"></span> Debrid Services</div>
+    </div>
+</section>
+
+<!-- ─── CTA ────────────────────────────────────────────────── -->
+<section class="cta" id="start">
+    <h2 class="reveal"><span class="gradient">Ready to Sync?</span></h2>
+    <p class="reveal">Set up in under 5 minutes. Your streams, your rules.</p>
+    <div class="reveal">
+        <a href="http://localhost:7800/configure" class="btn-primary">Open Configure Page</a>
+    </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+    <p>StreamSyncr — Open Source Streaming Tracker</p>
+    <p style="margin-top: 0.5rem;">
+        <a href="https://github.com/djfulfill/StreamSyncr">GitHub</a> · 
+        <a href="http://localhost:7800/configure">Configure</a>
+    </p>
+</footer>
+
+<script>
+    // ─── SCROLL REVEAL ───────────────────────────────────────
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ─── NAV SCROLL ──────────────────────────────────────────
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ─── SMOOTH SCROLL ───────────────────────────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+</script>
+
+</body>
 </html>
