@@ -77,6 +77,12 @@ StreamSyncr/
 | TorBox | `apis/torbox_api/` | API key |
 | AllDebrid | `apis/alldebrid_api/` | API key |
 
+### IPTV Services
+
+| Service | Module | Auth Type |
+|---------|--------|-----------|
+| Xtream Codes | `apis/xtream_api/` | URL + username + password |
+
 ---
 
 ## Addon Flow
@@ -343,6 +349,29 @@ Resume playback across devices. Positions are stored in SQLite and synced to Kod
   - `GET /user` — user info (limits, premium status)
 - **Rate limits:** 120 requests / minute
 
+### Xtream Codes (REST, IPTV)
+
+- **Base URL:** `{provider_url}:{port}`
+- **Auth:** username + password (query params)
+- **Key endpoints:**
+  - `GET /player_api.php?username=X&password=X` — auth + account info
+  - `GET /player_api.php?...&action=get_live_categories` — live TV categories
+  - `GET /player_api.php?...&action=get_live_streams` — live channels
+  - `GET /player_api.php?...&action=get_vod_categories` — movie categories
+  - `GET /player_api.php?...&action=get_vod_streams` — movies
+  - `GET /player_api.php?...&action=get_vod_info&vod_id=X` — movie details
+  - `GET /player_api.php?...&action=get_series_categories` — series categories
+  - `GET /player_api.php?...&action=get_series` — series list
+  - `GET /player_api.php?...&action=get_series_info&series_id=X` — series episodes
+  - `GET /player_api.php?...&action=get_short_epg&stream_id=X` — EPG for channel
+  - `GET /xmltv.php?username=X&password=X` — full XMLTV EPG
+  - `GET /get.php?username=X&password=X&type=m3u_plus` — M3U playlist
+- **Stream URLs:**
+  - Live: `/live/{user}/{pass}/{stream_id}`
+  - VOD: `/movie/{user}/{pass}/{stream_id}`
+  - Series: `/movie/{user}/{pass}/{stream_id}`
+  - Timeshift: `/timeshift/{user}/{pass}/{duration}/{start}/{stream_id}`
+
 ---
 
 ## Python Usage
@@ -373,6 +402,9 @@ export TORBOX_API_KEY="your_api_key"
 
 # AllDebrid
 export ALLDEBRID_API_KEY="your_api_key"
+
+# Xtream Codes (set in app, not env var)
+# URL, username, and password entered via configure page
 ```
 
 ### Quick Examples
@@ -460,6 +492,27 @@ from apis.alldebrid_api import AllDebridClient
 c = AllDebridClient(api_key="your_api_key")
 c.upload_magnet("magnet:?xt=...")
 c.unrestrict_link("https://alldebrid.com/d/...")
+
+# Xtream Codes (IPTV)
+from apis.xtream_api import XtreamClient
+x = XtreamClient("http://provider.com:8080", "user", "pass")
+x.auth()                          # authenticate
+x.live_categories()               # live TV categories
+x.live_streams()                  # all live channels
+x.live_streams(category_id=1)     # channels in category
+x.vod_categories()                # movie categories
+x.vod_streams()                   # all movies
+x.vod_info(vod_id=123)            # movie details + streams
+x.series_categories()             # series categories
+x.series()                        # all series
+x.series_info(series_id=456)      # series episodes
+x.search("Breaking Bad")          # search across live/vod/series
+x.xmltv_url()                     # EPG URL for players
+x.m3u_url()                       # M3U playlist URL
+x.stream_url(stream_id=789)       # direct stream URL
+x.is_active()                     # check account status
+x.expiry()                        # account expiry date
+x.connections()                   # active/max connections
 ```
 
 ---
