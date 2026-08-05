@@ -1,6 +1,6 @@
 # StreamSyncr API Reference
 
-Detailed API documentation for all 16+ services integrated with StreamSyncr — architecture, addon flow, catalogs, streams, scrobbling, data export, resume sync, and per-service endpoint details.
+Detailed API documentation for all 17+ services integrated with StreamSyncr — architecture, addon flow, catalogs, streams, scrobbling, data export, resume sync, and per-service endpoint details.
 
 ---
 
@@ -67,6 +67,7 @@ StreamSyncr/
 |---------|--------|-----------|
 | Plex | `apis/plex_api/` | Token |
 | Jellyfin | `apis/jellyfin_api/` | API key |
+| Emby | `apis/emby_api/` | API key or username/password |
 | Kodi | `apis/kodi_api/` | JSON-RPC (HTTP) |
 
 ### Debrid Services
@@ -298,6 +299,29 @@ Resume playback across devices. Positions are stored in SQLite and synced to Kod
   - `GET /Shows/{id}/Episodes` — show episodes
   - `GET /Items/{id}/Played` — mark played
 
+### Emby (REST, documented)
+
+- **Base URL:** `http://<server>:8096/emby`
+- **Auth:** API key (`X-Emby-Token`) or username/password (`POST /Users/AuthenticateByName`)
+- **Key endpoints:**
+  - `POST /Users/AuthenticateByName` — user auth (returns AccessToken + UserId)
+  - `GET /Users/{id}/Views` — library list
+  - `GET /Items?IncludeItemTypes=Movie&Recursive=true` — movies
+  - `GET /Shows/{id}/Seasons` — show seasons
+  - `GET /Shows/{id}/Episodes` — show episodes
+  - `POST /Items/{id}/Played` — mark watched
+  - `POST /Items/{id}/Unplayed` — mark unwatched
+  - `POST /Items/{id}/Rating` — rate item
+  - `POST /Users/{id}/FavoriteItems/{id}` — add favorite
+  - `DELETE /Users/{id}/FavoriteItems/{id}` — remove favorite
+  - `GET /Search/Items?SearchTerm=` — search
+  - `POST /Sessions/Playing` — report playback start
+  - `POST /Sessions/Playing/Progress` — report progress
+  - `POST /Sessions/Playing/Stopped` — report stop
+  - `GET /Sessions` — active sessions
+- **Provider IDs:** `ProviderIds` object with IMDb, TMDb, TVDB
+- **Images:** `/emby/Items/{id}/Images/Primary`
+
 ### Plex (REST, documented)
 
 - **Base URL:** `http://<server>:32400`
@@ -458,6 +482,15 @@ c.search("Breaking Bad", media_type="show")
 from apis.jellyfin_api import JellyfinClient
 c = JellyfinClient(base_url="http://localhost:8096", api_key="your_key", user_id="user_id")
 c.get_libraries()
+
+# Emby
+from apis.emby_api import EmbyClient
+c = EmbyClient(base_url="http://localhost:8096", api_key="your_key")
+c.get_libraries()
+# Or with user auth:
+c = EmbyClient(base_url="http://localhost:8096", username="user", password="pass")
+c.authenticate()
+c.get_movies()
 
 # Kodi
 from apis.kodi_api import KodiClient
