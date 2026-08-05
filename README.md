@@ -88,6 +88,7 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 | **Stremio Addon** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **Stream Resolution (Debrid)** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **Catalog Browsing** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Real-Time Scrobbling** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Watch History Sync** | ✅ | ❌ | ✅ | ✅ | ✅ |
 | **Cross-Service Sync** | ✅ | ❌ | ✅ | ❌ | ✅ |
 | **Netflix/Disney+/HBO Max** | ❌ | ❌ | ❌ | ✅ | ❌ |
@@ -111,7 +112,8 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 1. **Only tool that does it all** — Stremio addon + sync engine + dashboard in one package
 2. **Widest service coverage** — 16+ services, including unique ones like WeTrakr and Sofa Sidekick
 3. **Cookie-based services via Chrome extension** — No more manual DevTools copy-paste
-4. **Self-hosted and open-source** — Your data never leaves your machine. The Linux way.
+4. **Real-time scrobbling** — WebSocket-powered, instant sync across all services when you press play
+5. **Self-hosted and open-source** — Your data never leaves your machine. The Linux way.
 
 ---
 
@@ -177,6 +179,35 @@ curl -s http://localhost:7800/api/export/{token} > export.json
 ```
 
 **Supported services:** Trakt, Simkl, WeTrakr, Sofa Sidekick, Plex, Jellyfin, AniList, MDBList, IMDb
+
+### Real-Time Scrobbling
+
+When you press play in Kodi or Stremio, StreamSyncr instantly reports your activity to all connected services.
+
+**How it works:**
+- Kodi/Stremio connects via WebSocket for real-time bidirectional events
+- HTTP POST fallback for clients that can't use WebSocket
+- ID resolution chain: IMDb → TMDB → Trakt → service-specific IDs
+- 90% threshold marks as watched
+- Auto-reconnect with exponential backoff on disconnect
+
+**Services that receive scrobbles:**
+| Service | Start | Pause | Stop/Watched | Notes |
+|---------|-------|-------|--------------|-------|
+| Trakt | ✓ | ✓ | ✓ | Full scrobble API (start/pause/stop) |
+| WeTrakr | - | - | ✓ | Mark watched only |
+| Plex | - | - | ✓ | Mark watched only |
+| Jellyfin | - | - | ✓ | Mark watched only |
+| Simkl | - | - | ✓ | Add to history |
+| Letterboxd | - | - | ✓ | Mark watched |
+| Sofa Sidekick | - | - | ✓ | Mark watched |
+| AniList | - | - | ✓ | Progress update |
+| IMDb | - | - | - | Read-only, no write API |
+
+**Endpoints:**
+- `WS /ws/scrobble?token={token}` — Real-time bidirectional WebSocket
+- `POST /api/scrobble` — HTTP fallback for Kodi
+- `GET /api/scrobble/now-playing` — Active sessions across all clients
 
 ---
 
