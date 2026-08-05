@@ -8,33 +8,33 @@ A unified streaming tracker — sync your watch history across 12+ services, wit
 
 ### Tracking & Lists
 
-| Service | Module | Auth Type | Status |
-|---------|--------|-----------|--------|
-| [Trakt](https://trakt.tv) | `apis/trakt_api/` | API key + token | ✅ Full client |
-| [TMDB](https://themoviedb.org) | `apis/tmdb_api/` | API key | ✅ Full client |
-| [IMDb](https://www.imdb.com) | `apis/imdb_api/` | Cookie (GraphQL) | ✅ Recently viewed, lists, ratings |
-| [WeTrakr](https://wetrakr.com) | `apis/wetrakr_api/` | Cookie (JWT) | ✅ Favorites, watchlist, ratings |
-| [AniList](https://anilist.co) | `apis/anilist_api/` | Optional OAuth | ✅ Trending, popular |
-| [Simkl](https://simkl.com) | `apis/simkl_api/` | Client ID + OAuth | ✅ Trending, popular |
-| [MDBList](https://mdblist.com) | `apis/mdblist_api/` | API key | ✅ Lists + search |
-| [Sofa Sidekick](https://sofasidekick.com) | `apis/sofasidekick_api/` | Cookie (3 cookies) | ✅ Movies + upcoming |
-| [Letterboxd](https://letterboxd.com) | `apis/letterboxd_api/` | Cookie (undocumented) | ✅ Search + list CRUD |
+| Service | Status |
+|---------|--------|
+| [Trakt](https://trakt.tv) | ✅ Full client |
+| [TMDB](https://themoviedb.org) | ✅ Full client |
+| [IMDb](https://www.imdb.com) | ✅ Recently viewed, lists, ratings |
+| [WeTrakr](https://wetrakr.com) | ✅ Favorites, watchlist, ratings |
+| [AniList](https://anilist.co) | ✅ Trending, popular |
+| [Simkl](https://simkl.com) | ✅ Trending, popular |
+| [MDBList](https://mdblist.com) | ✅ Lists + search |
+| [Sofa Sidekick](https://sofasidekick.com) | ✅ Movies + upcoming |
+| [Letterboxd](https://letterboxd.com) | ✅ Search + list CRUD |
 
 ### Media Servers
 
-| Service | Module | Auth Type | Status |
-|---------|--------|-----------|--------|
-| [Plex](https://plex.tv) | `apis/plex_api/` | Token | ✅ Full client |
-| [Jellyfin](https://jellyfin.org) | `apis/jellyfin_api/` | API key | ✅ Full client |
-| [Kodi](https://kodi.tv) | `apis/kodi_api/` | JSON-RPC (HTTP) | ✅ Full client |
+| Service | Status |
+|---------|--------|
+| [Plex](https://plex.tv) | ✅ Full client |
+| [Jellyfin](https://jellyfin.org) | ✅ Full client |
+| [Kodi](https://kodi.tv) | ✅ Full client |
 
 ### Debrid Services (Stream Sources)
 
-| Service | Module | Auth Type | Status |
-|---------|--------|-----------|--------|
-| [Real-Debrid](https://real-debrid.com) | `apis/realdebrid_api/` | API token | ✅ Torrents, unrestricted links |
-| [TorBox](https://torbox.app) | `apis/torbox_api/` | API key | ✅ Torrents, unrestricted links |
-| [AllDebrid](https://alldebrid.com) | `apis/alldebrid_api/` | API key | ✅ Torrents, unrestricted links |
+| Service | Status |
+|---------|--------|
+| [Real-Debrid](https://real-debrid.com) | ✅ Torrents, unrestricted links |
+| [TorBox](https://torbox.app) | ✅ Torrents, unrestricted links |
+| [AllDebrid](https://alldebrid.com) | ✅ Torrents, unrestricted links |
 
 ## Why StreamSyncr?
 

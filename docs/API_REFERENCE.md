@@ -45,6 +45,40 @@ StreamSyncr/
 
 ---
 
+## Services Overview
+
+### Tracking & Lists
+
+| Service | Module | Auth Type |
+|---------|--------|-----------|
+| Trakt | `apis/trakt_api/` | API key + token |
+| TMDB | `apis/tmdb_api/` | API key |
+| IMDb | `apis/imdb_api/` | Cookie (GraphQL) |
+| WeTrakr | `apis/wetrakr_api/` | Cookie (JWT) |
+| AniList | `apis/anilist_api/` | Optional OAuth |
+| Simkl | `apis/simkl_api/` | Client ID + OAuth |
+| MDBList | `apis/mdblist_api/` | API key |
+| Sofa Sidekick | `apis/sofasidekick_api/` | Cookie (3 cookies) |
+| Letterboxd | `apis/letterboxd_api/` | Cookie (undocumented) |
+
+### Media Servers
+
+| Service | Module | Auth Type |
+|---------|--------|-----------|
+| Plex | `apis/plex_api/` | Token |
+| Jellyfin | `apis/jellyfin_api/` | API key |
+| Kodi | `apis/kodi_api/` | JSON-RPC (HTTP) |
+
+### Debrid Services
+
+| Service | Module | Auth Type |
+|---------|--------|-----------|
+| Real-Debrid | `apis/realdebrid_api/` | API token |
+| TorBox | `apis/torbox_api/` | API key |
+| AllDebrid | `apis/alldebrid_api/` | API key |
+
+---
+
 ## Data Export
 
 Export all user data from connected services as JSON:
