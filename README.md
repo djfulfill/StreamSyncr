@@ -2,7 +2,7 @@
 
 # StreamSyncr
 
-A unified streaming tracker — sync your watch history across 12+ services, with a self-hosted Stremio addon.
+A unified streaming tracker — sync your watch history across 15+ services, with a self-hosted Stremio addon.
 
 ## Services
 
@@ -71,7 +71,7 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 ### What Sets Us Apart
 
 1. **Only tool that does it all** — Stremio addon + sync engine + dashboard in one package
-2. **Widest service coverage** — 16+ services, including unique ones like WeTrakr and Sofa Sidekick
+2. **Widest service coverage** — 15+ services, including unique ones like WeTrakr and Sofa Sidekick
 3. **Cookie-based services via Chrome extension** — No more manual DevTools copy-paste
 4. **Real-time scrobbling** — WebSocket-powered, instant sync across all services when you press play
 5. **Persistent config** — SQLite-backed, survives server restarts
