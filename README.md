@@ -113,7 +113,9 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 2. **Widest service coverage** — 16+ services, including unique ones like WeTrakr and Sofa Sidekick
 3. **Cookie-based services via Chrome extension** — No more manual DevTools copy-paste
 4. **Real-time scrobbling** — WebSocket-powered, instant sync across all services when you press play
-5. **Self-hosted and open-source** — Your data never leaves your machine. The Linux way.
+5. **Persistent config** — SQLite-backed, survives server restarts
+6. **Resume position sync** — Pick up where you left off across devices
+7. **Self-hosted and open-source** — Your data never leaves your machine. The Linux way.
 
 ---
 
@@ -208,6 +210,21 @@ When you press play in Kodi or Stremio, StreamSyncr instantly reports your activ
 - `WS /ws/scrobble?token={token}` — Real-time bidirectional WebSocket
 - `POST /api/scrobble` — HTTP fallback for Kodi
 - `GET /api/scrobble/now-playing` — Active sessions across all clients
+
+### Resume Position Sync
+
+Resume playback across devices. Positions are stored in SQLite and synced to Kodi/Jellyfin where supported.
+
+**Endpoints:**
+- `GET /api/resume/{item_id}?token={token}&media_type=movie` — Get resume position
+- `POST /api/resume` — Save position (Kodi sends on heartbeat/stop)
+- `GET /api/resume/all?token={token}` — All resume positions for a user
+
+**How it works:**
+- Kodi sends `position_seconds` and `total_seconds` on each heartbeat/stop
+- On play, Kodi fetches resume position and seeks the player
+- Positions >95% are cleared (treated as "watched")
+- SQLite database at `~/.streamsyncr/config.db`
 
 ---
 

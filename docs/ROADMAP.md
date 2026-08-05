@@ -45,6 +45,20 @@
 - [x] Kodi addon debrid stream resolution (Real-Debrid, TorBox, AllDebrid)
 - [x] Kodi addon scrobbling (auto-sync watch progress to all services)
 - [x] Kodi addon settings dialog (backend URL, config token, catalog preferences)
+- [x] **Real-Time Scrobbling** — WebSocket-powered instant sync across all services
+- [x] Scrobble endpoints (`/ws/scrobble`, `/api/scrobble`, `/api/scrobble/now-playing`)
+- [x] Fan-out to Trakt, WeTrakr, Plex, Jellyfin, Simkl, Letterboxd, Sofa Sidekick, AniList
+- [x] 90% threshold marks as watched, dedup window prevents duplicates
+
+## Completed (Phase 5)
+- [x] **Persistent Config** — SQLite database at `~/.streamsyncr/config.db`
+- [x] ConfigStore class with dict-compatible interface (drop-in replacement)
+- [x] Config survives server restarts (no more in-memory dict)
+- [x] **Resume Position Sync** — Cross-device playback resume
+- [x] ResumeStore class for position CRUD (UNIQUE per item per user)
+- [x] Positions >95% cleared as "watched"
+- [x] Resume endpoints (`/api/resume/{item_id}`, `/api/resume`, `/api/resume/all`)
+- [x] Kodi addon integration: fetch resume on play, seek player, send position on events
 
 ## Competitive Gaps & Opportunities
 
