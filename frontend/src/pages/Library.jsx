@@ -48,7 +48,6 @@ export default function Library() {
           <h1 className="font-display text-3xl font-bold text-snow">Your Library</h1>
           <p className="text-mist mt-1">{sorted.length} titles</p>
         </div>
-
         <div className="flex items-center gap-3">
           {/* View toggle */}
           <div className="glass flex items-center p-1">
@@ -88,9 +87,7 @@ export default function Library() {
             key={id}
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeTab === id
-                ? 'bg-glow/20 text-glow border border-glow/30'
-                : 'glass text-mist hover:text-snow'
+              activeTab === id ? 'bg-glow/20 text-glow border border-glow/30' : 'glass text-mist hover:text-snow'
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -157,9 +154,7 @@ function ListItem({ item, index }) {
         <h3 className="font-semibold text-snow truncate">{title}</h3>
         <p className="text-sm text-mist">{year}</p>
       </div>
-      {item.vote_average > 0 && (
-        <span className="text-sm font-bold text-ember">{item.vote_average.toFixed(1)}</span>
-      )}
+      {item.vote_average > 0 && <span className="text-sm font-bold text-flame">{item.vote_average.toFixed(1)}</span>}
     </motion.div>
   );
 }

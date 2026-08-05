@@ -18,30 +18,28 @@ export default function Layout({ children }) {
 
   const services = [
     { name: 'StreamSyncr', connected: wetrakr.connected, color: 'bg-glow' },
-    { name: 'Trakt', connected: trakt.connected, color: 'bg-flame' },
-    { name: 'TMDB', connected: tmdb.connected, color: 'bg-mint' },
-    { name: 'IMDb', connected: imdb.connected, color: 'bg-ember' },
-    { name: 'Plex', connected: plex.connected, color: 'bg-ember' },
-    { name: 'AniList', connected: anilist.connected, color: 'bg-flame' },
-    { name: 'Simkl', connected: simkl.connected, color: 'bg-mint' },
+    { name: 'Trakt', connected: trakt.connected, color: 'bg-ember' },
+    { name: 'TMDB', connected: tmdb.connected, color: 'bg-flame' },
+    { name: 'IMDb', connected: imdb.connected, color: 'bg-mint' },
+    { name: 'Plex', connected: plex.connected, color: 'bg-rose' },
+    { name: 'AniList', connected: anilist.connected, color: 'bg-ember' },
+    { name: 'Simkl', connected: simkl.connected, color: 'bg-flame' },
     { name: 'Jellyfin', connected: jellyfin.connected, color: 'bg-glow' },
-    { name: 'Kodi', connected: kodi.connected, color: 'bg-mint' },
+    { name: 'Kodi', connected: kodi.connected, color: 'bg-flame' },
   ];
 
-  const connectedCount = services.filter(s => s.connected).length;
+  const connectedCount = services.filter((s) => s.connected).length;
 
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="w-20 lg:w-64 glass-strong flex flex-col py-6 px-3 lg:px-5 m-3 rounded-2xl relative z-10">
+      <aside className="w-20 lg:w-72 glass-strong flex flex-col py-6 px-3 lg:px-5 m-3 rounded-2xl relative z-10">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-glow to-ember flex items-center justify-center">
             <Clapperboard className="w-5 h-5 text-void" />
           </div>
-          <span className="hidden lg:block font-display font-bold text-xl tracking-tight">
-            StreamSyncr
-          </span>
+          <span className="hidden lg:block font-display font-bold text-xl tracking-tight"> StreamSyncr </span>
         </div>
 
         {/* Nav */}
@@ -51,9 +49,7 @@ export default function Layout({ children }) {
               {({ isActive }) => (
                 <motion.div
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors duration-200 ${
-                    isActive
-                      ? 'bg-glow/20 text-glow'
-                      : 'text-mist hover:text-snow hover:bg-ghost'
+                    isActive ? 'bg-glow/20 text-glow' : 'text-mist hover:text-snow hover:bg-ghost'
                   }`}
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
@@ -74,9 +70,7 @@ export default function Layout({ children }) {
 
         {/* Service status */}
         <div className="mt-auto px-2">
-          <div className="hidden lg:block text-xs text-mist mb-3 font-medium uppercase tracking-wider">
-            Connected
-          </div>
+          <div className="hidden lg:block text-xs text-mist mb-3 font-medium uppercase tracking-wider"> Connected </div>
           <div className="flex lg:flex-col gap-2">
             {services.map((s) => (
               <ServiceDot key={s.name} name={s.name} connected={s.connected} color={s.color} />

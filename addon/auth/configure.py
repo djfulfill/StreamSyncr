@@ -5,56 +5,63 @@ CONFIGURE_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StreamSyncr — Configure</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
-        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 32px 24px; text-align: center; border-bottom: 1px solid #2a2a4a; }
-        .header h1 { font-size: 28px; margin-bottom: 8px; background: linear-gradient(90deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header p { color: #888; font-size: 14px; }
-        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
-        .section { background: #16213e; border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
-        .section-header { padding: 16px 20px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .section-header:hover { background: #1a2a4a; }
-        .section-header .icon { font-size: 20px; }
-        .section-header h2 { font-size: 16px; font-weight: 600; }
-        .section-header .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e94560; color: #fff; margin-left: auto; }
-        .section-header .badge.required { background: #e94560; }
-        .section-header .badge.optional { background: #2ecc71; }
-        .section-header .chevron { margin-left: auto; transition: transform 0.2s; }
-        .section-header.open .chevron { transform: rotate(180deg); }
-        .section-body { padding: 20px; display: none; }
-        .section-body.open { display: block; }
-        .field { margin-bottom: 16px; }
-        .field:last-child { margin-bottom: 0; }
-        .field label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #ccc; }
-        .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid #2a2a4a; border-radius: 8px; background: #0f0f1a; color: #fff; font-size: 14px; transition: border-color 0.2s; }
-        .field input:focus, .field select:focus { outline: none; border-color: #e94560; }
-        .field input::placeholder { color: #4a4a6a; }
-        .field .help { font-size: 12px; color: #6a6a8a; margin-top: 4px; }
-        .field .help a { color: #e94560; text-decoration: none; }
-        .field .help a:hover { text-decoration: underline; }
-        .field-row { display: flex; gap: 12px; }
-        .field-row .field { flex: 1; }
-        .actions { padding: 20px; display: flex; gap: 12px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-primary { background: linear-gradient(135deg, #e94560, #ff6b6b); color: #fff; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3); }
-        .btn-secondary { background: #2a2a4a; color: #ccc; }
-        .btn-secondary:hover { background: #3a3a5a; }
-        .status { padding: 12px 20px; background: #1a2a3e; border-top: 1px solid #2a2a4a; display: none; }
-        .status.show { display: block; }
-        .status.success { color: #2ecc71; }
-        .status.error { color: #e74c3c; }
-        .footer { text-align: center; padding: 24px; color: #4a4a6a; font-size: 12px; }
-        .divider { height: 1px; background: #2a2a4a; margin: 16px 0; }
-        .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .service-card { background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px; }
-        .service-card h3 { font-size: 14px; margin-bottom: 4px; }
-        .service-card p { font-size: 11px; color: #6a6a8a; }
-        .btn-connect { padding: 10px 16px; background: #2a2a4a; color: #ccc; border: 1px solid #3a3a5a; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-        .btn-connect:hover { background: #e94560; color: #fff; border-color: #e94560; }
-        .btn-connect.connected { background: #2ecc71; color: #fff; border-color: #2ecc71; }
-    </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --blue: #3b82f6; --blue-glow: #60a5fa; --purple: #a855f7; --magenta: #e879f9; --dark: #030712; --dark-card: #0a0f1e; --dark-border: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; line-height: 1.6; }
+.header { background: linear-gradient(135deg, rgba(10, 15, 30, 0.95), rgba(3, 7, 18, 0.97)); padding: 32px 24px; text-align: center; border-bottom: 1px solid rgba(59, 130, 246, 0.15); position: relative; }
+.header::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); pointer-events: none; }
+.header h1 { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg, var(--blue), var(--purple), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header p { color: var(--text-muted); font-size: 14px; }
+.container { max-width: 640px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+.section { background: linear-gradient(135deg, rgba(10, 15, 30, 0.85), rgba(5, 10, 25, 0.95)); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 20px; overflow: hidden; position: relative; }
+.section:hover { border-color: rgba(59, 130, 246, 0.35); box-shadow: 0 0 30px rgba(59, 130, 246, 0.1); }
+.section-header { padding: 16px 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.15); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.3s; }
+.section-header:hover { background: rgba(59, 130, 246, 0.08); }
+.section-header .icon { font-size: 20px; }
+.section-header h2 { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 600; color: var(--text); }
+.section-header .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; margin-left: auto; font-weight: 500; }
+.section-header .badge.required { background: linear-gradient(135deg, var(--blue), var(--blue-glow)); }
+.section-header .badge.optional { background: linear-gradient(135deg, var(--purple), var(--magenta)); }
+.section-header .chevron { margin-left: 12px; transition: transform 0.2s; color: var(--text-muted); }
+.section-header.open .chevron { transform: rotate(180deg); }
+.section-body { padding: 20px; display: none; }
+.section-body.open { display: block; }
+.field { margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+.field label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--text-muted); }
+.field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid var(--dark-border); border-radius: 8px; background: rgba(3, 7, 18, 0.7); color: var(--text); font-size: 14px; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+.field input::placeholder { color: rgba(148, 163, 184, 0.5); }
+.field .help { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.field .help a { color: var(--blue-glow); text-decoration: none; transition: color 0.2s; }
+.field .help a:hover { color: var(--magenta); text-decoration: underline; }
+.field-row { display: flex; gap: 12px; }
+.field-row .field { flex: 1; }
+.actions { padding: 20px; display: flex; gap: 12px; }
+.btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'Orbitron', sans-serif; }
+.btn-primary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(59, 130, 246, 0.5); }
+.btn-secondary { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--dark-border); }
+.btn-secondary:hover { background: rgba(59, 130, 246, 0.15); color: var(--text); border-color: var(--blue); }
+.status { padding: 12px 20px; background: rgba(10, 15, 30, 0.9); border-top: 1px solid rgba(59, 130, 246, 0.2); display: none; }
+.status.show { display: block; }
+.status.success { color: #55efc4; }
+.status.error { color: #fd79a8; }
+.footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; font-family: 'Inter', sans-serif; }
+.divider { height: 1px; background: var(--dark-border); margin: 16px 0; }
+.service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.service-card { background: rgba(3, 7, 18, 0.6); border: 1px solid var(--dark-border); border-radius: 8px; padding: 12px; }
+.service-card h3 { font-size: 14px; margin-bottom: 4px; color: var(--text); }
+.service-card p { font-size: 11px; color: var(--text-muted); }
+.btn-connect { padding: 10px 16px; background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--dark-border); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.btn-connect:hover { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; border-color: transparent; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+.btn-connect.connected { background: linear-gradient(135deg, #55efc4, #00b859); color: #fff; border-color: transparent; box-shadow: 0 0 15px rgba(85, 239, 196, 0.3); }
+</style>
+
 </head>
 <body>
     <div class="header">

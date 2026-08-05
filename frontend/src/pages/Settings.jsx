@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Check, X, ExternalLink, Eye, EyeOff, Shield, Key, User } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  Check,
+  X,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Shield,
+  Key,
+  User,
+} from 'lucide-react';
 import useStore from '../store';
 
 const services = [
@@ -9,7 +19,7 @@ const services = [
     name: 'StreamSyncr',
     description: 'Unofficial API. Tokens expire after ~2 days.',
     color: 'glow',
-    gradient: 'from-glow to-[#a29bfe]',
+    gradient: 'from-glow to-blue-glow',
     fields: [
       { key: 'accessToken', label: 'Access Token (wta_at)', type: 'password' },
       { key: 'refreshToken', label: 'Refresh Token (wta_rt)', type: 'password' },
@@ -21,8 +31,8 @@ const services = [
     id: 'trakt',
     name: 'Trakt',
     description: 'Official API with scrobbling, lists, and social features.',
-    color: 'flame',
-    gradient: 'from-flame to-[#c0392b]',
+    color: 'ember',
+    gradient: 'from-ember to-c084fc',
     fields: [
       { key: 'apiKey', label: 'API Key', type: 'password' },
       { key: 'token', label: 'Bearer Token', type: 'password' },
@@ -34,8 +44,8 @@ const services = [
     id: 'tmdb',
     name: 'TMDB',
     description: 'Movie database with posters, metadata, and watch providers.',
-    color: 'mint',
-    gradient: 'from-mint to-[#00b859]',
+    color: 'flame',
+    gradient: 'from-flame to-f0abfc',
     fields: [
       { key: 'apiKey', label: 'API Key', type: 'password' },
       { key: 'username', label: 'Username', type: 'text' },
@@ -46,8 +56,8 @@ const services = [
     id: 'imdb',
     name: 'IMDb',
     description: 'Lists, ratings, and watchlist sync via GraphQL API.',
-    color: 'ember',
-    gradient: 'from-ember to-[#d4a80a]',
+    color: 'rose',
+    gradient: 'from-rose to-fb7185',
     fields: [
       { key: 'sessionId', label: 'Session ID (session-id)', type: 'password' },
       { key: 'atMain', label: 'AT Main (at-main)', type: 'password' },
@@ -61,8 +71,8 @@ const services = [
     id: 'plex',
     name: 'Plex',
     description: 'Official API. Use your Plex token and server URL.',
-    color: 'ember',
-    gradient: 'from-ember to-[#e5a00d]',
+    color: 'mint',
+    gradient: 'from-mint to-emerald-400',
     fields: [
       { key: 'baseUrl', label: 'Server URL (e.g. http://localhost:32400)', type: 'text' },
       { key: 'token', label: 'Plex Token', type: 'password' },
@@ -75,7 +85,7 @@ const services = [
     name: 'AniList',
     description: 'Official GraphQL API. No auth needed for reads; OAuth for writes.',
     color: 'flame',
-    gradient: 'from-flame to-[#02a9ff]',
+    gradient: 'from-flame to-sky-500',
     fields: [
       { key: 'accessToken', label: 'Access Token (optional)', type: 'password' },
       { key: 'username', label: 'Username', type: 'text' },
@@ -86,8 +96,8 @@ const services = [
     id: 'simkl',
     name: 'Simkl',
     description: 'Official API. Client ID required; OAuth for user data.',
-    color: 'mint',
-    gradient: 'from-mint to-[#1a73e8]',
+    color: 'flame',
+    gradient: 'from-flame to-blue-500',
     fields: [
       { key: 'clientId', label: 'Client ID', type: 'password' },
       { key: 'accessToken', label: 'Access Token (optional)', type: 'password' },
@@ -100,7 +110,7 @@ const services = [
     name: 'Jellyfin',
     description: 'Official API. Requires API key from admin dashboard.',
     color: 'glow',
-    gradient: 'from-glow to-[#9b59b6]',
+    gradient: 'from-glow to-purple-500',
     fields: [
       { key: 'baseUrl', label: 'Server URL (e.g. http://localhost:8096)', type: 'text' },
       { key: 'apiKey', label: 'API Key', type: 'password' },
@@ -114,7 +124,7 @@ const services = [
     name: 'Kodi',
     description: 'JSON-RPC API. Enable in Settings → Services → Control.',
     color: 'mint',
-    gradient: 'from-mint to-[#1778e0]',
+    gradient: 'from-mint to-blue-600',
     fields: [
       { key: 'baseUrl', label: 'Server URL (e.g. http://192.168.1.50:8080)', type: 'text' },
       { key: 'username', label: 'Username (optional)', type: 'text' },
@@ -126,7 +136,6 @@ const services = [
 
 export default function Settings() {
   const store = useStore();
-
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -139,9 +148,9 @@ export default function Settings() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="glass p-4 flex items-start gap-3 border border-mint/20"
+        className="glass p-4 flex items-start gap-3 border border-rose/20"
       >
-        <Shield className="w-5 h-5 text-mint flex-shrink-0 mt-0.5" />
+        <Shield className="w-5 h-5 text-rose flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-sm text-snow font-medium">Local storage only</p>
           <p className="text-xs text-mist mt-1">
@@ -158,25 +167,15 @@ export default function Settings() {
           connected={store[service.id]?.connected}
           username={store[service.id]?.username}
           onConnect={(data) => {
-            if (service.id === 'wetrakr') {
-              store.connectWeTrakr(data.username, data.accessToken, data.refreshToken);
-            } else if (service.id === 'trakt') {
-              store.connectTrakt(data.username, data.token, data.apiKey);
-            } else if (service.id === 'tmdb') {
-              store.connectTMDB(data.username, data.apiKey);
-            } else if (service.id === 'imdb') {
-              store.connectIMDb(data.sessionId, data.atMain, data.sessionToken, data.ubidMain, data.sessAtMain);
-            } else if (service.id === 'plex') {
-              store.connectPlex(data.username, data.token, data.baseUrl);
-            } else if (service.id === 'anilist') {
-              store.connectAniList(data.username, data.accessToken);
-            } else if (service.id === 'simkl') {
-              store.connectSimkl(data.username, data.accessToken, data.clientId);
-            } else if (service.id === 'jellyfin') {
-              store.connectJellyfin(data.username, data.apiKey, data.userId, data.baseUrl);
-            } else if (service.id === 'kodi') {
-              store.connectKodi(data.username, data.baseUrl);
-            }
+            if (service.id === 'wetrakr') store.connectWeTrakr(data.username, data.accessToken, data.refreshToken);
+            else if (service.id === 'trakt') store.connectTrakt(data.username, data.token, data.apiKey);
+            else if (service.id === 'tmdb') store.connectTMDB(data.username, data.apiKey);
+            else if (service.id === 'imdb') store.connectIMDb(data.sessionId, data.atMain, data.sessionToken, data.ubidMain, data.sessAtMain);
+            else if (service.id === 'plex') store.connectPlex(data.username, data.token, data.baseUrl);
+            else if (service.id === 'anilist') store.connectAniList(data.username, data.accessToken);
+            else if (service.id === 'simkl') store.connectSimkl(data.username, data.accessToken, data.clientId);
+            else if (service.id === 'jellyfin') store.connectJellyfin(data.username, data.apiKey, data.userId, data.baseUrl);
+            else if (service.id === 'kodi') store.connectKodi(data.username, data.baseUrl);
           }}
           onDisconnect={() => store.disconnectService(service.id)}
           index={i}
@@ -242,7 +241,8 @@ function ServiceCard({ service, connected, username, onConnect, onDisconnect, in
             <h3 className="font-display font-semibold text-snow">{service.name}</h3>
             {connected && (
               <span className="flex items-center gap-1 text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
-                <Check className="w-3 h-3" /> Connected
+                <Check className="w-3 h-3" />
+                Connected
               </span>
             )}
           </div>
@@ -313,19 +313,11 @@ function ServiceCard({ service, connected, username, onConnect, onDisconnect, in
               </div>
             </div>
           ))}
-
           <div className="flex gap-3 pt-2">
-            <button
-              type="submit"
-              className="flex-1 bg-glow text-void font-semibold py-3 rounded-xl"
-            >
+            <button type="submit" className="flex-1 bg-glow text-void font-semibold py-3 rounded-xl">
               Connect {service.name}
             </button>
-            <button
-              type="button"
-              onClick={() => setExpanded(false)}
-              className="glass text-mist px-6 py-3 rounded-xl"
-            >
+            <button type="button" onClick={() => setExpanded(false)} className="glass text-mist px-6 py-3 rounded-xl">
               Cancel
             </button>
           </div>

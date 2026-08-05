@@ -36,6 +36,8 @@
             color: var(--text);
             overflow-x: hidden;
             line-height: 1.6;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
         /* ─── NAVIGATION ───────────────────────────────────────── */
@@ -150,19 +152,21 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 800px;
-            height: 800px;
+            width: min(800px, 90vw);
+            height: min(800px, 90vw);
             background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
             pointer-events: none;
         }
 
         .hero h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-size: clamp(2rem, 6vw, 5rem);
             font-weight: 900;
             line-height: 1.1;
             margin-bottom: 1.5rem;
             animation: fadeInUp 1s ease-out 0.2s both;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
         .hero h1 .gradient {
@@ -305,11 +309,13 @@
         section {
             padding: 6rem 2rem;
             position: relative;
+            overflow: hidden;
         }
 
         .section-header {
             text-align: center;
             margin-bottom: 4rem;
+            min-width: 0;
         }
 
         .section-header h2 {
@@ -317,6 +323,7 @@
             font-size: clamp(1.75rem, 4vw, 2.5rem);
             font-weight: 700;
             margin-bottom: 1rem;
+            overflow-wrap: break-word;
         }
 
         .section-header p {
@@ -324,6 +331,7 @@
             max-width: 600px;
             margin: 0 auto;
             font-size: 1.05rem;
+            overflow-wrap: break-word;
         }
 
         .section-header .accent {
@@ -345,6 +353,13 @@
             max-width: 1100px;
             margin: 0 auto;
             align-items: center;
+        }
+
+        .who-text {
+            min-width: 0;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            hyphens: auto;
         }
 
         .who-text h3 {
@@ -369,11 +384,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .stream-ring {
-            width: 300px;
-            height: 300px;
+            width: min(300px, 100%);
+            height: min(300px, 100%);
+            aspect-ratio: 1;
             border-radius: 50%;
             border: 2px solid;
             position: relative;
@@ -382,21 +400,21 @@
 
         .stream-ring:nth-child(1) {
             border-color: rgba(59, 130, 246, 0.3);
-            width: 280px;
-            height: 280px;
+            width: min(280px, 90%);
+            height: min(280px, 90%);
             animation-direction: reverse;
         }
 
         .stream-ring:nth-child(2) {
             border-color: rgba(168, 85, 247, 0.3);
-            width: 220px;
-            height: 220px;
+            width: min(220px, 72%);
+            height: min(220px, 72%);
         }
 
         .stream-ring:nth-child(3) {
             border-color: rgba(232, 121, 249, 0.3);
-            width: 160px;
-            height: 160px;
+            width: min(160px, 52%);
+            height: min(160px, 52%);
             animation-direction: reverse;
         }
 
@@ -449,6 +467,8 @@
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
+            min-width: 0;
+            overflow-wrap: break-word;
         }
 
         .feature-card::before {
@@ -525,16 +545,19 @@
             max-width: 900px;
             margin: 0 auto;
             text-align: center;
+            min-width: 0;
+            overflow-wrap: break-word;
         }
 
         .why-content .big-quote {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-size: clamp(1.2rem, 3.5vw, 2.2rem);
             font-weight: 700;
             line-height: 1.5;
             margin-bottom: 2rem;
             position: relative;
             padding: 2rem 0;
+            overflow-wrap: break-word;
         }
 
         .why-content .big-quote::before,
@@ -563,6 +586,8 @@
             border-radius: 12px;
             background: rgba(59, 130, 246, 0.05);
             border: 1px solid rgba(59, 130, 246, 0.1);
+            min-width: 0;
+            overflow-wrap: break-word;
         }
 
         .pillar h4 {
@@ -588,6 +613,7 @@
             gap: 1rem;
             max-width: 1000px;
             margin: 0 auto;
+            min-width: 0;
         }
 
         .service-pill {
@@ -601,6 +627,8 @@
             font-size: 0.85rem;
             font-weight: 500;
             transition: all 0.3s;
+            min-width: 0;
+            overflow-wrap: break-word;
         }
 
         .service-pill:hover {
@@ -642,6 +670,7 @@
             text-align: center;
             padding: 8rem 2rem;
             position: relative;
+            overflow: hidden;
         }
 
         .cta::before {
@@ -650,24 +679,26 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
-            height: 600px;
+            width: min(600px, 90vw);
+            height: min(600px, 90vw);
             background: radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 70%);
             pointer-events: none;
         }
 
         .cta h2 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2rem, 4vw, 3rem);
+            font-size: clamp(1.5rem, 4vw, 3rem);
             font-weight: 800;
             margin-bottom: 1rem;
+            overflow-wrap: break-word;
         }
 
         .cta p {
             color: var(--text-muted);
-            font-size: 1.1rem;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
             max-width: 500px;
             margin: 0 auto 3rem;
+            overflow-wrap: break-word;
         }
 
         /* ─── FOOTER ───────────────────────────────────────────── */
@@ -717,21 +748,37 @@
         }
 
         /* ─── RESPONSIVE ───────────────────────────────────────── */
+        @media (max-width: 1024px) {
+            .who-grid { gap: 2.5rem; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .services-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
         @media (max-width: 900px) {
             nav { padding: 1rem 1.5rem; }
             .nav-links { display: none; }
-            .who-grid { grid-template-columns: 1fr; gap: 3rem; }
-            .who-visual { order: -1; }
+            .who-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .who-visual { order: -1; max-width: 280px; margin: 0 auto; }
             .features-grid { grid-template-columns: 1fr; }
             .why-pillars { grid-template-columns: 1fr; }
             .services-grid { grid-template-columns: repeat(2, 1fr); }
+            section { padding: 4rem 1.5rem; }
         }
 
         @media (max-width: 600px) {
+            nav { padding: 0.75rem 1rem; }
+            .hero { padding: 6rem 1rem 3rem; }
             .hero h1 { font-size: 2rem; }
+            .hero p { font-size: 0.95rem; }
             .hero-buttons { flex-direction: column; width: 100%; max-width: 300px; }
             .btn-primary, .btn-secondary { width: 100%; text-align: center; }
             .services-grid { grid-template-columns: 1fr; }
+            section { padding: 3rem 1rem; }
+            .who-visual { display: none; }
+            .who-text h3 { font-size: 1.25rem; }
+            .who-text p { font-size: 0.95rem; }
+            .section-header h2 { font-size: clamp(1.5rem, 5vw, 2rem); }
+            .feature-card { padding: 1.75rem 1.25rem; }
         }
     </style>
 </head>
@@ -863,24 +910,25 @@
 <section class="services" id="services">
     <div class="section-header reveal">
         <h2>Connected <span class="accent">Services</span></h2>
-        <p>15+ integrations and growing.</p>
+        <p>16 integrations and growing.</p>
     </div>
     <div class="services-grid reveal">
         <div class="service-pill"><span class="service-dot tracking"></span> Trakt</div>
         <div class="service-pill"><span class="service-dot tracking"></span> Simkl</div>
-        <div class="service-pill"><span class="service-dot tracking"></span> AniList</div>
         <div class="service-pill"><span class="service-dot tracking"></span> WeTrakr</div>
         <div class="service-pill"><span class="service-dot tracking"></span> Letterboxd</div>
         <div class="service-pill"><span class="service-dot tracking"></span> IMDb</div>
         <div class="service-pill"><span class="service-dot tracking"></span> MDBList</div>
         <div class="service-pill"><span class="service-dot tracking"></span> Sofa Sidekick</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> TMDB</div>
+        <div class="service-pill"><span class="service-dot server"></span> Stremio</div>
         <div class="service-pill"><span class="service-dot server"></span> Plex</div>
         <div class="service-pill"><span class="service-dot server"></span> Jellyfin</div>
         <div class="service-pill"><span class="service-dot server"></span> Kodi</div>
+        <div class="service-pill"><span class="service-dot server"></span> Nuvio</div>
         <div class="service-pill"><span class="service-dot debrid"></span> Real-Debrid</div>
         <div class="service-pill"><span class="service-dot debrid"></span> TorBox</div>
         <div class="service-pill"><span class="service-dot debrid"></span> AllDebrid</div>
-        <div class="service-pill"><span class="service-dot tracking"></span> TMDB</div>
     </div>
     <div class="services-legend">
         <div class="legend-item"><span class="service-dot tracking"></span> Tracking & Lists</div>

@@ -21,7 +21,6 @@ export default function Detail() {
       setLoading(false);
       return;
     }
-
     const fetchDetails = async () => {
       try {
         const [itemData, creditsData] = await Promise.all([
@@ -30,7 +29,6 @@ export default function Detail() {
         ]);
         setItem(itemData);
         setCredits(creditsData);
-
         if (type === 'movie') {
           const providerData = await tmdbApi.movieWatchProviders(id, tmdbState.apiKey);
           setProviders(providerData.results?.US);
@@ -41,7 +39,6 @@ export default function Detail() {
         setLoading(false);
       }
     };
-
     fetchDetails();
   }, [id, type, tmdbState]);
 
@@ -57,7 +54,9 @@ export default function Detail() {
     return (
       <div className="text-center py-20">
         <p className="text-mist">Item not found. Connect TMDB to view details.</p>
-        <button onClick={() => navigate(-1)} className="text-glow mt-4 inline-block">Go back</button>
+        <button onClick={() => navigate(-1)} className="text-glow mt-4 inline-block">
+          Go back
+        </button>
       </div>
     );
   }
@@ -88,11 +87,7 @@ export default function Detail() {
         className="relative h-[400px] rounded-3xl overflow-hidden"
       >
         {item.backdrop_path ? (
-          <img
-            src={tmdbBackdrop(item.backdrop_path)}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
+          <img src={tmdbBackdrop(item.backdrop_path)} alt={title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-deep" />
         )}
@@ -116,8 +111,8 @@ export default function Detail() {
               <h1 className="font-display text-4xl font-bold text-snow">{title}</h1>
               <div className="flex items-center gap-3 mt-3 text-sm">
                 {item.vote_average > 0 && (
-                  <span className="flex items-center gap-1 text-ember font-semibold">
-                    <Star className="w-4 h-4 fill-ember" />
+                  <span className="flex items-center gap-1 text-flame font-semibold">
+                    <Star className="w-4 h-4 fill-flame" />
                     {item.vote_average.toFixed(1)}
                   </span>
                 )}
@@ -250,26 +245,19 @@ export default function Detail() {
               <h3 className="font-display font-semibold text-snow mb-3">Stream</h3>
               <div className="flex flex-wrap gap-2">
                 {providers.flatrate.map((p) => (
-                  <span
-                    key={p.provider_id}
-                    className="bg-elevated text-snow text-xs px-3 py-1.5 rounded-lg"
-                  >
+                  <span key={p.provider_id} className="bg-elevated text-snow text-xs px-3 py-1.5 rounded-lg">
                     {p.provider_name}
                   </span>
                 ))}
               </div>
             </div>
           )}
-
           {providers?.buy && (
             <div className="glass-strong p-5">
               <h3 className="font-display font-semibold text-snow mb-3">Buy</h3>
               <div className="flex flex-wrap gap-2">
                 {providers.buy.map((p) => (
-                  <span
-                    key={p.provider_id}
-                    className="bg-elevated text-snow text-xs px-3 py-1.5 rounded-lg"
-                  >
+                  <span key={p.provider_id} className="bg-elevated text-snow text-xs px-3 py-1.5 rounded-lg">
                     {p.provider_name}
                   </span>
                 ))}

@@ -16,7 +16,6 @@ export default function Search() {
     if (!query.trim()) return;
     setLoading(true);
     setSearched(true);
-
     try {
       if (tmdbState.connected && tmdbState.apiKey) {
         const data = await tmdbApi.search(query, tmdbState.apiKey);
@@ -31,10 +30,7 @@ export default function Search() {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-3xl font-bold text-snow mb-6">Search</h1>
 
         {/* Search bar */}
@@ -61,12 +57,8 @@ export default function Search() {
         {/* Source indicator */}
         <div className="flex gap-2 mt-4">
           <span className="text-xs text-mist">Searching via:</span>
-          {tmdbState.connected && (
-            <span className="text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">TMDB</span>
-          )}
-          {!tmdbState.connected && (
-            <span className="text-xs text-whisper">No services connected</span>
-          )}
+          {tmdbState.connected && <span className="text-xs bg-flame/20 text-flame px-2 py-0.5 rounded-full">TMDB</span>}
+          {!tmdbState.connected && <span className="text-xs text-whisper">No services connected</span>}
         </div>
       </motion.div>
 
@@ -76,11 +68,7 @@ export default function Search() {
           <Loader2 className="w-8 h-8 text-glow animate-spin" />
         </div>
       ) : searched && results.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="glass-strong p-16 text-center"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-strong p-16 text-center">
           <SearchIcon className="w-16 h-16 text-whisper mx-auto mb-4" />
           <h3 className="font-display text-xl font-semibold text-snow mb-2">No results found</h3>
           <p className="text-mist">Try a different search term</p>

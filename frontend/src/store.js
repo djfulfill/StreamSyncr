@@ -14,6 +14,8 @@ const useStore = create(
       simkl: { connected: false, username: null, accessToken: null, clientId: null },
       jellyfin: { connected: false, username: null, apiKey: null, userId: null, baseUrl: null },
       kodi: { connected: false, username: null, baseUrl: null },
+        stremio: { connected: true, username: null },
+        nuvio: { connected: true, username: null },
 
       // Library state
       library: [],

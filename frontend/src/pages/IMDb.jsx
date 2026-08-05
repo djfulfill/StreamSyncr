@@ -15,16 +15,15 @@ export default function IMDb() {
 
   const loadData = async () => {
     if (!imdbState.connected) return;
-    
     setIsLoading(true);
     setError(null);
     try {
       if (activeTab === 'lists') {
         const data = await imdb.getLists();
-        setLists(data?.data?.currentUser?.lists?.edges?.map(e => e.node) || []);
+        setLists(data?.data?.currentUser?.lists?.edges?.map((e) => e.node) || []);
       } else if (activeTab === 'ratings') {
         const data = await imdb.getRatings();
-        setRatings(data?.data?.currentUser?.ratings?.edges?.map(e => e.node) || []);
+        setRatings(data?.data?.currentUser?.ratings?.edges?.map((e) => e.node) || []);
       } else if (activeTab === 'recent') {
         const data = await imdb.getRecentlyViewed();
         setRecentlyViewed(data?.data?.recentlyViewedItems?.items || []);
@@ -44,7 +43,7 @@ export default function IMDb() {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <div className="glass-strong rounded-2xl p-8 max-w-md text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-ember to-[#d4a80a] flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-glow to-ember flex items-center justify-center mx-auto mb-6">
             <List className="w-8 h-8 text-void" />
           </div>
           <h2 className="text-2xl font-display font-bold mb-4">IMDb Not Connected</h2>
@@ -53,7 +52,7 @@ export default function IMDb() {
           </p>
           <a
             href="/settings"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ember/20 text-ember font-medium hover:bg-ember/30 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-glow/20 text-glow font-medium hover:bg-glow/30 transition-colors"
           >
             Go to Settings
           </a>
@@ -72,7 +71,7 @@ export default function IMDb() {
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-ember/20 text-ember hover:bg-ember/30 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose/20 text-rose hover:bg-rose/30 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -90,9 +89,7 @@ export default function IMDb() {
             key={id}
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
-              activeTab === id
-                ? 'bg-ember/20 text-ember'
-                : 'text-mist hover:text-snow hover:bg-ghost'
+              activeTab === id ? 'bg-rose/20 text-rose' : 'text-mist hover:text-snow hover:bg-ghost'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -101,17 +98,13 @@ export default function IMDb() {
         ))}
       </div>
 
-      {error && (
-        <div className="glass rounded-xl p-4 text-red-400 text-sm">
-          Error: {error}
-        </div>
-      )}
+      {error && <div className="glass rounded-xl p-4 text-red-400 text-sm">Error: {error}</div>}
 
       {/* Content */}
       <div className="glass-strong rounded-2xl p-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <RefreshCw className="w-6 h-6 text-ember animate-spin" />
+            <RefreshCw className="w-6 h-6 text-rose animate-spin" />
           </div>
         ) : activeTab === 'lists' ? (
           <ListsTab lists={lists} />
@@ -134,7 +127,6 @@ function ListsTab({ lists }) {
       </div>
     );
   }
-
   return (
     <div className="space-y-3">
       {lists.map((list) => (
@@ -166,19 +158,15 @@ function RatingsTab({ ratings }) {
       </div>
     );
   }
-
   return (
     <div className="space-y-3">
       {ratings.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center justify-between p-4 rounded-xl bg-ghost/50"
-        >
+        <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-ghost/50">
           <div>
             <h3 className="font-medium">{item.titleText}</h3>
             <p className="text-sm text-mist">{item.year}</p>
           </div>
-          <div className="flex items-center gap-1 text-ember">
+          <div className="flex items-center gap-1 text-flame">
             <Star className="w-4 h-4 fill-current" />
             <span className="font-medium">{item.rating?.currentRating || '-'}</span>
           </div>
@@ -197,20 +185,16 @@ function RecentlyViewedTab({ items }) {
       </div>
     );
   }
-
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center justify-between p-4 rounded-xl bg-ghost/50"
-        >
+        <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-ghost/50">
           <div>
             <h3 className="font-medium">{item.titleText}</h3>
             <p className="text-sm text-mist">{item.releaseYear?.year || 'Unknown year'}</p>
           </div>
           {item.rating?.aggregateRating && (
-            <div className="flex items-center gap-1 text-ember">
+            <div className="flex items-center gap-1 text-flame">
               <Star className="w-4 h-4 fill-current" />
               <span className="font-medium">{item.rating.aggregateRating}</span>
             </div>

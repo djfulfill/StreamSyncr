@@ -44,16 +44,11 @@ export default function Dashboard() {
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-void via-void/80 to-transparent" />
         </div>
-
         <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight mb-3">
               Welcome to{' '}
-              <span className="bg-gradient-to-r from-glow via-ember to-rose bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-glow via-blue-glow to-ember bg-clip-text text-transparent">
                 StreamSyncr
               </span>
             </h1>
@@ -66,18 +61,18 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-4 mt-8">
             <StatCard icon={Film} label="Movies" value={stats.movies} color="text-glow" />
             <StatCard icon={Tv} label="Shows" value={stats.shows} color="text-ember" />
-            <StatCard icon={Clock} label="Hours" value={stats.hours} color="text-mint" />
-            <StatCard icon={Zap} label="Services" value={`${connectedCount}/3`} color="text-rose" />
+            <StatCard icon={Clock} label="Hours" value={stats.hours} color="text-flame" />
+            <StatCard icon={Zap} label="Services" value={`${connectedCount}/9`} color="text-mint" />
           </div>
         </div>
       </motion.div>
 
       {/* Service cards */}
-      {connectedCount < 3 && (
+      {connectedCount < 9 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {!wetrakr.connected && <ServicePrompt name="StreamSyncr" color="glow" path="/settings" />}
-          {!trakt.connected && <ServicePrompt name="Trakt" color="flame" path="/settings" />}
-          {!tmdbState.connected && <ServicePrompt name="TMDB" color="mint" path="/settings" />}
+          {!trakt.connected && <ServicePrompt name="Trakt" color="ember" path="/settings" />}
+          {!tmdbState.connected && <ServicePrompt name="TMDB" color="flame" path="/settings" />}
         </div>
       )}
 
@@ -122,11 +117,8 @@ export default function Dashboard() {
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <motion.div
-      className="glass px-5 py-3 flex items-center gap-3 min-w-[140px]"
-      whileHover={{ scale: 1.02 }}
-    >
-      <div className={`${color}`}>
+    <motion.div className="glass px-5 py-3 flex items-center gap-3 min-w-[140px]" whileHover={{ scale: 1.02 }}>
+      <div className={color}>
         <Icon className="w-5 h-5" />
       </div>
       <div>
@@ -150,7 +142,8 @@ function SectionHeader({ icon: Icon, title, link }) {
           className="flex items-center gap-1 text-sm text-mist hover:text-glow transition-colors"
           whileHover={{ x: 4 }}
         >
-          View all <ArrowRight className="w-4 h-4" />
+          View all
+          <ArrowRight className="w-4 h-4" />
         </motion.a>
       )}
     </div>

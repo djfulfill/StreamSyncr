@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Star, Eye, Heart, Bookmark } from 'lucide-react';
+import { Star, Eye, Heart, Bookmark, Tv, Film } from 'lucide-react';
 import { tmdbImage } from '../api';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,15 +20,16 @@ export default function PosterCard({ item, index = 0, showMeta = true }) {
       {/* Poster image */}
       <div className="aspect-[2/3] bg-deep relative">
         {item.poster_path ? (
-          <img
-            src={tmdbImage(item.poster_path)}
-            alt={title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <img src={tmdbImage(item.poster_path)} alt={title} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-4xl">{type === 'tv' ? <Tv className="w-12 h-12 text-whisper" /> : <Film className="w-12 h-12 text-whisper" />}</span>
+            <span className="text-4xl">
+              {type === 'tv' ? (
+                <Tv className="w-12 h-12 text-whisper" />
+              ) : (
+                <Film className="w-12 h-12 text-whisper" />
+              )}
+            </span>
           </div>
         )}
 
@@ -38,8 +39,8 @@ export default function PosterCard({ item, index = 0, showMeta = true }) {
             <div className="space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
               <div className="flex items-center gap-2">
                 {item.vote_average > 0 && (
-                  <span className="flex items-center gap-1 text-xs font-semibold text-ember">
-                    <Star className="w-3 h-3 fill-ember" />
+                  <span className="flex items-center gap-1 text-xs font-semibold text-flame">
+                    <Star className="w-3 h-3 fill-flame" />
                     {item.vote_average.toFixed(1)}
                   </span>
                 )}
@@ -62,8 +63,8 @@ export default function PosterCard({ item, index = 0, showMeta = true }) {
         {/* Rating badge */}
         {item.vote_average > 0 && (
           <div className="absolute top-2 right-2 bg-void/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-            <Star className="w-3 h-3 text-ember fill-ember" />
-            <span className="text-xs font-bold text-ember">{item.vote_average.toFixed(1)}</span>
+            <Star className="w-3 h-3 text-flame fill-flame" />
+            <span className="text-xs font-bold text-flame">{item.vote_average.toFixed(1)}</span>
           </div>
         )}
       </div>
@@ -85,7 +86,6 @@ function ActionButton({ icon: Icon, label }) {
       whileTap={{ scale: 0.95 }}
       onClick={(e) => {
         e.stopPropagation();
-        // Will be wired up in parent
       }}
     >
       <Icon className="w-3 h-3" />
