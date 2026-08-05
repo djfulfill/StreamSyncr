@@ -2,6 +2,7 @@ import json
 import os
 import secrets
 import threading
+import logging
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Request
@@ -20,6 +21,8 @@ from auth.oauth import (
     anilist_authorize_url, anilist_exchange_code,
 )
 from export import export_all
+
+logger = logging.getLogger("streamsyncr")
 
 app = FastAPI(title="StreamSyncr Stremio Addon", cors_origins=["http://localhost:3030", "http://127.0.0.1:3030"])
 
@@ -599,6 +602,104 @@ async def extension_config():
     with _store_lock:
         config = _config_store.get("__extension__", {})
     return JSONResponse({"config": config})
+
+
+# ── Real-Time Scrobbling ────────────────────────────────────
+
+from fastapi import WebSocket, WebSocketDisconnect
+from scrobble import scrobble_manager, ScrobbleEvent
+import time as _time
+
+
+@app.websocket("/ws/scrobble")
+async def websocket_scrobble(websocket: WebSocket, token: str = None):
+    """Real-time bidirectional scrobble channel.
+
+    Clients connect with ?token=<config_token> query param.
+    Messages are JSON with format:
+        {"action": "start|pause|resume|stop|heartbeat", "item_id": "tt1234567", ...}
+    """
+    if not token or token not in _config_store:
+        await websocket.close(code=4001, reason="Invalid token")
+        return
+
+    await scrobble_manager.connect(websocket, token)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            event = ScrobbleEvent(
+                action=data.get("action", "heartbeat"),
+                item_id=data.get("item_id", ""),
+                media_type=data.get("media_type", "movie"),
+                progress=data.get("progress", 0),
+                title=data.get("title", ""),
+                year=data.get("year"),
+                season=data.get("season"),
+                episode=data.get("episode"),
+                client_type=data.get("client_type", "unknown"),
+            )
+            with _store_lock:
+                await scrobble_manager.handle_event(token, event, _config_store)
+    except WebSocketDisconnect:
+        await scrobble_manager.disconnect(token)
+    except Exception as e:
+        logger.warning(f"WebSocket scrobble error: {e}")
+        await scrobble_manager.disconnect(token)
+
+
+@app.post("/api/scrobble")
+async def scrobble_rest(request: Request):
+    """HTTP fallback for clients that can't use WebSocket.
+    Kodi addon currently calls this endpoint."""
+    body = await request.json()
+
+    # Extract token from header or use extension default
+    token = request.headers.get("X-Config-Token", "__extension__")
+
+    # Build event from body
+    progress = body.get("progress", 0)
+    action = body.get("action", "")
+    if not action:
+        action = "stop" if progress >= 90 else "heartbeat"
+
+    event = ScrobbleEvent(
+        action=action,
+        item_id=body.get("imdb_id", body.get("item_id", "")),
+        media_type=body.get("media_type", "movie"),
+        progress=progress,
+        title=body.get("title", ""),
+        year=body.get("year"),
+        season=body.get("season"),
+        episode=body.get("episode"),
+        client_type=body.get("client_type", "kodi"),
+    )
+
+    with _store_lock:
+        # Ensure token exists in config store
+        if token not in _config_store:
+            _config_store[token] = {}
+        await scrobble_manager.handle_event(token, event, _config_store)
+
+    return JSONResponse({"status": "ok"})
+
+
+@app.get("/api/scrobble/now-playing")
+async def now_playing():
+    """Get currently playing sessions across all clients."""
+    sessions = []
+    for token, session in scrobble_manager.active_sessions.items():
+        if session.is_playing:
+            sessions.append({
+                "token": token[:8] + "...",
+                "client_type": session.client_type,
+                "title": session.title,
+                "year": session.year,
+                "progress": session.progress,
+                "is_playing": session.is_playing,
+                "media_type": session.media_type,
+                "started_at": session.started_at,
+            })
+    return JSONResponse({"sessions": sessions})
 
 
 @app.get("/")

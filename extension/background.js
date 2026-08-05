@@ -194,6 +194,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true });
         break;
 
+      case 'SCROBBLE_EVENT':
+        // Forward scrobble events to StreamSyncr backend
+        try {
+          const scrobbleResponse = await fetch(`${STREAMSYNCR_URL}/api/scrobble`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Config-Token': '__extension__',
+            },
+            body: JSON.stringify({
+              imdb_id: message.imdb_id,
+              progress: message.progress,
+              action: message.action,
+              title: message.title,
+              year: message.year,
+              media_type: message.media_type || 'movie',
+              client_type: 'extension',
+            }),
+          });
+          sendResponse({ success: scrobbleResponse.ok });
+        } catch (error) {
+          sendResponse({ success: false, error: error.message });
+        }
+        break;
+
       case 'OPEN_SERVICE_LOGIN':
         const urls = {
           imdb: 'https://www.imdb.com/registration/signin',

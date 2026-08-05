@@ -27,6 +27,11 @@ const useStore = create(
       // Extension state
       extension: { detected: false, connected: false, lastSync: null },
 
+      // Scrobble state
+      nowPlaying: [],
+      _scrobbleWs: null,
+      _scrobbleReconnectTimer: null,
+
       // UI state
       activeTab: 'library',
       searchQuery: '',
@@ -111,6 +116,44 @@ const useStore = create(
         set((state) => ({
           extension: { ...state.extension, lastSync: Date.now() },
         }));
+      },
+
+      // Scrobble actions
+      connectScrobbleWs: (token) => {
+        const wsUrl = `ws://localhost:7800/ws/scrobble?token=${token}`;
+        const ws = new WebSocket(wsUrl);
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.type === 'now_playing') {
+            set({ nowPlaying: data.sessions });
+          }
+        };
+
+        ws.onclose = () => {
+          // Reconnect after 3 seconds
+          const timer = setTimeout(() => {
+            const currentState = get();
+            if (currentState.trakt.connected || currentState.plex.connected) {
+              get().connectScrobbleWs(token);
+            }
+          }, 3000);
+          set({ _scrobbleReconnectTimer: timer });
+        };
+
+        ws.onerror = () => {
+          ws.close();
+        };
+
+        set({ _scrobbleWs: ws });
+      },
+
+      disconnectScrobbleWs: () => {
+        const ws = get()._scrobbleWs;
+        if (ws) ws.close();
+        const timer = get()._scrobbleReconnectTimer;
+        if (timer) clearTimeout(timer);
+        set({ _scrobbleWs: null, nowPlaying: [], _scrobbleReconnectTimer: null });
       },
 
       // Library actions

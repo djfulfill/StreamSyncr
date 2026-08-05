@@ -176,6 +176,11 @@
             "name": "stream",
             "types": ["movie", "series", "anime"],
             "idPrefixes": ["tt", "kitsu"]
+        },
+        {
+            "name": "events",
+            "types": ["movie", "series"],
+            "idPrefixes": ["tt", "tmdb:"]
         }
     ],
     "behaviorHints": {

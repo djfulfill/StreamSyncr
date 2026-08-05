@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Film, TrendingUp, Clock, Star, Tv, ArrowRight, Zap } from 'lucide-react';
+import { Film, TrendingUp, Clock, Star, Tv, ArrowRight, Zap, Play } from 'lucide-react';
 import useStore from '../store';
 import PosterCard from '../components/PosterCard';
 import { tmdb, tmdbBackdrop } from '../api';
 
 export default function Dashboard() {
-  const { wetrakr, trakt, tmdb: tmdbState, library } = useStore();
+  const { wetrakr, trakt, tmdb: tmdbState, library, nowPlaying } = useStore();
   const [trending, setTrending] = useState([]);
   const [popular, setPopular] = useState([]);
   const [stats, setStats] = useState({ movies: 0, shows: 0, hours: 0 });
@@ -66,6 +66,56 @@ export default function Dashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* Now Playing */}
+      {nowPlaying.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <SectionHeader icon={Play} title="Now Playing" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {nowPlaying.map((session) => (
+              <motion.div
+                key={session.token}
+                className="glass p-4 flex items-center gap-4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                {session.poster && (
+                  <img
+                    src={session.poster}
+                    alt=""
+                    className="w-16 h-24 rounded-lg object-cover"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-semibold text-snow truncate">
+                    {session.title}
+                  </div>
+                  <div className="text-sm text-mist">
+                    {session.client_type} • {session.progress.toFixed(0)}%
+                  </div>
+                  <div className="mt-2 h-1.5 bg-void/50 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-glow to-ember rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${session.progress}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                </div>
+                <div className={`text-xs px-2 py-1 rounded ${
+                  session.is_playing ? 'bg-mint/20 text-mint' : 'bg-flame/20 text-flame'
+                }`}>
+                  {session.is_playing ? 'Playing' : 'Paused'}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* Service cards */}
       {connectedCount < 9 && (
