@@ -59,7 +59,7 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 | **Real-Time Scrobbling** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Watch History Sync** | ✅ | ❌ | ✅ | ✅ | ✅ |
 | **Cross-Service Sync** | ✅ | ❌ | ✅ | ❌ | ✅ |
-| **Netflix/Disney+/HBO Max** | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Netflix/Disney+/HBO Max/Prime** | ✅ | ❌ | ❌ | ✅ | ❌ |
 | **Trakt** | ✅ | ❌ | ✅ | ❌ | ✅ |
 | **TMDB** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **IMDb** | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -79,7 +79,7 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 
 1. **Only tool that does it all** — Stremio addon + sync engine + dashboard in one package
 2. **Widest service coverage** — 17+ services, including unique ones like WeTrakr and Sofa Sidekick
-3. **Cookie-based services via Chrome extension** — No more manual DevTools copy-paste
+3. **Cookie-based services via Chrome extension** — Netflix, Disney+, HBO Max, Prime Video captured automatically, no DevTools
 4. **Real-time scrobbling** — WebSocket-powered, instant sync across all services when you press play
 5. **Persistent config** — SQLite-backed, survives server restarts
 6. **Resume position sync** — Pick up where you left off across devices
