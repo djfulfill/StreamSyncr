@@ -102,35 +102,7 @@ PYTHONPATH=/home/user/StreamSyncr/apis:/home/user/StreamSyncr/addon \
 - **Manifest:** http://localhost:7800/manifest.json
 - **Token Manifest:** http://localhost:7800/{token}/manifest.json
 
-### Flow
-
-1. User visits `/configure`
-2. Enters API keys and tokens for desired services
-3. Gets a token-based manifest URL
-4. Adds the URL to Stremio
-
-### Catalogs (30 total)
-
-**Public (no auth required):**
-- Trakt Trending/Popular (movies + shows)
-- TMDB Trending/Popular/Top Rated/Now Playing/Upcoming (movies + TV)
-- Simkl Trending/Popular (movies + shows + anime)
-- AniList Trending/Popular (anime)
-
-**Private (user-configured):**
-- WeTrakr Favorites/Watchlist (from user lists)
-- Sofa Sidekick Movies/Upcoming (from library)
-- MDBList — dynamic catalogs from user's lists
-- Trakt Watchlist/Favorites
-- IMDb Recently Viewed/Lists/Ratings
-- Letterboxd — search catalog (read endpoints Cloudflare-protected)
-
-### Streams (Debrid)
-
-When a user selects a title, the addon resolves streams from:
-- **Real-Debrid** — Torrents, unrestricted links
-- **TorBox** — Torrents, unrestricted links  
-- **AllDebrid** — Torrents, unrestricted links
+For addon flow, catalogs, stream resolution, data export, and resume sync details, see **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**.
 
 ### Real-Time Scrobbling
 
@@ -160,10 +132,6 @@ When you press play in Kodi or Stremio, StreamSyncr instantly reports your activ
 - `WS /ws/scrobble?token={token}` — Real-time bidirectional WebSocket
 - `POST /api/scrobble` — HTTP fallback for Kodi
 - `GET /api/scrobble/now-playing` — Active sessions across all clients
-
-### Data Export & Resume Sync
-
-For full details on data export, resume position sync, and all addon endpoints, see **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**.
 
 ---
 

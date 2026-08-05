@@ -79,6 +79,42 @@ StreamSyncr/
 
 ---
 
+## Addon Flow
+
+1. User visits `/configure`
+2. Enters API keys and tokens for desired services
+3. Gets a token-based manifest URL
+4. Adds the URL to Stremio
+
+---
+
+## Catalogs (30 total)
+
+**Public (no auth required):**
+- Trakt Trending/Popular (movies + shows)
+- TMDB Trending/Popular/Top Rated/Now Playing/Upcoming (movies + TV)
+- Simkl Trending/Popular (movies + shows + anime)
+- AniList Trending/Popular (anime)
+
+**Private (user-configured):**
+- WeTrakr Favorites/Watchlist (from user lists)
+- Sofa Sidekick Movies/Upcoming (from library)
+- MDBList — dynamic catalogs from user's lists
+- Trakt Watchlist/Favorites
+- IMDb Recently Viewed/Lists/Ratings
+- Letterboxd — search catalog (read endpoints Cloudflare-protected)
+
+---
+
+## Streams (Debrid)
+
+When a user selects a title, the addon resolves streams from:
+- **Real-Debrid** — Torrents, unrestricted links
+- **TorBox** — Torrents, unrestricted links
+- **AllDebrid** — Torrents, unrestricted links
+
+---
+
 ## Data Export
 
 Export all user data from connected services as JSON:
