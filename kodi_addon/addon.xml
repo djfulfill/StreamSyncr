@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.streamsyncr"
+       name="StreamSyncr"
+       version="1.0.0"
+       provider-name="StreamSyncr">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="inputstream.adaptive" version="21.0.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginscript" library="default.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary>Unified streaming tracker — sync watch history across 12+ services</summary>
+    <description>
+      StreamSyncr is a self-hosted Stremio addon and streaming tracker.
+      Browse catalogs from Trakt, TMDB, IMDb, WeTrakr, AniList, Simkl, MDBList,
+      and more. Resolve streams from Real-Debrid, TorBox, and AllDebrid.
+      Sync your watch history across all connected services.
+    </description>
+    <disclaimer>Self-hosted. Requires a running StreamSyncr backend instance.</disclaimer>
+    <platform>all</platform>
+    <license>MIT</license>
+    <email>support@streamsyncr.app</email>
+    <website>https://github.com/djfulfill/StreamSyncr</website>
+    <assets>
+      <icon>resources/media/icon.png</icon>
+      <fanart>resources/media/fanart.jpg</fanart>
+    </assets>
+  </extension>
+</addon>

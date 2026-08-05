@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<strings>
+  <!-- Connection -->
+  <string id="30001">Connection</string>
+  <string id="30002">Backend URL</string>
+  <string id="30003">Config Token (optional)</string>
+  <string id="30004">Test Connection</string>
+
+  <!-- Catalogs -->
+  <string id="30010">Catalogs</string>
+  <string id="30011">Show Trending</string>
+  <string id="30012">Show Popular</string>
+  <string id="30013">Show Watchlist</string>
+  <string id="30014">Show Favorites</string>
+  <string id="30015">Show Ratings</string>
+  <string id="30016">Show IMDb Lists</string>
+
+  <!-- Playback -->
+  <string id="30020">Playback</string>
+  <string id="30021">Auto-Scrobble (sync watch progress)</string>
+  <string id="30022">Scrobble Threshold (%)</string>
+  <string id="30023">Preferred Quality</string>
+</strings>

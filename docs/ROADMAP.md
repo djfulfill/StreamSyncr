@@ -34,6 +34,18 @@
 - [x] Export button on configure page — one-click download of all connected service data
 - [x] AniList catalog fix — added browser headers to bypass Cloudflare
 
+## Completed (Phase 4)
+- [x] **Chrome Extension** — Auto-extract cookies for IMDb, Letterboxd, WeTrakr, Sofa Sidekick
+- [x] Extension auto-sync via `chrome.cookies.onChanged` listener + 5-min alarm
+- [x] Content script bridges extension ↔ React app via `postMessage`
+- [x] Backend extension endpoints (`/api/extension/*`)
+- [x] Settings.jsx ExtensionPanel with install instructions + service status grid
+- [x] **Kodi Addon** — `plugin.video.streamsyncr` for Kodi 21 Omega+
+- [x] Kodi addon catalog browsing (Trakt, TMDB, IMDb, WeTrakr catalogs)
+- [x] Kodi addon debrid stream resolution (Real-Debrid, TorBox, AllDebrid)
+- [x] Kodi addon scrobbling (auto-sync watch progress to all services)
+- [x] Kodi addon settings dialog (backend URL, config token, catalog preferences)
+
 ## Competitive Gaps & Opportunities
 
 These are areas where competitors (AIOStreams, WatchState, LimeStream, librarySync) have features we don't yet.

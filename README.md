@@ -30,6 +30,11 @@ StreamSyncr/
 │   ├── streams/                 # Debrid stream resolver
 │   └── manifest.json            # Addon manifest
 ├── frontend/                    # React + Vite dashboard (port 3030)
+├── kodi_addon/                  # Kodi addon (plugin.video.streamsyncr)
+│   ├── addon.xml                # Kodi addon manifest
+│   ├── default.py               # Main entry point
+│   └── resources/               # Settings, language, art
+├── extension/                   # Chrome extension (cookie auto-sync)
 ├── sync_engine/                 # Cross-platform sync
 ├── docs/                        # Documentation
 │   ├── skills/                  # Claude skill + API summary

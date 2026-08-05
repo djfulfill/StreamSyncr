@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <category id="connection" label="30001">
+    <group id="1">
+      <setting id="backend_url" type="text" label="30002" default="http://localhost:7800">
+        <level>0</level>
+        <default>http://localhost:7800</default>
+      </setting>
+      <setting id="config_token" type="text" label="30003" default="">
+        <level>0</level>
+        <default></default>
+      </setting>
+      <setting id="test_connection" type="action" label="30004">
+        <level>0</level>
+        <action>RunPlugin(plugin://plugin.video.streamsyncr/?action=test_connection)</action>
+      </setting>
+    </group>
+  </category>
+
+  <category id="catalogs" label="30010">
+    <group id="1">
+      <setting id="show_trending" type="bool" label="30011" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+      <setting id="show_popular" type="bool" label="30012" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+      <setting id="show_watchlist" type="bool" label="30013" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+      <setting id="show_favorites" type="bool" label="30014" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+      <setting id="show_ratings" type="bool" label="30015" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+      <setting id="show_imdb_lists" type="bool" label="30016" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+    </group>
+  </category>
+
+  <category id="playback" label="30020">
+    <group id="1">
+      <setting id="auto_scrobble" type="bool" label="30021" default="true">
+        <level>0</level>
+        <default>true</default>
+      </setting>
+      <setting id="scrobble_threshold" type="int" label="30022" default="90">
+        <level>0</level>
+        <default>90</default>
+        <constraints>
+          <minimum>50</minimum>
+          <maximum>100</maximum>
+          <step>5</step>
+        </constraints>
+      </setting>
+      <setting id="preferred_quality" type="text" label="30023" default="4K">
+        <level>0</level>
+        <default>4K</default>
+      </setting>
+    </group>
+  </category>
+</settings>
