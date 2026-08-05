@@ -129,7 +129,7 @@ pip install -r requirements.txt
 
 # Start server (with API modules on path)
 cd addon
-PYTHONPATH=/home/philip/StreamSyncr/apis:/home/philip/StreamSyncr/addon \
+PYTHONPATH=/home/user/StreamSyncr/apis:/home/user/StreamSyncr/addon \
   screen -dmS stremio python3 server.py
 ```
 
