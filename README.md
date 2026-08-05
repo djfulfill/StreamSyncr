@@ -122,6 +122,31 @@ npm run dev    # http://localhost:3030
 npm run build  # production build
 ```
 
+## CLI
+
+Command-line interface for all services. Set env vars or enter them interactively.
+
+```bash
+# Check service status
+python3 streamsyncr.py status
+
+# Search & browse
+python3 streamsyncr.py trakt search "Inception"
+python3 streamsyncr.py plex libraries
+python3 streamsyncr.py emby movies --limit 10
+python3 streamsyncr.py xtream live-streams --category 1
+python3 streamsyncr.py anilist trending
+
+# Mark watched
+python3 streamsyncr.py plex mark-watched 12345
+python3 streamsyncr.py trakt mark-watched 4977
+
+# IPTV
+python3 streamsyncr.py xtream info
+python3 streamsyncr.py xtream vod-categories
+python3 streamsyncr.py xtream m3u
+```
+
 ### Real-Time Scrobbling
 
 When you press play in Kodi or Stremio, StreamSyncr instantly reports your activity to all connected services.
