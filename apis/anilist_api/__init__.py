@@ -315,3 +315,110 @@ class AniListClient:
         """
         data = self._query(q, {"animeId": media_id})
         return data.get("data", {}).get("ToggleFavourite") is not None
+
+    # ── Reviews (read: no auth, write: auth required) ──
+
+    def get_media_reviews(self, media_id: int, page: int = 1, per_page: int = 5) -> List[Dict]:
+        """Get reviews for a specific media item."""
+        q = """
+        query ($mediaId: Int, $page: Int, $perPage: Int) {
+            Page(page: $page, perPage: $perPage) {
+                reviews(mediaId: $mediaId, sort: RATING_DESC) {
+                    id
+                    rating
+                    ratingAmount
+                    summary
+                    body(asHtml: false)
+                    user { id name avatar { medium } }
+                    media { id title { userPreferred } type }
+                    createdAt
+                    updatedAt
+                }
+            }
+        }
+        """
+        data = self._query(q, {"mediaId": media_id, "page": page, "perPage": per_page})
+        return data.get("data", {}).get("Page", {}).get("reviews", [])
+
+    def get_user_reviews(self, user_name: str, page: int = 1, per_page: int = 10) -> List[Dict]:
+        """Get reviews written by a user."""
+        q = """
+        query ($userName: String, $page: Int, $perPage: Int) {
+            Page(page: $page, perPage: $perPage) {
+                reviews(userName: $userName, sort: CREATED_AT_DESC) {
+                    id
+                    rating
+                    ratingAmount
+                    summary
+                    body(asHtml: false)
+                    user { id name avatar { medium } }
+                    media { id title { userPreferred } type bannerImage }
+                    createdAt
+                    updatedAt
+                }
+            }
+        }
+        """
+        data = self._query(q, {"userName": user_name, "page": page, "perPage": per_page})
+        return data.get("data", {}).get("Page", {}).get("reviews", [])
+
+    def get_reviews(self, page: int = 1, per_page: int = 25) -> List[Dict]:
+        """Get recent reviews across all media (no auth required)."""
+        q = """
+        query ($page: Int, $perPage: Int) {
+            Page(page: $page, perPage: $perPage) {
+                reviews(sort: ID_DESC) {
+                    id
+                    rating
+                    ratingAmount
+                    summary
+                    user { id name avatar { medium } }
+                    media { id title { userPreferred } type bannerImage }
+                    createdAt
+                }
+            }
+        }
+        """
+        data = self._query(q, {"page": page, "perPage": per_page})
+        return data.get("data", {}).get("Page", {}).get("reviews", [])
+
+    def create_review(self, media_id: int, body: str, summary: str = "", score: int = 0) -> Dict:
+        """Create a review for a media item (auth required)."""
+        q = """
+        mutation ($mediaId: Int, $body: String, $summary: String, $score: Int) {
+            SaveReview(mediaId: $mediaId, body: $body, summary: $summary, score: $score) {
+                id
+                rating
+                summary
+                body(asHtml: false)
+                media { id title { userPreferred } }
+                createdAt
+            }
+        }
+        """
+        data = self._query(q, {"mediaId": media_id, "body": body, "summary": summary, "score": score})
+        return data.get("data", {}).get("SaveReview", {})
+
+    def delete_review(self, review_id: int) -> bool:
+        """Delete a review (auth required, must own the review)."""
+        q = """
+        mutation ($id: Int) {
+            DeleteReview(id: $id) { deleted }
+        }
+        """
+        data = self._query(q, {"id": review_id})
+        return data.get("data", {}).get("DeleteReview", {}).get("deleted", False)
+
+    def rate_review(self, review_id: int, rating: str = "UP_VOTE") -> Dict:
+        """Rate a review (auth required). Rating: UP_VOTE, DOWN_VOTE, NO_VOTE"""
+        q = """
+        mutation ($id: Int, $rating: ReviewRating) {
+            RateReview(id: $id, rating: $rating) {
+                id
+                rating
+                userRating
+            }
+        }
+        """
+        data = self._query(q, {"id": review_id, "rating": rating})
+        return data.get("data", {}).get("RateReview", {})
