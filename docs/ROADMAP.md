@@ -34,6 +34,28 @@
 - [x] Export button on configure page — one-click download of all connected service data
 - [x] AniList catalog fix — added browser headers to bypass Cloudflare
 
+## Competitive Gaps & Opportunities
+
+These are areas where competitors (AIOStreams, WatchState, LimeStream, librarySync) have features we don't yet.
+
+### High Priority
+- [ ] **Docker deployment** — `docker-compose.yml` for one-command setup. WatchState and AIOStreams both have this. Critical for adoption.
+- [ ] **Persistent config storage** — SQLite or Redis. Currently in-memory, lost on restart. WatchState uses SQLite.
+- [ ] **Real-time scrobbling** — Auto-mark watched in Trakt/Simkl when playback completes in Stremio. Trakt Integration addon does this.
+- [ ] **Emby support** — Add `emby_api/` client. WatchState supports Emby. Gap in media server coverage.
+
+### Medium Priority
+- [ ] **Netflix/Disney+/HBO Max tracking** — LimeStream's 15 platforms are compelling. Chrome extension could scrape these via cookie extraction.
+- [ ] **Public hosted instance** — AIOStreams and LimeStream offer hosted versions. Lower barrier to entry.
+- [ ] **Resume position sync** — WatchState syncs play progress (resume point). We only sync watched/unwatched.
+- [ ] **Multi-user support** — WatchState supports per-user sync profiles. Family use case.
+
+### Lower Priority
+- [ ] **Webhook-based real-time sync** — WatchState uses webhooks for instant sync. We use polling intervals.
+- [ ] **Conflict resolution UI** — WatchState has a web UI for manual conflict resolution. We have strategies but no manual override.
+- [ ] **Android/iOS apps** — LimeStream is building iOS/Android SDKs. Native mobile would differentiate.
+- [ ] **Prowlarr integration** — AIOStreams supports Prowlarr for private tracker indexing.
+
 ## Planned
 
 ### Phase 1: Streaming Discovery

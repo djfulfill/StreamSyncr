@@ -70,6 +70,46 @@ StreamSyncr/
 | [TorBox](https://torbox.app) | `apis/torbox_api/` | API key | ✅ Torrents, unrestricted links |
 | [AllDebrid](https://alldebrid.com) | `apis/alldebrid_api/` | API key | ✅ Torrents, unrestricted links |
 
+## Why StreamSyncr?
+
+The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterboxd, WeTrakr — none of them talk to each other. StreamSyncr is the **only self-hosted tool** that combines a Stremio addon, cross-service watch history sync, and a web dashboard in one package.
+
+**The Linux and open-source way:** Self-managed, self-owned. No cloud dependency, no monthly fees, no vendor lock-in. Your data stays on your machine.
+
+### How We Compare
+
+| Feature | StreamSyncr | AIOStreams | WatchState | LimeStream | librarySync |
+|---------|:-----------:|:----------:|:----------:|:----------:|:-----------:|
+| **Stremio Addon** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Stream Resolution (Debrid)** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Catalog Browsing** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Watch History Sync** | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Cross-Service Sync** | ✅ | ❌ | ✅ | ❌ | ✅ |
+| **Netflix/Disney+/HBO Max** | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Trakt** | ✅ | ❌ | ✅ | ❌ | ✅ |
+| **TMDB** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **IMDb** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Letterboxd** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **WeTrakr** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **AniList** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Simkl** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **MDBList** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Sofa Sidekick** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Plex/Jellyfin/Kodi** | ✅ | ❌ | ✅ | ❌ | ❌ |
+| **Real-Debrid/TorBox/AllDebrid** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Chrome Extension** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Self-Hosted** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Open Source** | ✅ | ✅ | ✅ | ❌ | ✅ |
+
+### What Sets Us Apart
+
+1. **Only tool that does it all** — Stremio addon + sync engine + dashboard in one package
+2. **Widest service coverage** — 16+ services, including unique ones like WeTrakr and Sofa Sidekick
+3. **Cookie-based services via Chrome extension** — No more manual DevTools copy-paste
+4. **Self-hosted and open-source** — Your data never leaves your machine. The Linux way.
+
+---
+
 ## Stremio Addon
 
 Self-hosted Stremio addon with hybrid auth — public catalogs + user-configured private catalogs and streams.
