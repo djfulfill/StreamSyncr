@@ -60,20 +60,30 @@
 - [x] Resume endpoints (`/api/resume/{item_id}`, `/api/resume`, `/api/resume/all`)
 - [x] Kodi addon integration: fetch resume on play, seek player, send position on events
 
+## Completed (Phase 6)
+- [x] **Streaming Service Capture** — Chrome extension captures Netflix, Prime Video, Disney+, Max (HBO) via cookies
+- [x] Extension host permissions for `*.netflix.com`, `*.primevideo.com`, `*.disneyplus.com`, `*.max.com`
+- [x] **Cloud Relay Mode** — Extension sends cookies to configurable cloud endpoint alongside local
+- [x] Cloud relay toggle in popup UI with endpoint + token config
+- [x] Dual delivery: local self-hosted + cloud relay in parallel
+- [x] **AniList Reviews** — Get, create, delete, rate reviews (`get_media_reviews`, `create_review`, `rate_review`)
+- [x] **Xtream Codes IPTV** — Full API client for IPTV providers (URL + user + pass)
+- [x] Xtream: live TV categories/streams, VOD categories/streams/info, series categories/streams/info
+- [x] Xtream: EPG (short + full + XMLTV), search, M3U playlist, timeshift URLs
+- [x] Extension popup split into Tracking Services + Streaming Services sections
+
 ## Competitive Gaps & Opportunities
 
 These are areas where competitors (AIOStreams, WatchState, LimeStream, librarySync) have features we don't yet.
 
 ### High Priority
 - [ ] **Docker deployment** — `docker-compose.yml` for one-command setup. WatchState and AIOStreams both have this. Critical for adoption.
-- [ ] **Persistent config storage** — SQLite or Redis. Currently in-memory, lost on restart. WatchState uses SQLite.
-- [ ] **Real-time scrobbling** — Auto-mark watched in Trakt/Simkl when playback completes in Stremio. Trakt Integration addon does this.
 - [ ] **Emby support** — Add `emby_api/` client. WatchState supports Emby. Gap in media server coverage.
 
 ### Medium Priority
-- [ ] **Netflix/Disney+/HBO Max tracking** — LimeStream's 15 platforms are compelling. Chrome extension could scrape these via cookie extraction.
-- [ ] **Public hosted instance** — AIOStreams and LimeStream offer hosted versions. Lower barrier to entry.
-- [ ] **Resume position sync** — WatchState syncs play progress (resume point). We only sync watched/unwatched.
+- [x] ~~**Netflix/Disney+/HBO Max tracking**~~ — ✅ Done via Chrome extension cookie capture (Netflix, Prime Video, Disney+, Max)
+- [x] ~~**Public hosted instance**~~ — ✅ Cloud relay mode enables hosted option without self-hosting
+- [x] ~~**Resume position sync**~~ — ✅ Done (Phase 5)
 - [ ] **Multi-user support** — WatchState supports per-user sync profiles. Family use case.
 
 ### Lower Priority
