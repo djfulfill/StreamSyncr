@@ -32,9 +32,9 @@ A unified streaming tracker — sync your watch history across 12+ services, wit
 
 | Service | Status |
 |---------|--------|
-| [Real-Debrid](https://real-debrid.com) | ✅ Torrents, unrestricted links |
-| [TorBox](https://torbox.app) | ✅ Torrents, unrestricted links |
-| [AllDebrid](https://alldebrid.com) | ✅ Torrents, unrestricted links |
+| [Real-Debrid](https://real-debrid.com) | ✅ Full client |
+| [TorBox](https://torbox.app) | ✅ Full client |
+| [AllDebrid](https://alldebrid.com) | ✅ Full client |
 
 ## Why StreamSyncr?
 
