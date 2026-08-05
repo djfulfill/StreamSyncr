@@ -1,6 +1,6 @@
 # StreamSyncr API Reference
 
-Detailed API documentation for all 15+ services integrated with StreamSyncr — architecture, addon flow, catalogs, streams, scrobbling, data export, resume sync, and per-service endpoint details.
+Detailed API documentation for all 16+ services integrated with StreamSyncr — architecture, addon flow, catalogs, streams, scrobbling, data export, resume sync, and per-service endpoint details.
 
 ---
 

@@ -2,7 +2,7 @@
 
 # StreamSyncr
 
-A unified streaming tracker — sync your watch history across 15+ services, with a self-hosted Stremio addon.
+A unified streaming tracker — sync your watch history across 16+ services, with a self-hosted Stremio addon.
 
 ## Services
 
@@ -35,6 +35,12 @@ A unified streaming tracker — sync your watch history across 15+ services, wit
 | [Real-Debrid](https://real-debrid.com) | ✅ Full client |
 | [TorBox](https://torbox.app) | ✅ Full client |
 | [AllDebrid](https://alldebrid.com) | ✅ Full client |
+
+### IPTV Services
+
+| Service | Status |
+|---------|--------|
+| Xtream Codes | ✅ Live TV, VOD, Series, EPG |
 
 ## Why StreamSyncr?
 
@@ -71,7 +77,7 @@ The streaming landscape is fragmented. You track content on Trakt, IMDb, Letterb
 ### What Sets Us Apart
 
 1. **Only tool that does it all** — Stremio addon + sync engine + dashboard in one package
-2. **Widest service coverage** — 15+ services, including unique ones like WeTrakr and Sofa Sidekick
+2. **Widest service coverage** — 16+ services, including unique ones like WeTrakr and Sofa Sidekick
 3. **Cookie-based services via Chrome extension** — No more manual DevTools copy-paste
 4. **Real-time scrobbling** — WebSocket-powered, instant sync across all services when you press play
 5. **Persistent config** — SQLite-backed, survives server restarts
@@ -143,7 +149,7 @@ When you press play in Kodi or Stremio, StreamSyncr instantly reports your activ
 
 ## API Reference
 
-For detailed API documentation for all 15+ services, architecture, environment variables, Python usage examples, and critical notes, see **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**.
+For detailed API documentation for all 16+ services, architecture, environment variables, Python usage examples, and critical notes, see **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**.
 
 ---
 
