@@ -96,6 +96,15 @@ class StreamSyncrScrobbler:
             "episode": self._episode,
         }
 
+        # Add position data if available
+        try:
+            player = xbmc.Player()
+            if player.isPlaying():
+                event["position_seconds"] = player.getTime()
+                event["total_seconds"] = player.getTotalTime()
+        except Exception:
+            pass
+
         # Try WebSocket first
         if self._ws and self._ws_connected:
             try:
@@ -121,8 +130,27 @@ class StreamSyncrScrobbler:
         if not self._ws_connected:
             self._connect_ws()
 
-        # Report start to backend
+        # Fetch resume position and seek player
         if self.imdb_id:
+            try:
+                resume = self.api.get_resume(
+                    imdb_id,
+                    media_type="episode" if season else "movie",
+                    season=season,
+                    episode=episode,
+                )
+                if resume and resume.get("position_seconds"):
+                    player = xbmc.Player()
+                    if player.isPlaying():
+                        player.seekTime(resume["position_seconds"])
+                        xbmc.log(
+                            f"[StreamSyncr] Resumed at {resume['position_seconds']:.0f}s",
+                            xbmc.LOGINFO,
+                        )
+            except Exception as e:
+                xbmc.log(f"[StreamSyncr] Failed to fetch resume: {e}", xbmc.LOGWARNING)
+
+            # Report start to backend
             self._send_event("start", 0)
 
     def stop(self):

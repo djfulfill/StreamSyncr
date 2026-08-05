@@ -21,14 +21,13 @@ from auth.oauth import (
     anilist_authorize_url, anilist_exchange_code,
 )
 from export import export_all
+from db import config_store, resume_store
 
 logger = logging.getLogger("streamsyncr")
 
 app = FastAPI(title="StreamSyncr Stremio Addon", cors_origins=["http://localhost:3030", "http://127.0.0.1:3030"])
 
-# In-memory token → config store. Tokens are 64-char hex (32 random bytes).
-# In production you'd use a DB/Redis so tokens survive restarts.
-_config_store: dict[str, dict] = {}
+# Persistent config store (SQLite-backed, survives restarts)
 _store_lock = threading.Lock()
 
 # Extension connection state
@@ -48,7 +47,7 @@ async def save_config(request: Request):
     config_data = body.get("config", {})
     token = _generate_token()
     with _store_lock:
-        _config_store[token] = config_data
+        config_store[token] = config_data
     return JSONResponse({"token": token})
 
 
@@ -68,7 +67,7 @@ async def export_data(token: str):
 async def debug_imdb(token: str):
     """Debug IMDb credentials."""
     with _store_lock:
-        user_config = _config_store.get(token, {})
+        user_config = config_store.get(token, {})
     if not user_config:
         return JSONResponse({"error": "Invalid token"}, status_code=401)
 
@@ -152,7 +151,7 @@ def _resolve_user_config(config_token: str | None, request: Request) -> dict:
     falls back to legacy ?config= query param."""
     if config_token:
         with _store_lock:
-            cfg = _config_store.get(config_token)
+            cfg = config_store.get(config_token)
         if cfg is not None:
             return cfg
     config_str = request.query_params.get("config", "{}")
@@ -564,9 +563,9 @@ async def extension_cookies(request: Request):
     with _store_lock:
         # Use a fixed key for extension-sourced configs
         ext_key = "__extension__"
-        if ext_key not in _config_store:
-            _config_store[ext_key] = {}
-        _config_store[ext_key].update(config_updates)
+        if ext_key not in config_store:
+            config_store[ext_key] = {}
+        config_store.update(ext_key, config_updates)
 
     return JSONResponse({
         "success": True,
@@ -600,7 +599,7 @@ async def extension_connect():
 async def extension_config():
     """Get the current extension-sourced config (for the frontend to read)."""
     with _store_lock:
-        config = _config_store.get("__extension__", {})
+        config = config_store.get("__extension__", {})
     return JSONResponse({"config": config})
 
 
@@ -619,7 +618,7 @@ async def websocket_scrobble(websocket: WebSocket, token: str = None):
     Messages are JSON with format:
         {"action": "start|pause|resume|stop|heartbeat", "item_id": "tt1234567", ...}
     """
-    if not token or token not in _config_store:
+    if not token or token not in config_store:
         await websocket.close(code=4001, reason="Invalid token")
         return
 
@@ -637,9 +636,11 @@ async def websocket_scrobble(websocket: WebSocket, token: str = None):
                 season=data.get("season"),
                 episode=data.get("episode"),
                 client_type=data.get("client_type", "unknown"),
+                position_seconds=data.get("position_seconds"),
+                total_seconds=data.get("total_seconds"),
             )
             with _store_lock:
-                await scrobble_manager.handle_event(token, event, _config_store)
+                await scrobble_manager.handle_event(token, event, config_store)
     except WebSocketDisconnect:
         await scrobble_manager.disconnect(token)
     except Exception as e:
@@ -676,9 +677,9 @@ async def scrobble_rest(request: Request):
 
     with _store_lock:
         # Ensure token exists in config store
-        if token not in _config_store:
-            _config_store[token] = {}
-        await scrobble_manager.handle_event(token, event, _config_store)
+        if token not in config_store:
+            config_store[token] = {}
+        await scrobble_manager.handle_event(token, event, config_store)
 
     return JSONResponse({"status": "ok"})
 
@@ -700,6 +701,49 @@ async def now_playing():
                 "started_at": session.started_at,
             })
     return JSONResponse({"sessions": sessions})
+
+
+# ── Resume Position Sync ────────────────────────────────────
+
+@app.get("/api/resume/{item_id}")
+async def get_resume(item_id: str, token: str = "", media_type: str = "movie",
+                     season: int = None, episode: int = None):
+    """Get resume position for an item."""
+    if not token:
+        return JSONResponse({"resume": None})
+    pos = resume_store.get_position(token, item_id, media_type, season, episode)
+    return JSONResponse({"resume": pos})
+
+
+@app.post("/api/resume")
+async def save_resume(request: Request):
+    """Save resume position (called by Kodi on heartbeat/stop)."""
+    body = await request.json()
+    token = request.headers.get("X-Config-Token", "")
+    if not token:
+        return JSONResponse({"error": "Missing token"}, status_code=400)
+
+    resume_store.save_position(
+        token=token,
+        item_id=body.get("item_id", ""),
+        position_seconds=body.get("position_seconds", 0),
+        total_seconds=body.get("total_seconds", 0),
+        media_type=body.get("media_type", "movie"),
+        season=body.get("season"),
+        episode=body.get("episode"),
+        title=body.get("title", ""),
+        year=body.get("year"),
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@app.get("/api/resume/all")
+async def get_all_resumes(token: str = ""):
+    """Get all resume positions for a user (Kodi fetches on start)."""
+    if not token:
+        return JSONResponse({"positions": []})
+    positions = resume_store.get_all_positions(token)
+    return JSONResponse({"positions": positions})
 
 
 @app.get("/")

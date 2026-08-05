@@ -176,3 +176,58 @@ class StreamSyncrAPI:
             "torbox": any("torbox" in str(s).lower() for s in streams),
             "alldebrid": any("alldebrid" in str(s).lower() for s in streams),
         }
+
+    def get_resume(self, item_id, media_type="movie", season=None, episode=None):
+        """Fetch resume position for an item."""
+        params = f"?token={self.config_token}&media_type={media_type}"
+        if season is not None:
+            params += f"&season={season}"
+        if episode is not None:
+            params += f"&episode={episode}"
+        try:
+            resp = requests.get(
+                f"{self.base_url}/api/resume/{item_id}{params}",
+                timeout=self.timeout,
+            )
+            if resp.status_code == 200:
+                return resp.json().get("resume")
+        except Exception:
+            pass
+        return None
+
+    def get_all_resumes(self):
+        """Fetch all resume positions (for sync-on-start)."""
+        try:
+            resp = requests.get(
+                f"{self.base_url}/api/resume/all?token={self.config_token}",
+                timeout=self.timeout,
+            )
+            if resp.status_code == 200:
+                return resp.json().get("positions", [])
+        except Exception:
+            pass
+        return []
+
+    def save_resume(self, item_id, position_seconds, total_seconds,
+                    media_type="movie", season=None, episode=None,
+                    title="", year=None):
+        """Save resume position to the backend."""
+        try:
+            resp = requests.post(
+                f"{self.base_url}/api/resume",
+                json={
+                    "item_id": item_id,
+                    "position_seconds": position_seconds,
+                    "total_seconds": total_seconds,
+                    "media_type": media_type,
+                    "season": season,
+                    "episode": episode,
+                    "title": title,
+                    "year": year,
+                },
+                headers={"X-Config-Token": self.config_token},
+                timeout=self.timeout,
+            )
+            return resp.status_code == 200
+        except Exception:
+            return False

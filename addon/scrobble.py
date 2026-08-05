@@ -31,6 +31,9 @@ class ScrobbleEvent:
     season: Optional[int] = None
     episode: Optional[int] = None
     client_type: str = "unknown"
+    # Resume position fields
+    position_seconds: Optional[float] = None  # current position in seconds
+    total_seconds: Optional[float] = None  # total duration in seconds
 
 
 @dataclass
@@ -144,6 +147,25 @@ class ScrobbleManager:
         # Fan out to services
         if session:
             await self._push_to_services(session, config_store.get(token, {}), event.action)
+
+        # Save resume position if provided
+        if (event.position_seconds is not None and event.total_seconds is not None
+                and event.total_seconds > 0 and event.action != "start"):
+            try:
+                from db import resume_store
+                resume_store.save_position(
+                    token=token,
+                    item_id=event.item_id,
+                    position_seconds=event.position_seconds,
+                    total_seconds=event.total_seconds,
+                    media_type=event.media_type,
+                    season=event.season,
+                    episode=event.episode,
+                    title=event.title,
+                    year=event.year,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save resume position: {e}")
 
         # Broadcast now_playing to all frontend clients
         await self._fan_out_now_playing()
