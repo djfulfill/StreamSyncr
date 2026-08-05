@@ -4,6 +4,111 @@ Detailed API documentation for all 15+ services integrated with StreamSyncr.
 
 ---
 
+## Architecture
+
+```
+StreamSyncr/
+├── apis/                        # API clients (12 services)
+│   ├── anilist_api/             # AniList (anime tracking)
+│   ├── imdb_api/                # IMDb (lists, ratings)
+│   ├── jellyfin_api/            # Jellyfin (media server)
+│   ├── kodi_api/                # Kodi (JSON-RPC)
+│   ├── letterboxd_api/          # Letterboxd (film tracking)
+│   ├── mdblist_api/             # MDBList (multi-rating lists)
+│   ├── plex_api/                # Plex (media server)
+│   ├── simkl_api/               # Simkl (tracking)
+│   ├── sofasidekick_api/        # Sofa Sidekick (TV tracking)
+│   ├── tmdb_api/                # TMDB (metadata, search)
+│   ├── trakt_api/               # Trakt (universal tracking)
+│   ├── wetrakr_api/             # WeTrakr (watch tracking)
+│   └── utils/                   # Shared utilities
+├── addon/                       # Stremio addon (port 7800)
+│   ├── server.py                # FastAPI server
+│   ├── auth/configure.py        # Web config page
+│   ├── catalogs/                # Catalog handlers
+│   ├── metadata/                # Metadata enricher
+│   ├── streams/                 # Debrid stream resolver
+│   └── manifest.json            # Addon manifest
+├── frontend/                    # React + Vite dashboard (port 3030)
+├── kodi_addon/                  # Kodi addon (plugin.video.streamsyncr)
+│   ├── addon.xml                # Kodi addon manifest
+│   ├── default.py               # Main entry point
+│   └── resources/               # Settings, language, art
+├── extension/                   # Chrome extension (cookie auto-sync)
+├── sync_engine/                 # Cross-platform sync
+├── docs/                        # Documentation
+│   ├── skills/                  # Claude skill + API summary
+│   ├── ROADMAP.md
+│   └── ...
+└── README.md
+```
+
+---
+
+## Data Export
+
+Export all user data from connected services as JSON:
+
+```bash
+# Export data
+curl -s http://localhost:7800/api/export/{token} > export.json
+```
+
+**Supported services:** Trakt, Simkl, WeTrakr, Sofa Sidekick, Plex, Jellyfin, AniList, MDBList, IMDb
+
+---
+
+## Real-Time Scrobbling
+
+When you press play in Kodi or Stremio, StreamSyncr instantly reports your activity to all connected services.
+
+**How it works:**
+- Kodi/Stremio connects via WebSocket for real-time bidirectional events
+- HTTP POST fallback for clients that can't use WebSocket
+- ID resolution chain: IMDb → TMDB → Trakt → service-specific IDs
+- 90% threshold marks as watched
+- Auto-reconnect with exponential backoff on disconnect
+
+**Services that receive scrobbles:**
+| Service | Start | Pause | Stop/Watched | Notes |
+|---------|-------|-------|--------------|-------|
+| Trakt | ✓ | ✓ | ✓ | Full scrobble API (start/pause/stop) |
+| WeTrakr | - | - | ✓ | Mark watched only |
+| Plex | - | - | ✓ | Mark watched only |
+| Jellyfin | - | - | ✓ | Mark watched only |
+| Simkl | - | - | ✓ | Add to history |
+| Letterboxd | - | - | ✓ | Mark watched |
+| Sofa Sidekick | - | - | ✓ | Mark watched |
+| AniList | - | - | ✓ | Progress update |
+| IMDb | - | - | - | Read-only, no write API |
+
+### Scrobble Endpoints
+
+- `WS /ws/scrobble?token={token}` — Real-time bidirectional WebSocket
+- `POST /api/scrobble` — HTTP fallback for Kodi
+- `GET /api/scrobble/now-playing` — Active sessions across all clients
+
+---
+
+## Resume Position Sync
+
+Resume playback across devices. Positions are stored in SQLite and synced to Kodi/Jellyfin where supported.
+
+### Resume Endpoints
+
+- `GET /api/resume/{item_id}?token={token}&media_type=movie` — Get resume position
+- `POST /api/resume` — Save position (Kodi sends on heartbeat/stop)
+- `GET /api/resume/all?token={token}` — All resume positions for a user
+
+### How it works
+
+- Kodi sends `position_seconds` and `total_seconds` on each heartbeat/stop
+- On play, Kodi fetches resume position and seeks the player
+- Positions >95% are cleared (treated as "watched")
+- SQLite database at `~/.streamsyncr/config.db`
+
+---
+
 ## API Reference
 
 ### WeTrakr (REST, unofficial)
