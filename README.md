@@ -128,11 +128,6 @@ When you press play in Kodi or Stremio, StreamSyncr instantly reports your activ
 | AniList | - | - | ✓ | Progress update |
 | IMDb | - | - | - | Read-only, no write API |
 
-**Endpoints:**
-- `WS /ws/scrobble?token={token}` — Real-time bidirectional WebSocket
-- `POST /api/scrobble` — HTTP fallback for Kodi
-- `GET /api/scrobble/now-playing` — Active sessions across all clients
-
 ---
 
 ## API Reference
