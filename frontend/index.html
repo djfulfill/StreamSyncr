@@ -647,6 +647,7 @@
         .service-dot.tracking { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
         .service-dot.server { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
         .service-dot.debrid { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+        .service-dot.streaming { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
 
         .services-legend {
             display: flex;
@@ -662,6 +663,78 @@
             gap: 0.5rem;
             font-size: 0.8rem;
             color: var(--text-muted);
+        }
+
+        /* ─── COMPARISON TABLE ─────────────────────────────────── */
+        .comparison {
+            background: linear-gradient(180deg, rgba(10, 15, 30, 1) 0%, var(--dark) 100%);
+        }
+
+        .comparison-table {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
+        }
+
+        .comparison-table thead th {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 1rem 1.2rem;
+            text-align: center;
+            border-bottom: 2px solid var(--dark-border);
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .comparison-table thead th:first-child {
+            text-align: left;
+            color: var(--text);
+        }
+
+        .comparison-table thead th.highlight {
+            color: var(--blue-glow);
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        .comparison-table tbody td {
+            padding: 0.85rem 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+            white-space: nowrap;
+        }
+
+        .comparison-table tbody td:first-child {
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .comparison-table tbody td.highlight {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .comparison-table tbody tr:hover td {
+            background: rgba(59, 130, 246, 0.06);
+        }
+
+        .comparison-table .check { color: #22c55e; font-weight: 700; }
+        .comparison-table .cross { color: #64748b; }
+
+        .comparison-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -1rem;
+            padding: 0 1rem;
+        }
+
+        @media (max-width: 800px) {
+            .comparison-table { font-size: 0.8rem; }
+            .comparison-table thead th,
+            .comparison-table tbody td { padding: 0.6rem 0.8rem; }
         }
 
         /* ─── CTA ──────────────────────────────────────────────── */
@@ -794,6 +867,7 @@
         <li><a href="#what">What We Do</a></li>
         <li><a href="#why">Why</a></li>
         <li><a href="#services">Services</a></li>
+        <li><a href="#compare">Compare</a></li>
     </ul>
     <a href="#start" class="nav-cta">Get Started</a>
 </nav>
@@ -850,27 +924,42 @@
         <div class="feature-card reveal">
             <div class="feature-icon blue">⚡</div>
             <h3>Unified Tracking</h3>
-            <p>Trakt, Simkl, AniList, WeTrakr, Letterboxd, IMDb — all your watch history and lists in one place. No more switching apps.</p>
+            <p>Trakt, Simkl, AniList, WeTrakr, Letterboxd, IMDb, MDBList, Sofa Sidekick — all your watch history and lists in one place.</p>
         </div>
         <div class="feature-card reveal">
             <div class="feature-icon purple">🖥️</div>
             <h3>Media Server Bridge</h3>
-            <p>Plex, Jellyfin, Kodi — your self-hosted libraries connected and synced. See everything you own alongside your streaming services.</p>
+            <p>Plex, Jellyfin, Emby, Kodi — your self-hosted libraries connected and synced. See everything you own alongside your streaming services.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon magenta">🔗</div>
+            <div class="feature-icon magenta">🔴</div>
+            <h3>Real-Time Scrobbling</h3>
+            <p>WebSocket-powered instant sync. Press play in Kodi or Stremio, and every connected service updates instantly. No polling delays.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon blue">🔗</div>
             <h3>Debrid Integration</h3>
             <p>Real-Debrid, TorBox, AllDebrid — instant stream resolution. Click a title, get a link. No more copy-pasting magnets.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon blue">📺</div>
+            <div class="feature-icon purple">📺</div>
             <h3>30+ Catalogs</h3>
             <p>Trending, popular, your watchlists, your favorites — all surfaced directly in Stremio. Discovery has never been easier.</p>
         </div>
         <div class="feature-card reveal">
+            <div class="feature-icon magenta">🔄</div>
+            <h3>Resume Sync</h3>
+            <p>Pick up where you left off across devices. SQLite-backed resume positions, synced between Kodi, Stremio, and all connected services.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon blue">🎬</div>
+            <h3>Streaming Capture</h3>
+            <p>Chrome extension auto-captures Netflix, Disney+, HBO Max, and Prime Video. No more manual DevTools cookie copy-paste.</p>
+        </div>
+        <div class="feature-card reveal">
             <div class="feature-icon purple">📦</div>
             <h3>Data Export</h3>
-            <p>Export your entire watch history from 9 services as JSON. Your data, your format, your control. Always.</p>
+            <p>Export your entire watch history from 10+ services as JSON. Your data, your format, your control. Always.</p>
         </div>
         <div class="feature-card reveal">
             <div class="feature-icon magenta">🔒</div>
@@ -910,7 +999,7 @@
 <section class="services" id="services">
     <div class="section-header reveal">
         <h2>Connected <span class="accent">Services</span></h2>
-        <p>16 integrations and growing.</p>
+        <p>20+ integrations and growing.</p>
     </div>
     <div class="services-grid reveal">
         <div class="service-pill"><span class="service-dot tracking"></span> Trakt</div>
@@ -924,16 +1013,191 @@
         <div class="service-pill"><span class="service-dot server"></span> Stremio</div>
         <div class="service-pill"><span class="service-dot server"></span> Plex</div>
         <div class="service-pill"><span class="service-dot server"></span> Jellyfin</div>
+        <div class="service-pill"><span class="service-dot server"></span> Emby</div>
         <div class="service-pill"><span class="service-dot server"></span> Kodi</div>
-        <div class="service-pill"><span class="service-dot server"></span> Nuvio</div>
         <div class="service-pill"><span class="service-dot debrid"></span> Real-Debrid</div>
         <div class="service-pill"><span class="service-dot debrid"></span> TorBox</div>
         <div class="service-pill"><span class="service-dot debrid"></span> AllDebrid</div>
+        <div class="service-pill"><span class="service-dot streaming"></span> Netflix</div>
+        <div class="service-pill"><span class="service-dot streaming"></span> Disney+</div>
+        <div class="service-pill"><span class="service-dot streaming"></span> HBO Max</div>
+        <div class="service-pill"><span class="service-dot streaming"></span> Prime Video</div>
+        <div class="service-pill"><span class="service-dot tracking"></span> AniList</div>
+        <div class="service-pill"><span class="service-dot server"></span> Xtream Codes</div>
     </div>
     <div class="services-legend">
         <div class="legend-item"><span class="service-dot tracking"></span> Tracking & Lists</div>
-        <div class="legend-item"><span class="service-dot server"></span> Media Servers</div>
+        <div class="legend-item"><span class="service-dot server"></span> Media Servers & IPTV</div>
         <div class="legend-item"><span class="service-dot debrid"></span> Debrid Services</div>
+        <div class="legend-item"><span class="service-dot streaming"></span> Streaming (via Chrome Extension)</div>
+    </div>
+</section>
+
+<!-- ─── HOW WE COMPARE ─────────────────────────────────────── -->
+<section class="comparison" id="compare">
+    <div class="section-header reveal">
+        <h2>How We <span class="accent">Compare</span></h2>
+        <p>One tool to rule them all. No accounts, no cloud, no compromise.</p>
+    </div>
+    <div class="comparison-table-wrap reveal">
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th class="highlight">StreamSyncr</th>
+                    <th>AIOStreams</th>
+                    <th>WatchState</th>
+                    <th>LimeStream</th>
+                    <th>librarySync</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Stremio Addon</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Stream Resolution (Debrid)</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Catalog Browsing</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Real-Time Scrobbling</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Watch History Sync</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>Cross-Service Sync</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>Netflix/Disney+/HBO Max/Prime</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Trakt</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>TMDB</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>IMDb</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Letterboxd</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>AniList</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>Simkl</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>Plex/Jellyfin/Emby/Kodi</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Real-Debrid/TorBox/AllDebrid</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Chrome Extension</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                </tr>
+                <tr>
+                    <td>Self-Hosted</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+                <tr>
+                    <td>Open Source</td>
+                    <td class="highlight check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="check">&#10003;</td>
+                    <td class="cross">&mdash;</td>
+                    <td class="check">&#10003;</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </section>
 
