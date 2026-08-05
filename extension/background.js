@@ -26,7 +26,32 @@ const SERVICE_COOKIES = {
     cookies: ['session-id', 'cf_clearance', '__cf_bm'],
     required: ['session-id'],
   },
+  netflix: {
+    domain: '.netflix.com',
+    cookies: ['NetflixId', 'SecureNetflixId', 'nfvdid', '.netflix_session', 'memclid'],
+    required: ['NetflixId'],
+  },
+  primevideo: {
+    domain: '.primevideo.com',
+    cookies: ['session-id', 'at-main', 'ubid-main', 'x-main', 'sess-at-main', 'lrc-main', 'lc-main'],
+    required: ['session-id', 'at-main'],
+  },
+  disneyplus: {
+    domain: '.disneyplus.com',
+    cookies: ['ct_', 'bt_obi', 'dpong', 'amplitude_id', 'ajs_anonymous_id'],
+    required: ['ct_'],
+  },
+  max: {
+    domain: '.max.com',
+    cookies: ['hb_obi', 'tp_obi', 'jwt', 'apollo-auth', 'BM-Visitor-Id'],
+    required: ['jwt'],
+  },
 };
+
+// Cloud relay endpoints (set by user via popup)
+let cloudRelayEnabled = false;
+let cloudRelayEndpoint = '';
+let cloudRelayToken = '';
 
 // State
 let autoSyncEnabled = true;
@@ -70,8 +95,10 @@ async function extractAllCookies() {
 // ── StreamSyncr Communication ──────────────────────────────────
 
 async function sendCookiesToStreamSyncr(serviceId, cookieData) {
+  const results = [];
+
+  // Local delivery (self-hosted mode)
   try {
-    // Try content script first (if StreamSyncr tab is open)
     const tabs = await chrome.tabs.query({ url: `http://localhost:${STREAMSYNCR_PORT}/*` });
     if (tabs.length > 0) {
       chrome.tabs.sendMessage(tabs[0].id, {
@@ -79,23 +106,38 @@ async function sendCookiesToStreamSyncr(serviceId, cookieData) {
         service: serviceId,
         data: cookieData,
       });
-      return { method: 'content_script', success: true };
+      results.push({ target: 'local', method: 'content_script', success: true });
+    } else {
+      const response = await fetch(`${STREAMSYNCR_URL}/api/extension/cookies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service: serviceId, ...cookieData }),
+      });
+      results.push({ target: 'local', method: 'direct_post', success: response.ok });
     }
-
-    // Fallback: POST directly to backend
-    const response = await fetch(`${STREAMSYNCR_URL}/api/extension/cookies`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ service: serviceId, ...cookieData }),
-    });
-
-    if (response.ok) {
-      return { method: 'direct_post', success: true };
-    }
-    return { method: 'direct_post', success: false, error: await response.text() };
   } catch (error) {
-    return { method: 'none', success: false, error: error.message };
+    results.push({ target: 'local', method: 'none', success: false, error: error.message });
   }
+
+  // Cloud relay delivery (if enabled)
+  if (cloudRelayEnabled && cloudRelayEndpoint) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (cloudRelayToken) {
+        headers['Authorization'] = `Bearer ${cloudRelayToken}`;
+      }
+      const response = await fetch(`${cloudRelayEndpoint}/api/relay/cookies`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ service: serviceId, ...cookieData }),
+      });
+      results.push({ target: 'cloud', method: 'relay', success: response.ok });
+    } catch (error) {
+      results.push({ target: 'cloud', method: 'relay', success: false, error: error.message });
+    }
+  }
+
+  return { results, primary: results[0] };
 }
 
 async function syncAllServices() {
@@ -219,12 +261,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         break;
 
+      case 'SET_CLOUD_RELAY':
+        cloudRelayEnabled = message.enabled;
+        cloudRelayEndpoint = message.endpoint || '';
+        cloudRelayToken = message.token || '';
+        await chrome.storage.local.set({ cloudRelayEnabled, cloudRelayEndpoint, cloudRelayToken });
+        sendResponse({ success: true });
+        break;
+
+      case 'GET_CLOUD_RELAY':
+        sendResponse({
+          success: true,
+          data: { enabled: cloudRelayEnabled, endpoint: cloudRelayEndpoint, token: cloudRelayToken },
+        });
+        break;
+
       case 'OPEN_SERVICE_LOGIN':
         const urls = {
           imdb: 'https://www.imdb.com/registration/signin',
           letterboxd: 'https://letterboxd.com/sign-in/',
           wetrakr: 'https://wetrakr.com/login',
           sofasidekick: 'https://sofasidekick.com/login',
+          netflix: 'https://www.netflix.com/browse',
+          primevideo: 'https://www.amazon.com/gp/video/storefront',
+          disneyplus: 'https://www.disneyplus.com/login',
+          max: 'https://www.max.com/sign-in',
         };
         if (urls[message.service]) {
           chrome.tabs.create({ url: urls[message.service] });
@@ -241,7 +302,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // ── Initialization ─────────────────────────────────────────────
 
-chrome.storage.local.get(['autoSyncEnabled'], (result) => {
+chrome.storage.local.get(['autoSyncEnabled', 'cloudRelayEnabled', 'cloudRelayEndpoint', 'cloudRelayToken'], (result) => {
   autoSyncEnabled = result.autoSyncEnabled !== false;
-  console.log(`[StreamSyncr] Auto-sync ${autoSyncEnabled ? 'enabled' : 'disabled'}`);
+  cloudRelayEnabled = result.cloudRelayEnabled === true;
+  cloudRelayEndpoint = result.cloudRelayEndpoint || '';
+  cloudRelayToken = result.cloudRelayToken || '';
+  console.log(`[StreamSyncr] Auto-sync ${autoSyncEnabled ? 'enabled' : 'disabled'}, Cloud relay ${cloudRelayEnabled ? 'enabled' : 'disabled'}`);
 });

@@ -1,18 +1,24 @@
 // StreamSyncr Chrome Extension - Popup Script
 
 const SERVICES = {
-  imdb: { name: 'IMDb', color: '#f5c518', icon: 'IM' },
-  letterboxd: { name: 'Letterboxd', color: '#00e054', icon: 'LB' },
-  wetrakr: { name: 'WeTrakr', color: '#6366f1', icon: 'WT' },
-  sofasidekick: { name: 'Sofa Sidekick', color: '#f97316', icon: 'SS' },
+  imdb: { name: 'IMDb', color: '#f5c518', icon: 'IM', category: 'tracking' },
+  letterboxd: { name: 'Letterboxd', color: '#00e054', icon: 'LB', category: 'tracking' },
+  wetrakr: { name: 'WeTrakr', color: '#6366f1', icon: 'WT', category: 'tracking' },
+  sofasidekick: { name: 'Sofa Sidekick', color: '#f97316', icon: 'SS', category: 'tracking' },
+  netflix: { name: 'Netflix', color: '#e50914', icon: 'NF', category: 'streaming' },
+  primevideo: { name: 'Prime Video', color: '#00a8e1', icon: 'PV', category: 'streaming' },
+  disneyplus: { name: 'Disney+', color: '#113ccf', icon: 'D+', category: 'streaming' },
+  max: { name: 'Max', color: '#6b21a8', icon: 'MX', category: 'streaming' },
 };
 
 let autoSyncEnabled = true;
+let cloudRelayEnabled = false;
 
 // ── Initialize ──────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadStatus();
+  await loadCloudRelay();
   setupEventListeners();
 });
 
@@ -30,30 +36,65 @@ async function loadStatus() {
   }
 }
 
+async function loadCloudRelay() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_CLOUD_RELAY' });
+    if (response.success) {
+      cloudRelayEnabled = response.data.enabled;
+      updateCloudRelayToggle();
+      updateCloudRelayStatus();
+    }
+  } catch (error) {
+    console.error('Failed to load cloud relay:', error);
+  }
+}
+
 // ── Render Services ─────────────────────────────────────────────
 
 function renderServices(services) {
   const container = document.getElementById('servicesList');
   container.innerHTML = '';
 
+  // Tracking services section
+  const trackingHeader = document.createElement('div');
+  trackingHeader.className = 'section-header';
+  trackingHeader.textContent = 'Tracking Services';
+  container.appendChild(trackingHeader);
+
   for (const [serviceId, meta] of Object.entries(SERVICES)) {
-    const status = services[serviceId] || { valid: false, missing: [] };
-    const card = document.createElement('div');
-    card.className = 'service-card';
-    card.innerHTML = `
-      <div class="service-icon" style="background: ${meta.color}">${meta.icon}</div>
-      <div class="service-info">
-        <div class="service-name">${meta.name}</div>
-        <div class="service-status ${status.valid ? 'valid' : 'expired'}">
-          ${status.valid ? 'Cookies valid' : status.missing.length > 0 ? `Missing: ${status.missing.join(', ')}` : 'Not connected'}
-        </div>
-      </div>
-      <button class="service-btn ${status.valid ? 'sync' : 'login'}" data-service="${serviceId}" data-action="${status.valid ? 'sync' : 'login'}">
-        ${status.valid ? 'Sync' : 'Login'}
-      </button>
-    `;
-    container.appendChild(card);
+    if (meta.category !== 'tracking') continue;
+    container.appendChild(createServiceCard(serviceId, meta, services[serviceId]));
   }
+
+  // Streaming services section
+  const streamingHeader = document.createElement('div');
+  streamingHeader.className = 'section-header';
+  streamingHeader.textContent = 'Streaming Services';
+  container.appendChild(streamingHeader);
+
+  for (const [serviceId, meta] of Object.entries(SERVICES)) {
+    if (meta.category !== 'streaming') continue;
+    container.appendChild(createServiceCard(serviceId, meta, services[serviceId]));
+  }
+}
+
+function createServiceCard(serviceId, meta, status) {
+  const cardStatus = status || { valid: false, missing: [] };
+  const card = document.createElement('div');
+  card.className = 'service-card';
+  card.innerHTML = `
+    <div class="service-icon" style="background: ${meta.color}">${meta.icon}</div>
+    <div class="service-info">
+      <div class="service-name">${meta.name}</div>
+      <div class="service-status ${cardStatus.valid ? 'valid' : 'expired'}">
+        ${cardStatus.valid ? 'Cookies valid' : cardStatus.missing.length > 0 ? `Missing: ${cardStatus.missing.join(', ')}` : 'Not connected'}
+      </div>
+    </div>
+    <button class="service-btn ${cardStatus.valid ? 'sync' : 'login'}" data-service="${serviceId}" data-action="${cardStatus.valid ? 'sync' : 'login'}">
+      ${cardStatus.valid ? 'Sync' : 'Login'}
+    </button>
+  `;
+  return card;
 }
 
 function updateStatusBar(services) {
@@ -91,6 +132,60 @@ document.getElementById('autoSyncToggle').addEventListener('click', async () => 
   });
 });
 
+// ── Cloud Relay Toggle ─────────────────────────────────────────
+
+function updateCloudRelayToggle() {
+  const toggle = document.getElementById('cloudRelayToggle');
+  toggle.className = `toggle-switch ${cloudRelayEnabled ? 'active' : ''}`;
+}
+
+function updateCloudRelayStatus() {
+  const statusEl = document.getElementById('cloudRelayStatus');
+  const configEl = document.getElementById('cloudRelayConfig');
+
+  if (cloudRelayEnabled) {
+    statusEl.textContent = 'Cloud relay active';
+    statusEl.className = 'relay-status active';
+    configEl.style.display = 'block';
+  } else {
+    statusEl.textContent = 'Cloud relay disabled';
+    statusEl.className = 'relay-status';
+    configEl.style.display = 'none';
+  }
+}
+
+document.getElementById('cloudRelayToggle').addEventListener('click', async () => {
+  cloudRelayEnabled = !cloudRelayEnabled;
+  updateCloudRelayToggle();
+  updateCloudRelayStatus();
+
+  const endpoint = document.getElementById('relayEndpoint').value;
+  const token = document.getElementById('relayToken').value;
+
+  await chrome.runtime.sendMessage({
+    type: 'SET_CLOUD_RELAY',
+    enabled: cloudRelayEnabled,
+    endpoint,
+    token,
+  });
+});
+
+document.getElementById('saveRelayBtn').addEventListener('click', async () => {
+  const endpoint = document.getElementById('relayEndpoint').value;
+  const token = document.getElementById('relayToken').value;
+
+  await chrome.runtime.sendMessage({
+    type: 'SET_CLOUD_RELAY',
+    enabled: cloudRelayEnabled,
+    endpoint,
+    token,
+  });
+
+  const btn = document.getElementById('saveRelayBtn');
+  btn.textContent = 'Saved!';
+  setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+});
+
 // ── Sync All Button ────────────────────────────────────────────
 
 document.getElementById('syncAllBtn').addEventListener('click', async () => {
@@ -100,7 +195,6 @@ document.getElementById('syncAllBtn').addEventListener('click', async () => {
 
   try {
     await chrome.runtime.sendMessage({ type: 'SYNC_ALL' });
-    // Reload status after sync
     setTimeout(loadStatus, 1000);
   } catch (error) {
     console.error('Sync failed:', error);
@@ -131,7 +225,6 @@ document.getElementById('servicesList').addEventListener('click', async (e) => {
     }
   } else if (action === 'login') {
     await chrome.runtime.sendMessage({ type: 'OPEN_SERVICE_LOGIN', service: serviceId });
-    // Close popup after opening login
     setTimeout(() => window.close(), 500);
   }
 
@@ -139,5 +232,5 @@ document.getElementById('servicesList').addEventListener('click', async (e) => {
 });
 
 function setupEventListeners() {
-  // Auto-sync toggle is set up above
+  // Toggles and buttons set up above
 }

@@ -8,7 +8,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      width: 360px;
+      width: 380px;
       min-height: 400px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0a0a0f;
@@ -85,8 +85,17 @@
 
     .toggle-switch.active::after { transform: translateX(16px); }
 
+    .section-header {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6b7280;
+      padding: 12px 12px 4px;
+    }
+
     .services {
-      padding: 12px;
+      padding: 0 12px 12px;
     }
 
     .service-card {
@@ -111,7 +120,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 14px;
       color: white;
       flex-shrink: 0;
     }
@@ -160,6 +169,71 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    .cloud-relay {
+      margin: 0 12px 12px;
+      padding: 16px;
+      background: #12121a;
+      border-radius: 12px;
+      border: 1px solid #1e1e2e;
+    }
+
+    .relay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .relay-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .relay-status {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .relay-status.active { color: #22c55e; }
+
+    .relay-config {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .relay-input {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0a0a0f;
+      border: 1px solid #1e1e2e;
+      border-radius: 8px;
+      color: #e8e8ed;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .relay-input::placeholder { color: #4b5563; }
+
+    .relay-input:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+
+    .save-relay-btn {
+      width: 100%;
+      padding: 8px;
+      background: #1e1e2e;
+      color: #9ca3af;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .save-relay-btn:hover { background: #2d2d3e; color: #e8e8ed; }
 
     .actions {
       padding: 12px 20px;
@@ -230,6 +304,21 @@
   <div class="services" id="servicesList">
     <div class="loading">
       <div class="spinner"></div>
+    </div>
+  </div>
+
+  <div class="cloud-relay">
+    <div class="relay-header">
+      <div class="relay-title">Cloud Relay</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="relay-status" id="cloudRelayStatus">Cloud relay disabled</span>
+        <div class="toggle-switch" id="cloudRelayToggle"></div>
+      </div>
+    </div>
+    <div class="relay-config" id="cloudRelayConfig">
+      <input type="text" class="relay-input" id="relayEndpoint" placeholder="Cloud endpoint (e.g., https://relay.streamsyncr.app)">
+      <input type="password" class="relay-input" id="relayToken" placeholder="Auth token (optional)">
+      <button class="save-relay-btn" id="saveRelayBtn">Save</button>
     </div>
   </div>
 
