@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamSyncr</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 360px;
+      min-height: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e8e8ed;
+    }
+
+    .header {
+      padding: 20px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #12121a;
+      border-bottom: 1px solid #1e1e2e;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+
+    .status-dot.connected { background: #22c55e; }
+    .status-dot.warning { background: #f59e0b; }
+
+    .auto-sync-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: #374151;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-switch.active { background: #6366f1; }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch.active::after { transform: translateX(16px); }
+
+    .services {
+      padding: 12px;
+    }
+
+    .service-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #12121a;
+      border-radius: 12px;
+      border: 1px solid #1e1e2e;
+      transition: border-color 0.2s;
+    }
+
+    .service-card:hover { border-color: #6366f1; }
+
+    .service-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .service-info { flex: 1; min-width: 0; }
+
+    .service-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .service-status {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .service-status.valid { color: #22c55e; }
+    .service-status.expired { color: #ef4444; }
+
+    .service-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .service-btn.sync {
+      background: #6366f1;
+      color: white;
+    }
+
+    .service-btn.sync:hover { background: #4f46e5; }
+
+    .service-btn.login {
+      background: #1e1e2e;
+      color: #9ca3af;
+    }
+
+    .service-btn.login:hover { background: #2d2d3e; }
+
+    .service-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .actions {
+      padding: 12px 20px;
+      border-top: 1px solid #1e1e2e;
+    }
+
+    .sync-all-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .sync-all-btn:hover { opacity: 0.9; }
+    .sync-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .footer {
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #6b7280;
+      border-top: 1px solid #1e1e2e;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #9ca3af;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid #1e1e2e;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>StreamSyncr</h1>
+    <p>Auto-sync your streaming services</p>
+  </div>
+
+  <div class="status-bar">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText" style="font-size: 12px;">Checking...</span>
+    </div>
+    <div class="auto-sync-toggle">
+      <span>Auto-sync</span>
+      <div class="toggle-switch active" id="autoSyncToggle"></div>
+    </div>
+  </div>
+
+  <div class="services" id="servicesList">
+    <div class="loading">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="sync-all-btn" id="syncAllBtn">Sync All Services</button>
+  </div>
+
+  <div class="footer">
+    Cookies never leave your device
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

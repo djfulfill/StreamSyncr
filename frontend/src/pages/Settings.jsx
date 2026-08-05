@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings as SettingsIcon,
   Check,
@@ -10,6 +10,10 @@ import {
   Shield,
   Key,
   User,
+  Plug,
+  RefreshCw,
+  Download,
+  AlertTriangle,
 } from 'lucide-react';
 import useStore from '../store';
 
@@ -136,12 +140,77 @@ const services = [
 
 export default function Settings() {
   const store = useStore();
+  const [extensionStatus, setExtensionStatus] = useState(null);
+  const [extensionLoading, setExtensionLoading] = useState(true);
+
+  // Listen for content script messages
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data.type === 'EXTENSION_DETECTED') {
+        store.setExtensionDetected(true);
+        // Request status from extension
+        window.postMessage({ type: 'GET_EXTENSION_STATUS' }, '*');
+      }
+
+      if (event.data.type === 'EXTENSION_STATUS') {
+        const { data } = event.data;
+        if (data.success) {
+          setExtensionStatus(data.data);
+          store.setExtensionConnected(true);
+        }
+        setExtensionLoading(false);
+      }
+
+      if (event.data.type === 'ALL_COOKIE_DATA') {
+        // Auto-connect services from extension data
+        const { data } = event.data;
+        for (const [serviceId, cookieData] of Object.entries(data)) {
+          if (cookieData && cookieData.valid) {
+            store.connectServiceFromExtension(serviceId, cookieData);
+          }
+        }
+      }
+
+      if (event.data.type === 'COOKIE_UPDATE') {
+        const { service, data } = event.data;
+        store.connectServiceFromExtension(service, data);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Check if extension is installed
+    window.postMessage({ type: 'GET_EXTENSION_STATUS' }, '*');
+
+    // Timeout: if no response in 2s, assume extension not installed
+    const timeout = setTimeout(() => {
+      setExtensionLoading(false);
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearTimeout(timeout);
+    };
+  }, []);
+
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-3xl font-bold text-snow mb-2">Settings</h1>
         <p className="text-mist">Manage your connected services and preferences</p>
       </motion.div>
+
+      {/* Extension Panel */}
+      <ExtensionPanel
+        detected={store.extension.detected}
+        status={extensionStatus}
+        loading={extensionLoading}
+        onSyncAll={() => window.postMessage({ type: 'SYNC_ALL' }, '*')}
+        onSyncService={(service) => window.postMessage({ type: 'SYNC_SERVICE', service }, '*')}
+        onOpenLogin={(service) => window.postMessage({ type: 'OPEN_SERVICE_LOGIN', service }, '*')}
+      />
 
       {/* Security notice */}
       <motion.div
@@ -205,6 +274,187 @@ export default function Settings() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+function ExtensionPanel({ detected, status, loading, onSyncAll, onSyncService, onOpenLogin }) {
+  const [expanded, setExpanded] = useState(true);
+
+  const services = [
+    { id: 'imdb', name: 'IMDb', icon: 'IM', color: '#f5c518' },
+    { id: 'letterboxd', name: 'Letterboxd', icon: 'LB', color: '#00e054' },
+    { id: 'wetrakr', name: 'WeTrakr', icon: 'WT', color: '#6366f1' },
+    { id: 'sofasidekick', name: 'Sofa Sidekick', icon: 'SS', color: '#f97316' },
+  ];
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="glass-strong p-5"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-glow/30 border-t-glow rounded-full animate-spin" />
+          <span className="text-sm text-mist">Checking for Chrome extension...</span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.05 }}
+      className={`glass-strong overflow-hidden ${detected ? 'border border-glow/30' : ''}`}
+    >
+      {/* Header */}
+      <div
+        className="p-5 flex items-center gap-4 cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-glow to-purple-500 flex items-center justify-center">
+          <Plug className="w-6 h-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-display font-semibold text-snow">Chrome Extension</h3>
+            {detected ? (
+              <span className="flex items-center gap-1 text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
+                <Check className="w-3 h-3" />
+                Connected
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs bg-ghost text-mist px-2 py-0.5 rounded-full">
+                <AlertTriangle className="w-3 h-3" />
+                Not Installed
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-mist mt-0.5">
+            {detected
+              ? 'Auto-sync cookies from your browser'
+              : 'Install to auto-sync cookies from your browser'}
+          </p>
+        </div>
+        <motion.div
+          animate={{ rotate: expanded ? 180 : 0 }}
+          className="text-mist"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.div>
+      </div>
+
+      {/* Content */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-whisper"
+          >
+            {!detected ? (
+              // Not installed state
+              <div className="p-5 space-y-4">
+                <p className="text-sm text-mist">
+                  The StreamSyncr Chrome extension automatically extracts cookies from your browser
+                  and syncs them with the app. No more manual cookie copying!
+                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-mist font-medium uppercase tracking-wider">How to install:</p>
+                  <ol className="text-sm text-mist space-y-1 list-decimal list-inside">
+                    <li>Open Chrome and go to <code className="text-glow">chrome://extensions</code></li>
+                    <li>Enable "Developer mode" (top right)</li>
+                    <li>Click "Load unpacked" and select the <code className="text-glow">extension/</code> folder</li>
+                    <li>Click the extension icon and connect your services</li>
+                  </ol>
+                </div>
+                <a
+                  href="https://github.com/djfulfill/StreamSyncr/tree/main/extension"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-glow hover:text-glow/80 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Download extension
+                </a>
+              </div>
+            ) : (
+              // Connected state
+              <div className="p-5 space-y-4">
+                <p className="text-sm text-mist">
+                  Auto-sync is enabled. Cookies are extracted when you visit each service.
+                </p>
+
+                {/* Service status grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {services.map((svc) => {
+                    const svcStatus = status?.services?.[svc.id];
+                    const isValid = svcStatus?.valid || false;
+
+                    return (
+                      <div
+                        key={svc.id}
+                        className="p-3 rounded-xl bg-ghost flex items-center gap-3"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white"
+                          style={{ background: svc.color }}
+                        >
+                          {svc.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-snow font-medium">{svc.name}</div>
+                          <div className={`text-xs ${isValid ? 'text-mint' : 'text-mist'}`}>
+                            {isValid ? 'Synced' : 'Not synced'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isValid) {
+                              onSyncService(svc.id);
+                            } else {
+                              onOpenLogin(svc.id);
+                            }
+                          }}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            isValid
+                              ? 'text-mint hover:bg-mint/10'
+                              : 'text-mist hover:bg-ghost'
+                          }`}
+                          title={isValid ? 'Re-sync' : 'Open login page'}
+                        >
+                          {isValid ? (
+                            <RefreshCw className="w-4 h-4" />
+                          ) : (
+                            <ExternalLink className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Sync all button */}
+                <button
+                  onClick={onSyncAll}
+                  className="w-full glass p-3 rounded-xl text-sm text-glow hover:bg-glow/10 transition-colors flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Sync All Services
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

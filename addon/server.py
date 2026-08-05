@@ -21,12 +21,16 @@ from auth.oauth import (
 )
 from export import export_all
 
-app = FastAPI(title="StreamSyncr Stremio Addon")
+app = FastAPI(title="StreamSyncr Stremio Addon", cors_origins=["http://localhost:3030", "http://127.0.0.1:3030"])
 
 # In-memory token → config store. Tokens are 64-char hex (32 random bytes).
 # In production you'd use a DB/Redis so tokens survive restarts.
 _config_store: dict[str, dict] = {}
 _store_lock = threading.Lock()
+
+# Extension connection state
+_extension_connected = False
+_extension_last_seen: float = 0
 
 
 def _generate_token() -> str:
@@ -497,6 +501,104 @@ async def oauth_callback(service: str, code: str = "", state: str = ""):
         return HTMLResponse(oauth_callback_html(service, "", field_id, error=error))
 
     return HTMLResponse(oauth_callback_html(service, token, field_id))
+
+
+# ── Chrome Extension Endpoints ─────────────────────────────────
+
+@app.post("/api/extension/cookies")
+async def extension_cookies(request: Request):
+    """Receive cookies from the Chrome extension.
+    The extension posts extracted cookies for a service, and we store them
+    in the in-memory config store."""
+    import time
+    global _extension_connected, _extension_last_seen
+
+    body = await request.json()
+    service = body.get("service")
+    cookies = body.get("cookies", {})
+    valid = body.get("valid", False)
+
+    if not service:
+        return JSONResponse({"error": "Missing 'service' field"}, status_code=400)
+
+    _extension_connected = True
+    _extension_last_seen = time.time()
+
+    # Map service cookies to config format
+    config_mapping = {
+        "imdb": lambda c: {
+            "imdb_full_cookies": "; ".join(f"{k}={v}" for k, v in c.items()),
+            "imdb_session_id": c.get("session-id", ""),
+            "imdb_at_main": c.get("at-main", ""),
+            "imdb_session_token": c.get("session-token", ""),
+            "imdb_ubid_main": c.get("ubid-main", ""),
+            "imdb_sess_at_main": c.get("sess-at-main", ""),
+        },
+        "letterboxd": lambda c: {
+            "letterboxd_cookies": "; ".join(f"{k}={v}" for k, v in c.items()),
+            "letterboxd_session": c.get("lfu-session", ""),
+            "letterboxd_remember": c.get("remember", ""),
+            "letterboxd_csrf": c.get("com.xk72.webparts.csrf", ""),
+        },
+        "wetrakr": lambda c: {
+            "wetrakr_access_token": c.get("wta_at", ""),
+            "wetrakr_refresh_token": c.get("wta_rt", ""),
+        },
+        "sofasidekick": lambda c: {
+            "sofasidekick_session_id": c.get("session-id", ""),
+            "sofasidekick_cf_clearance": c.get("cf_clearance", ""),
+            "sofasidekick_cf_bm": c.get("__cf_bm", ""),
+        },
+    }
+
+    mapper = config_mapping.get(service)
+    if not mapper:
+        return JSONResponse({"error": f"Unknown service: {service}"}, status_code=400)
+
+    config_updates = mapper(cookies)
+
+    # Store in a default token slot (or create one)
+    with _store_lock:
+        # Use a fixed key for extension-sourced configs
+        ext_key = "__extension__"
+        if ext_key not in _config_store:
+            _config_store[ext_key] = {}
+        _config_store[ext_key].update(config_updates)
+
+    return JSONResponse({
+        "success": True,
+        "service": service,
+        "config_updates": config_updates,
+    })
+
+
+@app.get("/api/extension/status")
+async def extension_status():
+    """Check if the Chrome extension is connected and when it was last seen."""
+    import time
+    return JSONResponse({
+        "connected": _extension_connected,
+        "last_seen": _extension_last_seen,
+        "age_seconds": time.time() - _extension_last_seen if _extension_last_seen else None,
+    })
+
+
+@app.post("/api/extension/connect")
+async def extension_connect():
+    """Extension registers itself as connected."""
+    import time
+    global _extension_connected, _extension_last_seen
+    _extension_connected = True
+    _extension_last_seen = time.time()
+    return JSONResponse({"success": True, "message": "Extension connected"})
+
+
+@app.get("/api/extension/config")
+async def extension_config():
+    """Get the current extension-sourced config (for the frontend to read)."""
+    with _store_lock:
+        config = _config_store.get("__extension__", {})
+    return JSONResponse({"config": config})
 
 
 @app.get("/")

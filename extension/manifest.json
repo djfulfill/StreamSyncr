@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "StreamSyncr",
+  "version": "1.0.0",
+  "description": "Auto-sync your streaming service cookies with StreamSyncr",
+  "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "activeTab",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://*.imdb.com/*",
+    "*://*.letterboxd.com/*",
+    "*://*.wetrakr.com/*",
+    "*://*.sofasidekick.com/*",
+    "*://*.tmdb.org/*",
+    "*://*.trakt.tv/*",
+    "*://*.anilist.co/*",
+    "*://*.simkl.com/*",
+    "*://*.plex.tv/*",
+    "*://*.jellyfin.org/*",
+    "*://localhost:*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:*/*", "http://127.0.0.1:*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

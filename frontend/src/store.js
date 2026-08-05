@@ -24,6 +24,9 @@ const useStore = create(
       ratings: {},
       history: [],
 
+      // Extension state
+      extension: { detected: false, connected: false, lastSync: null },
+
       // UI state
       activeTab: 'library',
       searchQuery: '',
@@ -65,6 +68,51 @@ const useStore = create(
           [service]: { connected: false, username: null, token: null, apiKey: null },
         })),
 
+      // Extension actions
+      setExtensionDetected: (detected) =>
+        set((state) => ({ extension: { ...state.extension, detected } })),
+
+      setExtensionConnected: (connected) =>
+        set((state) => ({ extension: { ...state.extension, connected } })),
+
+      connectServiceFromExtension: (serviceId, data) => {
+        const actions = {
+          imdb: () => set({
+            imdb: {
+              connected: true,
+              sessionId: data.cookies?.['session-id'] || data.sessionId,
+              atMain: data.cookies?.['at-main'] || data.atMain,
+              sessionToken: data.cookies?.['session-token'] || data.sessionToken,
+              ubidMain: data.cookies?.['ubid-main'] || data.ubidMain,
+              sessAtMain: data.cookies?.['sess-at-main'] || data.sessAtMain,
+            },
+          }),
+          wetrakr: () => set({
+            wetrakr: {
+              connected: true,
+              accessToken: data.cookies?.['wta_at'] || data.accessToken,
+              refreshToken: data.cookies?.['wta_rt'] || data.refreshToken,
+              username: data.username || 'extension_user',
+            },
+          }),
+          letterboxd: () => set({
+            // Letterboxd doesn't have a dedicated store entry yet
+            // Store in extension config for now
+          }),
+          sofasidekick: () => set({
+            // Sofa Sidekick doesn't have a dedicated store entry yet
+          }),
+        };
+
+        const action = actions[serviceId];
+        if (action) action();
+
+        // Update last sync time
+        set((state) => ({
+          extension: { ...state.extension, lastSync: Date.now() },
+        }));
+      },
+
       // Library actions
       setLibrary: (library) => set({ library }),
       setWatchlist: (watchlist) => set({ watchlist }),
@@ -102,6 +150,7 @@ const useStore = create(
         simkl: state.simkl,
         jellyfin: state.jellyfin,
         kodi: state.kodi,
+        extension: state.extension,
         library: state.library,
         watchlist: state.watchlist,
         favorites: state.favorites,
