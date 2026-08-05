@@ -104,6 +104,17 @@ PYTHONPATH=/home/user/StreamSyncr/apis:/home/user/StreamSyncr/addon \
 
 For addon flow, catalogs, stream resolution, data export, and resume sync details, see **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**.
 
+## Frontend
+
+React + Vite + Tailwind dashboard on port 3030.
+
+```bash
+cd frontend
+npm install
+npm run dev    # http://localhost:3030
+npm run build  # production build
+```
+
 ### Real-Time Scrobbling
 
 When you press play in Kodi or Stremio, StreamSyncr instantly reports your activity to all connected services.

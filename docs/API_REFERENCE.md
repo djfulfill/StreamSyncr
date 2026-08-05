@@ -464,17 +464,6 @@ c.unrestrict_link("https://alldebrid.com/d/...")
 
 ---
 
-## Frontend
-
-React + Vite + Tailwind dashboard on port 3030.
-
-```bash
-cd frontend
-npm install
-npm run dev    # http://localhost:3030
-npm run build  # production build
-```
-
 ---
 
 ## Critical Notes
