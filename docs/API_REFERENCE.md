@@ -56,7 +56,7 @@ StreamSyncr/
 | IMDb | `apis/imdb_api/` | Cookie (GraphQL) |
 | WeTrakr | `apis/wetrakr_api/` | Cookie (JWT) |
 | AniList | `apis/anilist_api/` | Optional OAuth |
-| Simkl | `apis/simkl_api/` | Client ID + OAuth |
+| Simkl | `apis/simkl_api/` | Cookie (session) |
 | MDBList | `apis/mdblist_api/` | API key |
 | Sofa Sidekick | `apis/sofasidekick_api/` | Cookie (3 cookies) |
 | Letterboxd | `apis/letterboxd_api/` | Cookie (undocumented) |
@@ -282,7 +282,9 @@ Resume playback across devices. Positions are stored in SQLite and synced to Kod
 ### Simkl (REST, documented)
 
 - **Base URL:** `https://api.simkl.com`
-- **Auth:** Client ID + optional OAuth2
+- **Auth:** Cookie-based (`simkl` session cookie) + optional `simkl-api-key` header
+- **Required cookie:** `simkl` (session hash from browser)
+- **Optional cookies:** `cf_clearance`, `__cflb`, `cc`
 - **Key endpoints:**
   - `GET /sync/history` — watch history
   - `GET /sync/all-items` — all items
