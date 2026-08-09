@@ -46,11 +46,6 @@ const SERVICE_COOKIES = {
     cookies: ['hb_obi', 'tp_obi', 'jwt', 'apollo-auth', 'BM-Visitor-Id'],
     required: ['jwt'],
   },
-  trakt: {
-    domain: '.trakt.tv',
-    cookies: ['_traktsession'],
-    required: ['_traktsession'],
-  },
   anilist: {
     domain: '.anilist.co',
     cookies: ['laravel_session'],
@@ -284,6 +279,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 source: 'tokens',
               };
             }
+          }
+          // Default if no tokens found
+          if (!status.services[serviceId]) {
+            const url = serviceId === 'trakt' ? 'app.trakt.tv' : serviceId + '.co';
+            status.services[serviceId] = {
+              valid: false,
+              missing: [`visit ${url} to connect`],
+              lastCheck: null,
+            };
           }
         }
         // Config-based services (check with backend)
