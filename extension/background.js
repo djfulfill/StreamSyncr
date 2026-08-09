@@ -23,13 +23,13 @@ const SERVICE_COOKIES = {
   },
   sofasidekick: {
     domain: '.sofasidekick.com',
-    cookies: ['session-id', 'cf_clearance', '__cf_bm'],
-    required: ['session-id'],
+    cookies: ['session_id', 'cf_clearance', '__cf_bm'],
+    required: ['session_id'],
   },
   netflix: {
     domain: '.netflix.com',
-    cookies: ['NetflixId', 'SecureNetflixId', 'nfvdid', '.netflix_session', 'memclid'],
-    required: ['NetflixId'],
+    cookies: ['NetflixId', 'SecureNetflixId', 'nfvdid', 'memclid', 'profilesNewSession'],
+    required: ['NetflixId', 'SecureNetflixId'],
   },
   primevideo: {
     domain: '.primevideo.com',
@@ -46,7 +46,25 @@ const SERVICE_COOKIES = {
     cookies: ['hb_obi', 'tp_obi', 'jwt', 'apollo-auth', 'BM-Visitor-Id'],
     required: ['jwt'],
   },
+  trakt: {
+    domain: '.trakt.tv',
+    cookies: ['_traktsession'],
+    required: ['_traktsession'],
+  },
+  anilist: {
+    domain: '.anilist.co',
+    cookies: ['laravel_session'],
+    required: ['laravel_session'],
+  },
+  simkl: {
+    domain: '.simkl.com',
+    cookies: ['simkl', 'cf_clearance', '__cflb', 'cc'],
+    required: ['simkl'],
+  },
 };
+
+// Config-based services (API keys, not cookies)
+const CONFIG_SERVICES = ['mdblist', 'plex', 'jellyfin', 'emby', 'tmdb'];
 
 // Cloud relay endpoints (set by user via popup)
 let cloudRelayEnabled = false;
@@ -97,6 +115,20 @@ async function extractAllCookies() {
 async function sendCookiesToStreamSyncr(serviceId, cookieData) {
   const results = [];
 
+  // Check for stored tokens (from localStorage/sessionStorage)
+  const stored = await chrome.storage.local.get(`tokens_${serviceId}`);
+  const tokens = stored[`tokens_${serviceId}`];
+
+  // Merge tokens into cookie data if available
+  const payload = { service: serviceId, ...cookieData };
+  if (tokens) {
+    payload.tokens = tokens;
+    // If tokens have valid auth, mark as valid
+    if (tokens.access_token || tokens.id_token || tokens.al_token) {
+      payload.valid = true;
+    }
+  }
+
   // Local delivery (self-hosted mode)
   try {
     const tabs = await chrome.tabs.query({ url: `http://localhost:${STREAMSYNCR_PORT}/*` });
@@ -104,14 +136,14 @@ async function sendCookiesToStreamSyncr(serviceId, cookieData) {
       chrome.tabs.sendMessage(tabs[0].id, {
         type: 'COOKIE_UPDATE',
         service: serviceId,
-        data: cookieData,
+        data: payload,
       });
       results.push({ target: 'local', method: 'content_script', success: true });
     } else {
       const response = await fetch(`${STREAMSYNCR_URL}/api/extension/cookies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service: serviceId, ...cookieData }),
+        body: JSON.stringify(payload),
       });
       results.push({ target: 'local', method: 'direct_post', success: response.ok });
     }
@@ -129,7 +161,7 @@ async function sendCookiesToStreamSyncr(serviceId, cookieData) {
       const response = await fetch(`${cloudRelayEndpoint}/api/relay/cookies`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ service: serviceId, ...cookieData }),
+        body: JSON.stringify(payload),
       });
       results.push({ target: 'cloud', method: 'relay', success: response.ok });
     } catch (error) {
@@ -219,6 +251,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           autoSyncEnabled,
           services: {},
         };
+        // Cookie-based services
         for (const serviceId of Object.keys(SERVICE_COOKIES)) {
           const data = await extractCookiesForService(serviceId);
           status.services[serviceId] = {
@@ -226,6 +259,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             missing: data?.missing || [],
             lastCheck: data?.timestamp || null,
           };
+        }
+        // Check for localStorage/sessionStorage tokens (trakt, anilist)
+        for (const serviceId of ['trakt', 'anilist']) {
+          const stored = await chrome.storage.local.get([`tokens_${serviceId}`, `${serviceId}_client_id`]);
+          const tokens = stored[`tokens_${serviceId}`];
+          const clientId = stored[`${serviceId}_client_id`];
+
+          if (tokens && Object.keys(tokens).length > 0) {
+            // Check for valid token based on service
+            let hasValidToken = false;
+            if (serviceId === 'trakt') {
+              // Trakt needs both token AND client_id
+              hasValidToken = !!(tokens.id_token || tokens.access_token) && !!clientId;
+            } else if (serviceId === 'anilist') {
+              hasValidToken = !!(tokens.access_token || tokens.al_token);
+            }
+
+            if (hasValidToken) {
+              status.services[serviceId] = {
+                valid: true,
+                missing: [],
+                lastCheck: Date.now(),
+                source: 'tokens',
+              };
+            }
+          }
+        }
+        // Config-based services (check with backend)
+        for (const serviceId of CONFIG_SERVICES) {
+          try {
+            const resp = await fetch(`${STREAMSYNCR_URL}/api/extension/status/${serviceId}`);
+            if (resp.ok) {
+              const cfg = await resp.json();
+              status.services[serviceId] = { valid: cfg.configured || false, missing: [], lastCheck: Date.now() };
+            } else {
+              status.services[serviceId] = { valid: false, missing: ['not configured'], lastCheck: null };
+            }
+          } catch {
+            status.services[serviceId] = { valid: false, missing: ['server unreachable'], lastCheck: null };
+          }
         }
         sendResponse({ success: true, data: status });
         break;
@@ -286,10 +359,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           primevideo: 'https://www.amazon.com/gp/video/storefront',
           disneyplus: 'https://www.disneyplus.com/login',
           max: 'https://www.max.com/sign-in',
+          trakt: 'https://app.trakt.tv',
+          anilist: 'https://anilist.co/login',
+          simkl: 'https://simkl.com/login',
         };
         if (urls[message.service]) {
           chrome.tabs.create({ url: urls[message.service] });
         }
+        sendResponse({ success: true });
+        break;
+
+      case 'OPEN_SERVICE_CONFIG':
+        const configUrls = {
+          trakt: 'https://app.trakt.tv',
+          anilist: 'https://anilist.co/login',
+          simkl: 'https://simkl.com/login',
+          mdblist: 'https://mdblist.com/login',
+          plex: 'https://app.plex.tv/auth#signin',
+          jellyfin: 'https://jellyfin.org/docs/general/installation/',
+          emby: 'https://emby.media/download.html',
+          tmdb: 'https://www.themoviedb.org/settings/api',
+        };
+        if (configUrls[message.service]) {
+          chrome.tabs.create({ url: configUrls[message.service] });
+        }
+        sendResponse({ success: true });
+        break;
+
+      case 'TOKENS_EXTRACTED':
+        // Store tokens extracted from localStorage/sessionStorage by content script
+        await chrome.storage.local.set({
+          [`tokens_${message.service}`]: message.tokens,
+        });
+        console.log(`[StreamSyncr] Stored ${message.service} tokens:`, Object.keys(message.tokens));
         sendResponse({ success: true });
         break;
 

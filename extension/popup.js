@@ -1,14 +1,22 @@
 // StreamSyncr Chrome Extension - Popup Script
 
 const SERVICES = {
-  imdb: { name: 'IMDb', color: '#f5c518', icon: 'IM', category: 'tracking' },
-  letterboxd: { name: 'Letterboxd', color: '#00e054', icon: 'LB', category: 'tracking' },
-  wetrakr: { name: 'WeTrakr', color: '#6366f1', icon: 'WT', category: 'tracking' },
-  sofasidekick: { name: 'Sofa Sidekick', color: '#f97316', icon: 'SS', category: 'tracking' },
-  netflix: { name: 'Netflix', color: '#e50914', icon: 'NF', category: 'streaming' },
-  primevideo: { name: 'Prime Video', color: '#00a8e1', icon: 'PV', category: 'streaming' },
-  disneyplus: { name: 'Disney+', color: '#113ccf', icon: 'D+', category: 'streaming' },
-  max: { name: 'Max', color: '#6b21a8', icon: 'MX', category: 'streaming' },
+  imdb: { name: 'IMDb', color: '#f5c518', icon: 'IM', category: 'tracking', auth: 'cookie' },
+  letterboxd: { name: 'Letterboxd', color: '#00e054', icon: 'LB', category: 'tracking', auth: 'cookie' },
+  wetrakr: { name: 'WeTrakr', color: '#6366f1', icon: 'WT', category: 'tracking', auth: 'cookie' },
+  sofasidekick: { name: 'Sofa Sidekick', color: '#f97316', icon: 'SS', category: 'tracking', auth: 'cookie' },
+  trakt: { name: 'Trakt', color: '#ed1c24', icon: 'TK', category: 'tracking', auth: 'cookie' },
+  anilist: { name: 'AniList', color: '#02a9e0', icon: 'AL', category: 'tracking', auth: 'cookie' },
+  simkl: { name: 'Simkl', color: '#ff6600', icon: 'SK', category: 'tracking', auth: 'cookie' },
+  mdblist: { name: 'MDBList', color: '#e6b422', icon: 'ML', category: 'tracking', auth: 'apikey' },
+  netflix: { name: 'Netflix', color: '#e50914', icon: 'NF', category: 'streaming', auth: 'cookie' },
+  primevideo: { name: 'Prime Video', color: '#00a8e1', icon: 'PV', category: 'streaming', auth: 'cookie' },
+  disneyplus: { name: 'Disney+', color: '#113ccf', icon: 'D+', category: 'streaming', auth: 'cookie' },
+  max: { name: 'Max', color: '#6b21a8', icon: 'MX', category: 'streaming', auth: 'cookie' },
+  plex: { name: 'Plex', color: '#e5a00d', icon: 'PX', category: 'mediaserver', auth: 'token' },
+  jellyfin: { name: 'Jellyfin', color: '#9b59b6', icon: 'JF', category: 'mediaserver', auth: 'apikey' },
+  emby: { name: 'Emby', color: '#44b381', icon: 'EB', category: 'mediaserver', auth: 'apikey' },
+  tmdb: { name: 'TMDB', color: '#01d277', icon: 'TM', category: 'metadata', auth: 'apikey' },
 };
 
 let autoSyncEnabled = true;
@@ -55,26 +63,25 @@ function renderServices(services) {
   const container = document.getElementById('servicesList');
   container.innerHTML = '';
 
-  // Tracking services section
-  const trackingHeader = document.createElement('div');
-  trackingHeader.className = 'section-header';
-  trackingHeader.textContent = 'Tracking Services';
-  container.appendChild(trackingHeader);
+  const categories = [
+    { id: 'tracking', label: 'Tracking Services' },
+    { id: 'streaming', label: 'Streaming Services' },
+    { id: 'mediaserver', label: 'Media Servers' },
+    { id: 'metadata', label: 'Metadata Providers' },
+  ];
 
-  for (const [serviceId, meta] of Object.entries(SERVICES)) {
-    if (meta.category !== 'tracking') continue;
-    container.appendChild(createServiceCard(serviceId, meta, services[serviceId]));
-  }
+  for (const cat of categories) {
+    const items = Object.entries(SERVICES).filter(([, m]) => m.category === cat.id);
+    if (items.length === 0) continue;
 
-  // Streaming services section
-  const streamingHeader = document.createElement('div');
-  streamingHeader.className = 'section-header';
-  streamingHeader.textContent = 'Streaming Services';
-  container.appendChild(streamingHeader);
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.textContent = cat.label;
+    container.appendChild(header);
 
-  for (const [serviceId, meta] of Object.entries(SERVICES)) {
-    if (meta.category !== 'streaming') continue;
-    container.appendChild(createServiceCard(serviceId, meta, services[serviceId]));
+    for (const [serviceId, meta] of items) {
+      container.appendChild(createServiceCard(serviceId, meta, services[serviceId]));
+    }
   }
 }
 
@@ -82,16 +89,38 @@ function createServiceCard(serviceId, meta, status) {
   const cardStatus = status || { valid: false, missing: [] };
   const card = document.createElement('div');
   card.className = 'service-card';
+
+  const isCookieBased = meta.auth === 'cookie';
+
+  let statusText, btnClass, btnText, btnAction;
+
+  if (cardStatus.valid) {
+    statusText = 'Connected';
+    btnClass = 'sync';
+    btnText = 'Sync';
+    btnAction = 'sync';
+  } else if (isCookieBased) {
+    statusText = cardStatus.missing.length > 0 ? `Missing: ${cardStatus.missing.join(', ')}` : 'Not connected';
+    btnClass = 'login';
+    btnText = 'Login';
+    btnAction = 'login';
+  } else {
+    statusText = cardStatus.missing.length > 0 ? cardStatus.missing.join(', ') : 'Not configured';
+    btnClass = 'login';
+    btnText = 'Configure';
+    btnAction = 'configure';
+  }
+
   card.innerHTML = `
     <div class="service-icon" style="background: ${meta.color}">${meta.icon}</div>
     <div class="service-info">
       <div class="service-name">${meta.name}</div>
       <div class="service-status ${cardStatus.valid ? 'valid' : 'expired'}">
-        ${cardStatus.valid ? 'Cookies valid' : cardStatus.missing.length > 0 ? `Missing: ${cardStatus.missing.join(', ')}` : 'Not connected'}
+        ${statusText}
       </div>
     </div>
-    <button class="service-btn ${cardStatus.valid ? 'sync' : 'login'}" data-service="${serviceId}" data-action="${cardStatus.valid ? 'sync' : 'login'}">
-      ${cardStatus.valid ? 'Sync' : 'Login'}
+    <button class="service-btn ${btnClass}" data-service="${serviceId}" data-action="${btnAction}">
+      ${btnText}
     </button>
   `;
   return card;
@@ -225,6 +254,9 @@ document.getElementById('servicesList').addEventListener('click', async (e) => {
     }
   } else if (action === 'login') {
     await chrome.runtime.sendMessage({ type: 'OPEN_SERVICE_LOGIN', service: serviceId });
+    setTimeout(() => window.close(), 500);
+  } else if (action === 'configure') {
+    await chrome.runtime.sendMessage({ type: 'OPEN_SERVICE_CONFIG', service: serviceId });
     setTimeout(() => window.close(), 500);
   }
 
