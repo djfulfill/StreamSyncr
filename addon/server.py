@@ -422,12 +422,15 @@ async def _trakt_user_catalog(catalog_type: str, catalog_id: str, skip: int, sor
             obj = item.get("movie") or item.get("show") or item
             ids = obj.get("ids", {})
             imdb = ids.get("imdb", "")
+            imdb_id = f"tt{imdb}" if imdb and not imdb.startswith("tt") else imdb
             metas.append({
-                "id": f"tt{imdb}" if imdb else str(ids.get("trakt", "")),
+                "id": imdb_id or str(ids.get("trakt", "")),
                 "type": media_type,
                 "name": obj.get("title", ""),
                 "year": obj.get("year"),
                 "poster": obj.get("poster"),
+                "imdb_id": imdb_id,
+                "tmdb_id": ids.get("tmdb"),
             })
 
         return JSONResponse({"metas": metas})
@@ -882,6 +885,69 @@ async def trakt_device_poll_endpoint(request: Request):
         })
 
     return JSONResponse(result)
+
+
+# ── Catalog Preview with TMDB Posters ─────────────────────────
+
+@app.get("/api/preview/{token}/catalog/{catalog_type}/{catalog_id}")
+async def preview_catalog(token: str, catalog_type: str, catalog_id: str):
+    """Fetch catalog items and enrich with TMDB poster URLs.
+
+    Returns metas with poster URLs from TMDB image API, looked up by
+    IMDb or TMDB ID. Used by the configure page for interactive preview.
+    """
+    with _store_lock:
+        user_config = config_store.get(token, {})
+    if not user_config:
+        return JSONResponse({"error": "Invalid token"}, status_code=401)
+
+    # Fetch catalog items using the existing handler logic
+    metas = []
+    error = None
+
+    # User-specific catalogs (Trakt watchlist/favorites)
+    if catalog_id in ("trakt-watchlist", "trakt-favorites", "trakt-watchlist-shows"):
+        result = await _trakt_user_catalog(catalog_type, catalog_id, 0, None, user_config)
+        import json as _json
+        data = _json.loads(result.body)
+        metas = data.get("metas", [])
+        error = data.get("error")
+    else:
+        handler = CATALOG_HANDLERS.get(catalog_id)
+        if handler:
+            try:
+                metas = handler(catalog_type, 0, user_config, None)
+            except Exception as e:
+                error = str(e)
+        else:
+            error = f"Unknown catalog: {catalog_id}"
+
+    if not metas and error:
+        return JSONResponse({"metas": [], "error": error})
+
+    # Enrich with TMDB posters
+    tmdb_key = user_config.get("tmdb_api_key", "")
+    if tmdb_key and metas:
+        from tmdb_api import TMDBClient
+        tmdb = TMDBClient(api_key=tmdb_key)
+        poster_quality = user_config.get("poster_quality", "w500")
+
+        for meta in metas[:20]:
+            if meta.get("poster"):
+                continue
+
+            imdb_id = meta.get("imdb_id", "")
+            tmdb_id = meta.get("tmdb_id", "")
+
+            try:
+                if imdb_id and imdb_id.startswith("tt"):
+                    result = tmdb.find_by_imdb(imdb_id)
+                    if result and result.get("poster_path"):
+                        meta["poster"] = tmdb.img_url(result["poster_path"], poster_quality)
+            except Exception:
+                pass
+
+    return JSONResponse({"metas": metas[:20]})
 
 
 # ── Service Verification ────────────────────────────────────

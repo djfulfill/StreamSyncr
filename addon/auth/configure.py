@@ -184,18 +184,36 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
     <!-- ═══ Tab: Catalogs ═══ -->
     <div class="tab-panel" id="tab-catalogs">
         <div class="container">
-        <!-- Catalog Builder -->
+        <!-- Catalog Builder with Live Preview -->
         <div class="section">
             <div class="section-header open" onclick="toggleSection(this)">
                 <span class="icon">📋</span>
                 <h2>Catalog Builder</h2>
-                <span class="badge optional">Customize</span>
+                <span class="badge optional" id="catalog-count-badge">—</span>
                 <span class="chevron">▼</span>
             </div>
             <div class="section-body open">
-                <div class="help" style="margin-bottom:12px;">Drag to reorder catalogs. Uncheck to hide. Changes apply after saving.</div>
+                <div class="help" style="margin-bottom:12px;">Drag to reorder catalogs. Toggle to include/exclude. Click a catalog to preview its contents with TMDB posters.</div>
                 <div id="catalog-builder-list" style="display:flex;flex-direction:column;gap:6px;"></div>
             </div>
+        </div>
+
+        <!-- Catalog Preview -->
+        <div class="section" id="catalog-preview-section" style="display:none;">
+            <div class="section-header open" onclick="toggleSection(this)">
+                <span class="icon">🎬</span>
+                <h2 id="catalog-preview-title">Preview</h2>
+                <span class="badge" id="catalog-preview-badge">—</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body open">
+                <div id="catalog-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;"></div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
+            <button class="btn btn-primary" onclick="saveConfig()">Save & Install</button>
         </div>
         </div>
     </div>
@@ -1190,6 +1208,42 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             {type:'anime',id:'simkl-anime-popular',name:'Simkl Anime Popular'},
         ];
 
+        // Catalogs are fetched from the manifest (includes dynamic user catalogs)
+        let ALL_CATALOGS = [];
+        let previewToken = null;
+
+        async function loadCatalogs() {
+            const config = getConfig();
+            // Save config to get a token for preview
+            try {
+                const resp = await fetch(`${BASE_URL}/api/save-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                const data = await resp.json();
+                previewToken = data.token;
+            } catch (e) {
+                console.error('Failed to save config for preview:', e);
+            }
+
+            // Fetch manifest to get all available catalogs
+            if (previewToken) {
+                try {
+                    const mResp = await fetch(`${BASE_URL}/${previewToken}/manifest.json`);
+                    const manifest = await mResp.json();
+                    ALL_CATALOGS = manifest.catalogs || [];
+                } catch (e) {
+                    console.error('Failed to fetch manifest:', e);
+                    ALL_CATALOGS = BASE_CATALOGS;
+                }
+            } else {
+                ALL_CATALOGS = BASE_CATALOGS;
+            }
+
+            renderCatalogBuilder();
+        }
+
         function renderCatalogBuilder() {
             const container = document.getElementById('catalog-builder-list');
             if (!container) return;
@@ -1199,30 +1253,90 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             const disabled = config.disabled_catalogs || [];
 
             // Build catalog list: ordered first, then remaining
-            const ordered = order.map(id => BASE_CATALOGS.find(c => c.id === id)).filter(Boolean);
-            const remaining = BASE_CATALOGS.filter(c => !order.includes(c.id));
+            const ordered = order.map(id => ALL_CATALOGS.find(c => c.id === id)).filter(Boolean);
+            const remaining = ALL_CATALOGS.filter(c => !order.includes(c.id));
             const all = [...ordered, ...remaining];
+
+            const badge = document.getElementById('catalog-count-badge');
+            if (badge) badge.textContent = `${all.length - disabled.length}/${all.length} active`;
 
             container.innerHTML = all.map((cat, i) => {
                 const isDisabled = disabled.includes(cat.id);
-                return `<div class="catalog-item" draggable="true" data-id="${cat.id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card);border-radius:8px;cursor:grab;">
-                    <span style="opacity:0.4;font-size:14px;">⠿</span>
-                    <input type="checkbox" ${!isDisabled ? 'checked' : ''} data-cat-id="${cat.id}" style="accent-color:var(--accent,#6366f1);" />
-                    <span style="font-size:13px;flex:1;">${cat.name}</span>
-                    <span style="font-size:11px;opacity:0.5;text-transform:uppercase;">${cat.type}</span>
+                const typeColor = cat.type === 'movie' ? '#e94560' : cat.type === 'series' ? '#6366f1' : '#2ecc71';
+                return `<div class="catalog-item" draggable="true" data-id="${cat.id}" data-type="${cat.type}" style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--card);border-radius:8px;cursor:grab;border-left:3px solid ${typeColor};${isDisabled ? 'opacity:0.4;' : ''}">
+                    <span style="opacity:0.4;font-size:14px;cursor:grab;">⠿</span>
+                    <input type="checkbox" ${!isDisabled ? 'checked' : ''} data-cat-id="${cat.id}" style="accent-color:var(--accent,#6366f1);cursor:pointer;" />
+                    <span style="font-size:13px;flex:1;cursor:pointer;" onclick="previewCatalog('${cat.id}','${cat.type}')">${cat.name}</span>
+                    <span style="font-size:10px;opacity:0.5;text-transform:uppercase;">${cat.type}</span>
                 </div>`;
             }).join('');
 
             // Drag-and-drop
             let dragSrc = null;
             container.querySelectorAll('.catalog-item').forEach(item => {
-                item.addEventListener('dragstart', e => { dragSrc = item; item.style.opacity = '0.5'; });
-                item.addEventListener('dragend', e => { item.style.opacity = '1'; saveCatalogOrder(); });
+                item.addEventListener('dragstart', e => { dragSrc = item; item.style.opacity = '0.3'; });
+                item.addEventListener('dragend', e => { item.style.opacity = ''; saveCatalogOrder(); });
                 item.addEventListener('dragover', e => { e.preventDefault(); const after = e.clientY > item.getBoundingClientRect().top + item.offsetHeight/2; if (dragSrc && dragSrc !== item) container.insertBefore(dragSrc, after ? item.nextSibling : item); });
             });
             container.querySelectorAll('input[type=checkbox]').forEach(cb => {
-                cb.addEventListener('change', saveCatalogOrder);
+                cb.addEventListener('change', () => { saveCatalogOrder(); renderCatalogBuilder(); });
             });
+        }
+
+        async function previewCatalog(catId, catType) {
+            const section = document.getElementById('catalog-preview-section');
+            const title = document.getElementById('catalog-preview-title');
+            const badge = document.getElementById('catalog-preview-badge');
+            const grid = document.getElementById('catalog-preview-grid');
+
+            section.style.display = 'block';
+            title.textContent = ALL_CATALOGS.find(c => c.id === catId)?.name || catId;
+            badge.textContent = 'loading...';
+            badge.style.color = '#f39c12';
+            grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">Loading...</div>';
+
+            if (!previewToken) {
+                grid.innerHTML = '<div style="color:#e74c3c;font-size:13px;grid-column:1/-1;">Save config first to enable preview.</div>';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${BASE_URL}/api/preview/${previewToken}/catalog/${catType}/${catId}`);
+                const data = await resp.json();
+
+                if (data.error) {
+                    grid.innerHTML = `<div style="color:#e74c3c;font-size:13px;grid-column:1/-1;">${data.error}</div>`;
+                    badge.textContent = 'error';
+                    badge.style.color = '#e74c3c';
+                    return;
+                }
+
+                const metas = data.metas || [];
+                badge.textContent = `${metas.length} items`;
+                badge.style.color = '#2ecc71';
+
+                if (metas.length === 0) {
+                    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">No items returned. Check API keys for this service.</div>';
+                    return;
+                }
+
+                grid.innerHTML = metas.map(m => {
+                    const poster = m.poster || '';
+                    const imgHtml = poster
+                        ? `<img src="${poster}" style="width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:6px;" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                        : '';
+                    const fallback = `<div style="width:100%;aspect-ratio:2/3;background:var(--card);border-radius:6px;display:${poster ? 'none' : 'flex'};align-items:center;justify-content:center;font-size:10px;opacity:0.3;">No img</div>`;
+                    return `<div style="text-align:center;">
+                        ${imgHtml}${fallback}
+                        <div style="font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name || '?'}</div>
+                        <div style="font-size:10px;opacity:0.4;">${m.year || ''}</div>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                grid.innerHTML = `<div style="color:#e74c3c;font-size:13px;grid-column:1/-1;">Failed to load: ${err.message}</div>`;
+                badge.textContent = 'error';
+                badge.style.color = '#e74c3c';
+            }
         }
 
         function saveCatalogOrder() {
@@ -1237,7 +1351,9 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
         }
 
-        document.addEventListener('DOMContentLoaded', renderCatalogBuilder);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCatalogs();
+        });
     </script>
 </body>
 </html>
