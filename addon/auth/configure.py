@@ -69,6 +69,24 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         <p>Configure your streaming addon — all keys are stored locally in your browser</p>
     </div>
 
+    <!-- Service Status Dashboard -->
+    <div class="container" id="status-dashboard" style="display:none; padding-bottom: 0;">
+        <div class="section">
+            <div class="section-header" onclick="toggleSection(this)">
+                <span class="icon">📡</span>
+                <h2>Service Status</h2>
+                <span class="badge" id="status-summary">—</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body open">
+                <div id="service-status-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+                <div style="margin-top:12px;text-align:center;">
+                    <button onclick="verifyAllServices()" class="btn-connect" id="btn-verify" style="width:100%;">Verify Connections</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Debrid Services -->
         <div class="section">
@@ -332,18 +350,32 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             'letterboxd_cookies', 'letterboxd_csrf'
         ];
 
-        // Load saved config
-        document.addEventListener('DOMContentLoaded', () => {
+        // Load saved config from localStorage + server (extension-sourced)
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Load from localStorage first
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const config = JSON.parse(saved);
-                    FIELDS.forEach(key => {
-                        const el = document.getElementById(key);
-                        if (el && config[key]) el.value = config[key];
-                    });
-                } catch(e) {}
-            }
+            const localConfig = saved ? JSON.parse(saved) : {};
+
+            // 2. Fetch extension-captured config from server
+            try {
+                const resp = await fetch(`${BASE_URL}/api/extension/config`);
+                const { config: extConfig } = await resp.json();
+                // Merge: server data fills in what localStorage doesn't have
+                Object.keys(extConfig).forEach(key => {
+                    if (!localConfig[key] && extConfig[key]) {
+                        localConfig[key] = extConfig[key];
+                    }
+                });
+            } catch(e) {}
+
+            // 3. Fill form fields
+            FIELDS.forEach(key => {
+                const el = document.getElementById(key);
+                if (el && localConfig[key]) el.value = localConfig[key];
+            });
+
+            // 4. Update status grid
+            updateServiceStatusGrid();
         });
 
         function toggleSection(header) {
@@ -519,6 +551,156 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
                 status.textContent = 'Export failed: ' + err.message;
             }
         }
+
+        // ── Service Status Dashboard ─────────────────────
+
+        const SERVICE_LABELS = {
+            realdebrid: { name: 'Real-Debrid', icon: '⚡', fields: ['realdebrid_key'] },
+            torbox: { name: 'TorBox', icon: '📦', fields: ['torbox_key'] },
+            alldebrid: { name: 'AllDebrid', icon: '🌐', fields: ['alldebrid_key'] },
+            trakt: { name: 'Trakt', icon: '📊', fields: ['trakt_token', 'trakt_client_id'], requireAll: true },
+            tmdb: { name: 'TMDB', icon: '🎬', fields: ['tmdb_api_key'] },
+            simkl: { name: 'Simkl', icon: '📺', fields: ['simkl_client_id'] },
+            anilist: { name: 'AniList', icon: '🎌', fields: ['anilist_token'] },
+            mdblist: { name: 'MDBList', icon: '📋', fields: ['mdblist_api_key'] },
+            wetrakr: { name: 'WeTrakr', icon: '⭐', fields: ['wetrakr_access_token'] },
+            imdb: { name: 'IMDb', icon: '🎭', fields: ['imdb_full_cookies'] },
+            letterboxd: { name: 'Letterboxd', icon: '🎬', fields: ['letterboxd_cookies', 'letterboxd_csrf'], requireAll: true },
+            netflix: { name: 'Netflix', icon: '🎬', fields: ['netflix_id'] },
+            primevideo: { name: 'Prime Video', icon: '🎬', fields: ['primevideo_session_id'] },
+            disneyplus: { name: 'Disney+', icon: '🎬', fields: ['disneyplus_ct'] },
+            max: { name: 'Max', icon: '🎬', fields: ['max_jwt'] },
+            sofasidekick: { name: 'Sofa Sidekick', icon: '🛋️', fields: ['sofasidekick_session_id'] },
+            plex: { name: 'Plex', icon: '🖥️', fields: ['plex_token', 'plex_url'], requireAll: true },
+            jellyfin: { name: 'Jellyfin', icon: '🐋', fields: ['jellyfin_api_key', 'jellyfin_url'], requireAll: true },
+            kodi: { name: 'Kodi', icon: '📡', fields: ['kodi_url'] },
+        };
+
+        function updateServiceStatusGrid() {
+            const grid = document.getElementById('service-status-grid');
+            const dashboard = document.getElementById('status-dashboard');
+            const config = getConfig();
+            const hasAnyConfig = Object.keys(config).length > 0;
+
+            if (!hasAnyConfig) {
+                dashboard.style.display = 'none';
+                return;
+            }
+
+            dashboard.style.display = 'block';
+            grid.innerHTML = '';
+
+            let configuredCount = 0;
+            const totalServices = Object.keys(SERVICE_LABELS).length;
+
+            for (const [key, info] of Object.entries(SERVICE_LABELS)) {
+                const isConfigured = info.requireAll
+                    ? info.fields.every(f => config[f] && config[f].trim())
+                    : info.fields.some(f => config[f] && config[f].trim());
+                if (isConfigured) configuredCount++;
+
+                const card = document.createElement('div');
+                card.className = 'service-card';
+                card.style.display = 'flex';
+                card.style.alignItems = 'center';
+                card.style.gap = '8px';
+                card.style.padding = '8px 12px';
+                card.id = 'status-' + key;
+
+                const dot = document.createElement('span');
+                dot.style.width = '8px';
+                dot.style.height = '8px';
+                dot.style.borderRadius = '50%';
+                dot.style.flexShrink = '0';
+                dot.style.transition = 'all 0.3s';
+
+                if (isConfigured) {
+                    dot.style.background = '#94a3b8';
+                    dot.style.boxShadow = '0 0 6px rgba(148, 163, 184, 0.5)';
+                    card.dataset.configured = 'true';
+                } else {
+                    dot.style.background = '#334155';
+                    card.dataset.configured = 'false';
+                }
+
+                const label = document.createElement('span');
+                label.style.fontSize = '12px';
+                label.style.color = isConfigured ? '#f8fafc' : '#64748b';
+                label.textContent = info.icon + ' ' + info.name;
+
+                card.appendChild(dot);
+                card.appendChild(label);
+                grid.appendChild(card);
+            }
+
+            const summary = document.getElementById('status-summary');
+            summary.textContent = configuredCount + '/' + totalServices;
+            summary.style.background = configuredCount > 0
+                ? 'linear-gradient(135deg, #55efc4, #00b859)'
+                : 'linear-gradient(135deg, #64748b, #475569)';
+        }
+
+        async function verifyAllServices() {
+            const config = getConfig();
+            const btn = document.getElementById('btn-verify');
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch(`${BASE_URL}/api/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                const results = await resp.json();
+
+                let okCount = 0;
+                let errCount = 0;
+
+                for (const [key, result] of Object.entries(results)) {
+                    const card = document.getElementById('status-' + key);
+                    if (!card) continue;
+
+                    const dot = card.querySelector('span:first-child');
+                    const label = card.querySelector('span:last-child');
+
+                    if (result.status === 'ok') {
+                        dot.style.background = '#55efc4';
+                        dot.style.boxShadow = '0 0 8px rgba(85, 239, 196, 0.6)';
+                        label.style.color = '#55efc4';
+                        okCount++;
+                    } else if (result.status === 'error') {
+                        dot.style.background = '#fd79a8';
+                        dot.style.boxShadow = '0 0 8px rgba(253, 121, 168, 0.6)';
+                        label.style.color = '#fd79a8';
+                        label.title = result.error;
+                        errCount++;
+                    } else {
+                        dot.style.background = '#334155';
+                        dot.style.boxShadow = 'none';
+                        label.style.color = '#64748b';
+                    }
+                }
+
+                const summary = document.getElementById('status-summary');
+                summary.textContent = errCount > 0 ? okCount + ' ok, ' + errCount + ' err' : okCount + ' active';
+                summary.style.background = errCount > 0
+                    ? 'linear-gradient(135deg, #f39c12, #e74c3c)'
+                    : 'linear-gradient(135deg, #55efc4, #00b859)';
+            } catch (err) {
+                console.error('Verify failed:', err);
+            }
+
+            btn.textContent = 'Verify Connections';
+            btn.disabled = false;
+        }
+
+        // Update dashboard on load and on any input change
+        document.addEventListener('DOMContentLoaded', updateServiceStatusGrid);
+        FIELDS.forEach(key => {
+            const el = document.getElementById(key);
+            if (el) el.addEventListener('input', updateServiceStatusGrid);
+        });
     </script>
 </body>
 </html>

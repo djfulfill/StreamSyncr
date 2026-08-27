@@ -5,6 +5,7 @@ import threading
 import logging
 from urllib.parse import parse_qs
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 
@@ -98,6 +99,43 @@ async def debug_imdb(token: str):
         result["status"] = "missing_credentials"
 
     return JSONResponse(result)
+
+
+@app.get("/api/config/{token}/status")
+async def get_config_status(token: str):
+    """Return which services are configured for a given token."""
+    with _store_lock:
+        user_config = config_store.get(token, {})
+    if not user_config:
+        return JSONResponse({"error": "Invalid token"}, status_code=401)
+
+    def has(key):
+        val = user_config.get(key)
+        return bool(val and val.strip() if isinstance(val, str) else bool(val))
+
+    return JSONResponse({
+        "debrid": {
+            "realdebrid": has("realdebrid_key"),
+            "torbox": has("torbox_key"),
+            "alldebrid": has("alldebrid_key"),
+        },
+        "tracking": {
+            "trakt": has("trakt_token"),
+            "wetrakr": has("wetrakr_access_token"),
+            "tmdb": has("tmdb_api_key"),
+            "imdb": has("imdb_full_cookies") or has("imdb_api_key"),
+            "anilist": has("anilist_token"),
+            "simkl": has("simkl_client_id"),
+            "mdblist": has("mdblist_api_key"),
+            "letterboxd": has("letterboxd_cookies"),
+            "sofasidekick": has("sofasidekick_session_id"),
+        },
+        "servers": {
+            "plex": has("plex_token"),
+            "jellyfin": has("jellyfin_api_key"),
+            "kodi": has("kodi_url"),
+        },
+    })
 
 
 def get_user_config(request: Request) -> dict:
@@ -346,7 +384,6 @@ async def _trakt_user_catalog(catalog_type: str, catalog_id: str, skip: int, sor
         return JSONResponse({"metas": [], "error": str(e)}, status_code=500)
 
 
-@app.get("/catalog/{catalog_type}/{catalog_id}/{extra}.json")
 async def _handle_catalog_with_extra(catalog_type: str, catalog_id: str, extra: str, request: Request, user_config: dict):
     params = parse_qs(extra)
     search = params.get("search", [None])[0]
@@ -446,7 +483,6 @@ async def _handle_meta(meta_type: str, meta_id: str, user_config: dict):
         return JSONResponse({"meta": {}, "error": str(e)}, status_code=500)
 
 
-@app.get("/stream/{stream_type}/{stream_id}.json")
 async def _handle_stream(stream_type: str, stream_id: str, request: Request, user_config: dict):
     try:
         streams = await resolver.resolve_streams(stream_type, stream_id, user_config)
@@ -543,13 +579,39 @@ async def extension_cookies(request: Request):
             "letterboxd_csrf": c.get("com.xk72.webparts.csrf", ""),
         },
         "wetrakr": lambda c: {
-            "wetrakr_access_token": c.get("wta_at", ""),
-            "wetrakr_refresh_token": c.get("wta_rt", ""),
+            "wetrakr_access_token": c.get("wta_at", "") or c.get("access_token", ""),
+            "wetrakr_refresh_token": c.get("wta_rt", "") or c.get("refresh_token", ""),
+            "wetrakr_username": c.get("username", "") or (c.get("tokens", {}).get("username", "") if isinstance(c.get("tokens"), dict) else ""),
         },
         "sofasidekick": lambda c: {
-            "sofasidekick_session_id": c.get("session-id", ""),
+            "sofasidekick_session_id": c.get("session_id", ""),
             "sofasidekick_cf_clearance": c.get("cf_clearance", ""),
             "sofasidekick_cf_bm": c.get("__cf_bm", ""),
+        },
+        "trakt": lambda c: {
+            "trakt_token": c.get("id_token", "") or c.get("access_token", "") or (c.get("tokens", {}).get("id_token", "") if isinstance(c.get("tokens"), dict) else ""),
+            "trakt_client_id": c.get("client_id", "") or (c.get("tokens", {}).get("client_id", "") if isinstance(c.get("tokens"), dict) else ""),
+        },
+        "anilist": lambda c: {
+            "anilist_token": c.get("access_token", "") or (c.get("tokens", {}).get("access_token", "") if isinstance(c.get("tokens"), dict) else ""),
+        },
+        "simkl": lambda c: {
+            "simkl_client_id": c.get("client_id", "") or (c.get("tokens", {}).get("idToState", {}).get("client_id", "") if isinstance(c.get("tokens"), dict) and isinstance(c.get("tokens", {}).get("idToState"), dict) else ""),
+            "simkl_access_token": c.get("access_token", "") or (c.get("tokens", {}).get("idToState", {}).get("access_token", "") if isinstance(c.get("tokens"), dict) and isinstance(c.get("tokens", {}).get("idToState"), dict) else ""),
+        },
+        "netflix": lambda c: {
+            "netflix_id": c.get("NetflixId", ""),
+            "netflix_secure_id": c.get("SecureNetflixId", ""),
+        },
+        "primevideo": lambda c: {
+            "primevideo_session_id": c.get("session-id", ""),
+            "primevideo_at_main": c.get("at-main", ""),
+        },
+        "disneyplus": lambda c: {
+            "disneyplus_ct": c.get("ct_", ""),
+        },
+        "max": lambda c: {
+            "max_jwt": c.get("jwt", ""),
         },
     }
 
@@ -601,6 +663,516 @@ async def extension_config():
     with _store_lock:
         config = config_store.get("__extension__", {})
     return JSONResponse({"config": config})
+
+
+# ── Service Verification ────────────────────────────────────
+
+@app.post("/api/verify")
+async def verify_services(request: Request):
+    """Verify which configured services are actually reachable.
+    Accepts raw config (pre-save) or a token (post-save)."""
+    body = await request.json()
+    config = body.get("config", {})
+
+    results = {}
+
+    # ── Debrid Services (API key auth) ────────────────────
+
+    # Real-Debrid
+    if config.get("realdebrid_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.real-debrid.com/rest/1.0/user",
+                    headers={"Authorization": f"Bearer {config['realdebrid_key']}"}
+                )
+                if resp.status_code == 200:
+                    user = resp.json()
+                    results["realdebrid"] = {"status": "ok", "username": user.get("username", "unknown")}
+                else:
+                    results["realdebrid"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["realdebrid"] = {"status": "error", "error": str(e)}
+    else:
+        results["realdebrid"] = {"status": "not_configured"}
+
+    # TorBox
+    if config.get("torbox_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.torbox.app/v1/api/user/me",
+                    headers={"Authorization": f"Bearer {config['torbox_key']}"}
+                )
+                if resp.status_code == 200:
+                    results["torbox"] = {"status": "ok"}
+                else:
+                    results["torbox"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["torbox"] = {"status": "error", "error": str(e)}
+    else:
+        results["torbox"] = {"status": "not_configured"}
+
+    # AllDebrid
+    if config.get("alldebrid_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.alldebrid.com/v2/user?agent=streamsyncr",
+                    headers={"Authorization": f"Bearer {config['alldebrid_key']}"}
+                )
+                if resp.status_code == 200:
+                    results["alldebrid"] = {"status": "ok"}
+                else:
+                    results["alldebrid"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["alldebrid"] = {"status": "error", "error": str(e)}
+    else:
+        results["alldebrid"] = {"status": "not_configured"}
+
+    # ── Tracking Services (OAuth / token auth) ────────────
+
+    # Trakt — needs both token AND client_id
+    if config.get("trakt_token") and config.get("trakt_client_id"):
+        try:
+            from trakt_api import TraktClient
+            client = TraktClient(api_key=config["trakt_client_id"], token=config["trakt_token"])
+            user = client.users_me()
+            results["trakt"] = {"status": "ok", "username": user.get("username", "unknown")}
+        except Exception as e:
+            results["trakt"] = {"status": "error", "error": str(e)}
+    elif config.get("trakt_token") or config.get("trakt_client_id"):
+        results["trakt"] = {"status": "incomplete", "error": "Need both trakt_token and trakt_client_id"}
+    else:
+        results["trakt"] = {"status": "not_configured"}
+
+    # TMDB
+    if config.get("tmdb_api_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(f"https://api.themoviedb.org/3/movie/550?api_key={config['tmdb_api_key']}")
+                if resp.status_code == 200:
+                    results["tmdb"] = {"status": "ok"}
+                else:
+                    results["tmdb"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["tmdb"] = {"status": "error", "error": str(e)}
+    else:
+        results["tmdb"] = {"status": "not_configured"}
+
+    # Simkl — client_id is public; just check it's valid format
+    if config.get("simkl_client_id"):
+        results["simkl"] = {"status": "ok", "note": "Client ID configured (public key)"}
+    else:
+        results["simkl"] = {"status": "not_configured"}
+
+    # AniList
+    if config.get("anilist_token"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.post(
+                    "https://graphql.anilist.co",
+                    json={"query": "{ Viewer { name } }"},
+                    headers={"Authorization": f"Bearer {config['anilist_token']}"}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    username = data.get("data", {}).get("Viewer", {}).get("name", "unknown")
+                    results["anilist"] = {"status": "ok", "username": username}
+                else:
+                    results["anilist"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["anilist"] = {"status": "error", "error": str(e)}
+    else:
+        results["anilist"] = {"status": "not_configured", "note": "Public catalogs work without token"}
+
+    # MDBList
+    if config.get("mdblist_api_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(f"https://api.mdblist.com/?apikey={config['mdblist_api_key']}")
+                if resp.status_code == 200:
+                    results["mdblist"] = {"status": "ok"}
+                else:
+                    results["mdblist"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["mdblist"] = {"status": "error", "error": str(e)}
+    else:
+        results["mdblist"] = {"status": "not_configured"}
+
+    # ── Cookie / Session Auth ─────────────────────────────
+
+    # WeTrakr — needs username + access_token
+    if config.get("wetrakr_access_token") and config.get("wetrakr_username"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://wetrakr.com/api/v2/account/user",
+                    headers={
+                        "wetrakr-api-country": "US",
+                        "wetrakr-api-language": "en-US",
+                        "Cookie": f"wta_at={config['wetrakr_access_token']}"
+                    }
+                )
+                if resp.status_code == 200:
+                    results["wetrakr"] = {"status": "ok"}
+                else:
+                    results["wetrakr"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["wetrakr"] = {"status": "error", "error": str(e)}
+    elif config.get("wetrakr_access_token") or config.get("wetrakr_username"):
+        results["wetrakr"] = {"status": "incomplete", "error": "Need both wetrakr_username and wetrakr_access_token"}
+    else:
+        results["wetrakr"] = {"status": "not_configured"}
+
+    # IMDb — cookie-based
+    if config.get("imdb_full_cookies"):
+        try:
+            from imdb_api import IMDbClient
+            client = IMDbClient(full_cookies=config["imdb_full_cookies"])
+            lists = client.get_lists()
+            results["imdb"] = {"status": "ok", "lists_count": len(lists)}
+        except Exception as e:
+            results["imdb"] = {"status": "error", "error": str(e)}
+    elif config.get("imdb_api_key"):
+        results["imdb"] = {"status": "partial", "note": "API key set, but lists/ratings need cookies"}
+    else:
+        results["imdb"] = {"status": "not_configured"}
+
+    # Letterboxd — needs cookies + CSRF
+    if config.get("letterboxd_cookies") and config.get("letterboxd_csrf"):
+        try:
+            from letterboxd_api import LetterboxdClient
+            client = LetterboxdClient(
+                cookies=config["letterboxd_cookies"],
+                csrf_token=config["letterboxd_csrf"]
+            )
+            client.search_film("test")
+            results["letterboxd"] = {"status": "ok"}
+        except Exception as e:
+            results["letterboxd"] = {"status": "error", "error": str(e)}
+    elif config.get("letterboxd_cookies") or config.get("letterboxd_csrf"):
+        results["letterboxd"] = {"status": "incomplete", "error": "Need both letterboxd_cookies and letterboxd_csrf"}
+    else:
+        results["letterboxd"] = {"status": "not_configured"}
+
+    # Sofa Sidekick — session cookies
+    if config.get("sofasidekick_session_id"):
+        try:
+            from sofasidekick_api import SofaSidekickClient
+            client = SofaSidekickClient(
+                session_id=config["sofasidekick_session_id"],
+                cf_clearance=config.get("sofasidekick_cf_clearance"),
+                cf_bm=config.get("sofasidekick_cf_bm"),
+            )
+            # NOTE: /shows is Cloudflare-blocked — verify via /movies instead
+            client.get_movies()
+            results["sofasidekick"] = {"status": "ok"}
+        except Exception as e:
+            results["sofasidekick"] = {"status": "error", "error": str(e)}
+    else:
+        results["sofasidekick"] = {"status": "not_configured"}
+
+    # ── Media Servers (URL + token/key auth) ──────────────
+
+    # Plex — needs both token AND url
+    if config.get("plex_token") and config.get("plex_url"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    f"{config['plex_url']}/library/sections",
+                    headers={"X-Plex-Token": config["plex_token"]},
+                    timeout=5.0
+                )
+                if resp.status_code == 200:
+                    results["plex"] = {"status": "ok"}
+                else:
+                    results["plex"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["plex"] = {"status": "error", "error": str(e)}
+    elif config.get("plex_token") or config.get("plex_url"):
+        results["plex"] = {"status": "incomplete", "error": "Need both plex_token and plex_url"}
+    else:
+        results["plex"] = {"status": "not_configured"}
+
+    # Jellyfin — needs both api_key AND url
+    if config.get("jellyfin_api_key") and config.get("jellyfin_url"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    f"{config['jellyfin_url']}/System/Info",
+                    headers={"X-Emby-Token": config["jellyfin_api_key"]},
+                    timeout=5.0
+                )
+                if resp.status_code == 200:
+                    results["jellyfin"] = {"status": "ok"}
+                else:
+                    results["jellyfin"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["jellyfin"] = {"status": "error", "error": str(e)}
+    elif config.get("jellyfin_api_key") or config.get("jellyfin_url"):
+        results["jellyfin"] = {"status": "incomplete", "error": "Need both jellyfin_api_key and jellyfin_url"}
+    else:
+        results["jellyfin"] = {"status": "not_configured"}
+
+    # Kodi — JSON-RPC URL (optional username/password)
+    if config.get("kodi_url"):
+        try:
+            from kodi_api import KodiClient
+            client = KodiClient(
+                base_url=config["kodi_url"],
+                username=config.get("kodi_username"),
+                password=config.get("kodi_password"),
+            )
+            client.ping()
+            results["kodi"] = {"status": "ok"}
+        except Exception as e:
+            results["kodi"] = {"status": "error", "error": str(e)}
+    else:
+        results["kodi"] = {"status": "not_configured"}
+
+    return JSONResponse(results)
+
+
+@app.post("/api/services/health")
+async def services_health(request: Request):
+    """Check health of all services from frontend config.
+    Accepts the raw streamsyncr_config from localStorage."""
+    body = await request.json()
+    config = body.get("config", {})
+
+    results = {}
+
+    def has(key):
+        val = config.get(key)
+        return bool(val and val.strip() if isinstance(val, str) else bool(val))
+
+    # ── Debrid Services ──
+    if has("realdebrid_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.real-debrid.com/rest/1.0/user",
+                    headers={"Authorization": f"Bearer {config['realdebrid_key']}"}
+                )
+                if resp.status_code == 200:
+                    user = resp.json()
+                    results["realdebrid"] = {"status": "ok", "username": user.get("username"), "premium": bool(user.get("premium"))}
+                else:
+                    results["realdebrid"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["realdebrid"] = {"status": "error", "error": str(e)}
+    else:
+        results["realdebrid"] = {"status": "not_configured"}
+
+    if has("torbox_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.torbox.app/v1/api/user/me",
+                    headers={"Authorization": f"Bearer {config['torbox_key']}"}
+                )
+                if resp.status_code == 200:
+                    results["torbox"] = {"status": "ok"}
+                else:
+                    results["torbox"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["torbox"] = {"status": "error", "error": str(e)}
+    else:
+        results["torbox"] = {"status": "not_configured"}
+
+    if has("alldebrid_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.alldebrid.com/v4/user?agent=streamsyncr",
+                    headers={"Authorization": f"Bearer {config['alldebrid_key']}"}
+                )
+                if resp.status_code == 200:
+                    data = resp.json().get("data", {}).get("user", {})
+                    results["alldebrid"] = {"status": "ok", "username": data.get("username"), "premium": bool(data.get("isPremium"))}
+                else:
+                    results["alldebrid"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["alldebrid"] = {"status": "error", "error": str(e)}
+    else:
+        results["alldebrid"] = {"status": "not_configured"}
+
+    # ── Tracking Services ──
+    if has("trakt_token") and has("trakt_client_id"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://api.trakt.tv/users/me",
+                    headers={
+                        "Authorization": f"Bearer {config['trakt_token']}",
+                        "trakt-api-version": "2",
+                        "trakt-api-key": config["trakt_client_id"],
+                    }
+                )
+                if resp.status_code == 200:
+                    user = resp.json()
+                    results["trakt"] = {"status": "ok", "username": user.get("username")}
+                else:
+                    results["trakt"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["trakt"] = {"status": "error", "error": str(e)}
+    else:
+        results["trakt"] = {"status": "not_configured"}
+
+    if has("tmdb_api_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(f"https://api.themoviedb.org/3/movie/550?api_key={config['tmdb_api_key']}")
+                if resp.status_code == 200:
+                    results["tmdb"] = {"status": "ok"}
+                else:
+                    results["tmdb"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["tmdb"] = {"status": "error", "error": str(e)}
+    else:
+        results["tmdb"] = {"status": "not_configured"}
+
+    if has("imdb_full_cookies"):
+        try:
+            from imdb_api import IMDbClient
+            client = IMDbClient(full_cookies=config["imdb_full_cookies"])
+            lists = client.get_lists()
+            results["imdb"] = {"status": "ok", "lists_count": len(lists)}
+        except Exception as e:
+            results["imdb"] = {"status": "error", "error": str(e)}
+    else:
+        results["imdb"] = {"status": "not_configured"}
+
+    if has("letterboxd_cookies") and has("letterboxd_csrf"):
+        try:
+            from letterboxd_api import LetterboxdClient
+            client = LetterboxdClient(cookies=config["letterboxd_cookies"], csrf_token=config["letterboxd_csrf"])
+            client.search_film("test")
+            results["letterboxd"] = {"status": "ok"}
+        except Exception as e:
+            results["letterboxd"] = {"status": "error", "error": str(e)}
+    else:
+        results["letterboxd"] = {"status": "not_configured"}
+
+    if has("sofasidekick_session_id"):
+        try:
+            from sofasidekick_api import SofaSidekickClient
+            client = SofaSidekickClient(
+                session_id=config["sofasidekick_session_id"],
+                cf_clearance=config.get("sofasidekick_cf_clearance"),
+                cf_bm=config.get("sofasidekick_cf_bm"),
+            )
+            client.get_movies()
+            results["sofasidekick"] = {"status": "ok"}
+        except Exception as e:
+            results["sofasidekick"] = {"status": "error", "error": str(e)}
+    else:
+        results["sofasidekick"] = {"status": "not_configured"}
+
+    if has("mdblist_api_key"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(f"https://mdblist.com/api/?apikey={config['mdblist_api_key']}&i=tt0133093&type=imdb")
+                if resp.status_code == 200:
+                    results["mdblist"] = {"status": "ok"}
+                else:
+                    results["mdblist"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["mdblist"] = {"status": "error", "error": str(e)}
+    else:
+        results["mdblist"] = {"status": "not_configured"}
+
+    if has("simkl_client_id"):
+        results["simkl"] = {"status": "ok", "note": "Client ID set (public key)"}
+    else:
+        results["simkl"] = {"status": "not_configured"}
+
+    if has("wetrakr_access_token") and has("wetrakr_username"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    "https://wetrakr.com/proxy/frontend/users/" + config["wetrakr_username"],
+                    headers={
+                        "wetrakr-api-country": "US",
+                        "wetrakr-api-language": "en-US",
+                        "Cookie": f"wta_at={config['wetrakr_access_token']}"
+                    }
+                )
+                if resp.status_code == 200:
+                    results["wetrakr"] = {"status": "ok"}
+                else:
+                    results["wetrakr"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["wetrakr"] = {"status": "error", "error": str(e)}
+    else:
+        results["wetrakr"] = {"status": "not_configured"}
+
+    # ── Media Servers ──
+    if has("plex_token") and has("plex_url"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    f"{config['plex_url']}/library/sections",
+                    headers={"X-Plex-Token": config["plex_token"]},
+                    timeout=5.0
+                )
+                if resp.status_code == 200:
+                    results["plex"] = {"status": "ok"}
+                else:
+                    results["plex"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["plex"] = {"status": "error", "error": str(e)}
+    else:
+        results["plex"] = {"status": "not_configured"}
+
+    if has("jellyfin_api_key") and has("jellyfin_url"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.get(
+                    f"{config['jellyfin_url']}/System/Info",
+                    headers={"X-Emby-Token": config["jellyfin_api_key"]},
+                    timeout=5.0
+                )
+                if resp.status_code == 200:
+                    results["jellyfin"] = {"status": "ok"}
+                else:
+                    results["jellyfin"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["jellyfin"] = {"status": "error", "error": str(e)}
+    else:
+        results["jellyfin"] = {"status": "not_configured"}
+
+    if has("kodi_url"):
+        try:
+            from kodi_api import KodiClient
+            client = KodiClient(base_url=config["kodi_url"])
+            client.ping()
+            results["kodi"] = {"status": "ok"}
+        except Exception as e:
+            results["kodi"] = {"status": "error", "error": str(e)}
+    else:
+        results["kodi"] = {"status": "not_configured"}
+
+    if has("anilist_token"):
+        try:
+            async with httpx.AsyncClient() as c:
+                resp = await c.post(
+                    "https://graphql.anilist.co",
+                    json={"query": "{ Viewer { name } }"},
+                    headers={"Authorization": f"Bearer {config['anilist_token']}"}
+                )
+                if resp.status_code == 200:
+                    username = resp.json().get("data", {}).get("Viewer", {}).get("name")
+                    results["anilist"] = {"status": "ok", "username": username}
+                else:
+                    results["anilist"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+        except Exception as e:
+            results["anilist"] = {"status": "error", "error": str(e)}
+    else:
+        results["anilist"] = {"status": "not_configured"}
+
+    return JSONResponse(results)
 
 
 # ── Real-Time Scrobbling ────────────────────────────────────
