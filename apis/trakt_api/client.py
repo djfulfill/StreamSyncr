@@ -30,12 +30,18 @@ class TraktClient:
 
     def __init__(self, api_key: str = None, token: str = None):
         self.api_key = api_key or os.environ.get("TRAKT_API_KEY")
-        self.token = token or os.environ.get("TRAKT_TOKEN")
+        raw_token = token or os.environ.get("TRAKT_TOKEN")
         if not self.api_key:
             raise ValueError("TRAKT_API_KEY not set")
         # Token is optional — public endpoints (trending, popular) work
         # with just the API key. User endpoints (watchlist, favorites)
         # require a valid OAuth2 bearer token.
+        # Clean the token: strip any "; cf_clearance=..." suffix that may
+        # have been stored as part of a cookie string.
+        if raw_token:
+            self.token = raw_token.split(';')[0].strip()
+        else:
+            self.token = None
 
     def _request(self, method: str, path: str, params: dict = None,
                  data: dict = None, allow_409: bool = False) -> Union[dict, list]:
