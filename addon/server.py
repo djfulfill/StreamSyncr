@@ -562,6 +562,7 @@ async def extension_cookies(request: Request):
     body = await request.json()
     service = body.get("service")
     cookies = body.get("cookies", {})
+    tokens = body.get("tokens", {})
     valid = body.get("valid", False)
 
     if not service:
@@ -569,6 +570,18 @@ async def extension_cookies(request: Request):
 
     _extension_connected = True
     _extension_last_seen = time.time()
+
+    # Map service cookies to config format.
+    # The mapper receives the cookies dict; for services that store auth in
+    # localStorage (wetrakr, trakt, anilist, simkl), we also pass tokens so the
+    # mapper can extract username/client_id/etc.
+    mapper_ctx = dict(cookies)
+    if tokens:
+        mapper_ctx["tokens"] = tokens
+        # Also flatten token keys into the top level for easy .get() access
+        for k, v in tokens.items():
+            if k not in mapper_ctx:
+                mapper_ctx[k] = v
 
     # Map service cookies to config format
     config_mapping = {
@@ -627,15 +640,26 @@ async def extension_cookies(request: Request):
     if not mapper:
         return JSONResponse({"error": f"Unknown service: {service}"}, status_code=400)
 
-    config_updates = mapper(cookies)
+    config_updates = mapper(mapper_ctx)
 
-    # Store in a default token slot (or create one)
+    # Store in the extension slot AND merge into all user config tokens
     with _store_lock:
-        # Use a fixed key for extension-sourced configs
         ext_key = "__extension__"
         if ext_key not in config_store:
             config_store[ext_key] = {}
         config_store.update(ext_key, config_updates)
+
+        # Also merge into every user token so Stremio sees fresh cookies
+        for tok in list(config_store.keys()):
+            if tok == ext_key:
+                continue
+            existing = config_store.get(tok, {})
+            if not existing:
+                continue
+            for key, value in config_updates.items():
+                if value:  # Only set non-empty values
+                    existing[key] = value
+            config_store[tok] = existing
 
     return JSONResponse({
         "success": True,
@@ -671,6 +695,85 @@ async def extension_config():
     with _store_lock:
         config = config_store.get("__extension__", {})
     return JSONResponse({"config": config})
+
+
+# ── Browser Cookie Loader (browser_cookie3) ──────────────────
+
+@app.get("/api/browser-cookies/scan")
+async def browser_cookies_scan():
+    """Scan the local browser cookie database and return what's available.
+
+    Does not modify any config — just reports what cookies were found.
+    """
+    from browser_cookies import load_browser_cookies
+    try:
+        results = load_browser_cookies()
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+    # Summarize for the response (don't expose raw cookie values)
+    summary = {}
+    for service_id, data in results.items():
+        summary[service_id] = {
+            "valid": data["valid"],
+            "cookie_count": len(data["cookies"]),
+            "missing": data.get("missing", []),
+            "source": data.get("source", "browser"),
+        }
+    return JSONResponse({"services": summary})
+
+
+@app.post("/api/browser-cookies/merge")
+async def browser_cookies_merge(request: Request):
+    """Scan browser cookies + extension data and merge into a user's config token.
+
+    Body: {"token": "<config_token>"} or {"token": "all"} to merge into every token.
+    """
+    from browser_cookies import load_browser_cookies, merge_into_config, merge_extension_config
+
+    body = await request.json()
+    token = body.get("token", "all")
+
+    # Load browser cookies
+    try:
+        browser_cookies = load_browser_cookies()
+    except Exception as e:
+        return JSONResponse({"error": f"Browser cookie scan failed: {e}"}, status_code=500)
+
+    # Load extension-sourced config
+    with _store_lock:
+        ext_config = config_store.get("__extension__", {})
+
+    # Determine which tokens to update
+    if token == "all":
+        tokens = list(config_store.keys())
+    else:
+        if token not in config_store:
+            return JSONResponse({"error": "Invalid token"}, status_code=404)
+        tokens = [token]
+
+    updated = []
+    with _store_lock:
+        for tok in tokens:
+            if tok == "__extension__":
+                continue
+            existing = config_store.get(tok, {})
+            if not existing:
+                continue
+
+            # Merge: browser cookies first, then extension (extension wins on conflict)
+            merged = merge_into_config(existing, browser_cookies)
+            merged = merge_extension_config(merged, ext_config)
+
+            config_store[tok] = merged
+            updated.append(tok)
+
+    return JSONResponse({
+        "success": True,
+        "tokens_updated": updated,
+        "browser_services": list(browser_cookies.keys()),
+        "extension_keys": len(ext_config),
+    })
 
 
 # ── Service Verification ────────────────────────────────────
