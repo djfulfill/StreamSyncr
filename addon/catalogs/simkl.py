@@ -64,3 +64,59 @@ def popular_anime(skip: int = 0, limit: int = 20, user_config: dict = None) -> L
     client = _get_client(user_config)
     items = client.popular_anime()
     return [_item_to_meta(i, "anime") for i in items[skip:skip + limit]]
+
+
+# ── User lists (require access_token) ──────────────────────────
+
+def _get_auth_client(user_config: dict) -> SimklClient:
+    """Get a Simkl client with access token for user-specific calls."""
+    client_id = (user_config or {}).get("simkl_client_id", "") or os.environ.get("SIMKL_CLIENT_ID", "")
+    access_token = (user_config or {}).get("simkl_access_token", "")
+    if not client_id:
+        raise ValueError("Simkl client_id required")
+    if not access_token:
+        raise ValueError("Simkl access_token required for user lists")
+    return SimklClient(client_id=client_id, access_token=access_token)
+
+
+def _user_item_to_meta(item: dict, stremio_type: str) -> dict:
+    """Convert a Simkl user-list item to Stremio meta."""
+    # Simkl user items have: title, year, ids (imdb, tmdb, simkl), poster, fanart
+    return _item_to_meta(item, stremio_type)
+
+
+def user_watchlist(skip: int = 0, limit: int = 20, user_config: dict = None) -> List[Dict]:
+    """Get user's plan-to-watch list."""
+    client = _get_auth_client(user_config)
+    data = client.get_all_items(list_type="plantowatch")
+    items = _extract_simkl_items(data)
+    return [_user_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
+
+
+def user_watching(skip: int = 0, limit: int = 20, user_config: dict = None) -> List[Dict]:
+    """Get user's currently watching list."""
+    client = _get_auth_client(user_config)
+    data = client.get_all_items(list_type="watching")
+    items = _extract_simkl_items(data)
+    return [_user_item_to_meta(i, "series") for i in items[skip:skip + limit]]
+
+
+def user_completed(skip: int = 0, limit: int = 20, user_config: dict = None) -> List[Dict]:
+    """Get user's completed list."""
+    client = _get_auth_client(user_config)
+    data = client.get_all_items(list_type="completed")
+    items = _extract_simkl_items(data)
+    return [_user_item_to_meta(i, "movie") for i in items[skip:skip + limit]]
+
+
+def _extract_simkl_items(data: dict) -> List[dict]:
+    """Extract items from Simkl /sync/all-items response.
+
+    Response format: {"movies": [...], "shows": [...], "anime": [...]}
+    Each item has: title, year, ids, poster, fanart, last_watched, etc.
+    """
+    all_items = []
+    for key in ("movies", "shows", "anime"):
+        items = data.get(key, []) if isinstance(data, dict) else []
+        all_items.extend(items)
+    return all_items

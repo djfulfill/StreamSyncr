@@ -22,6 +22,7 @@ class SimklClient:
         req = Request(url, data=body, method=method)
         req.add_header("Content-Type", "application/json")
         req.add_header("simkl-api-key", self.client_id)
+        req.add_header("User-Agent", "StreamSyncr/1.0")
         if self.access_token:
             req.add_header("Authorization", f"Bearer {self.access_token}")
 

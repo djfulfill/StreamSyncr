@@ -171,6 +171,9 @@ CATALOG_HANDLERS = {
     "simkl-popular-shows": lambda t, s, c, g: simkl.popular_shows(skip=s, user_config=c),
     "simkl-anime-trending": lambda t, s, c, g: simkl.trending_anime(skip=s, user_config=c),
     "simkl-anime-popular": lambda t, s, c, g: simkl.popular_anime(skip=s, user_config=c),
+    "simkl-watchlist": lambda t, s, c, g: simkl.user_watchlist(skip=s, user_config=c),
+    "simkl-watching": lambda t, s, c, g: simkl.user_watching(skip=s, user_config=c),
+    "simkl-completed": lambda t, s, c, g: simkl.user_completed(skip=s, user_config=c),
     "anilist-trending": lambda t, s, c, g: anilist.trending(skip=s),
     "anilist-popular": lambda t, s, c, g: anilist.popular(skip=s),
     "wetrakr-favorites": lambda t, s, c, g: wetrakr.favorites(c, skip=s),
@@ -260,6 +263,13 @@ def _build_manifest(data: dict, user_config: dict) -> JSONResponse:
             {"type": "movie", "id": "imdb-lists", "name": "IMDb Lists"},
             {"type": "movie", "id": "imdb-recently-viewed", "name": "IMDb Recently Viewed"},
             {"type": "movie", "id": "imdb-ratings", "name": "IMDb Ratings"},
+        ])
+
+    if user_config.get("simkl_access_token"):
+        dynamic_catalogs.extend([
+            {"type": "movie", "id": "simkl-watchlist", "name": "My Simkl Watchlist"},
+            {"type": "series", "id": "simkl-watching", "name": "My Simkl Watching"},
+            {"type": "movie", "id": "simkl-completed", "name": "My Simkl Completed"},
         ])
 
     available.extend(dynamic_catalogs)
