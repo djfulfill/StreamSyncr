@@ -19,7 +19,7 @@ from urllib.parse import quote
 
 logger = logging.getLogger("streamsyncr")
 
-SOOTIO_DEFAULT_URL = "http://localhost:7000"
+SOOTIO_DEFAULT_URL = "http://localhost:55771"
 
 
 def _build_sootio_config(user_config: dict) -> dict:

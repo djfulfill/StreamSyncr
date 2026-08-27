@@ -126,8 +126,8 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             <div class="section-body">
                 <div class="field">
                     <label>Sootio URL</label>
-                    <input type="text" id="sootio_url" placeholder="http://localhost:7000">
-                    <div class="help">URL of your local Sootio addon server. Leave blank to use default (http://localhost:7000).</div>
+                    <input type="text" id="sootio_url" placeholder="http://localhost:55771">
+                    <div class="help">URL of your local Sootio addon server. Leave blank to use default (http://localhost:55771).</div>
                 </div>
                 <div class="field">
                     <label>Enable Sootio Backend</label>

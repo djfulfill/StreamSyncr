@@ -736,7 +736,7 @@ async def verify_services(request: Request):
 
     # ── Sootio Stream Backend ────────────────────────────
 
-    sootio_url = (config.get("sootio_url") or "http://localhost:7000").rstrip("/")
+    sootio_url = (config.get("sootio_url") or "http://localhost:55771").rstrip("/")
     try:
         async with httpx.AsyncClient() as c:
             resp = await c.get(f"{sootio_url}/manifest.json", timeout=5.0)
