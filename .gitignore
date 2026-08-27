@@ -24,6 +24,15 @@ Thumbs.db
 *.env
 .env
 tokens.json
-node_modules/\ndist/\n.env
-scripts/.server.pid
-scripts/.streamsync.pid
+node_modules/
+dist/
+
+# PID files
+scripts/*.pid
+
+# Nested repos
+sootio/
+
+# Scratchpad / dev notes
+Stream-Syncr-session.md
+mac-mini-opensese.md
