@@ -1,16 +1,35 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, Loader2, Film, Tv } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import PosterCard from '../components/PosterCard';
 import { tmdb as tmdbApi } from '../api';
+import useKeyboardNav from '../hooks/useKeyboardNav';
 
 export default function Search() {
   const { tmdb: tmdbState, trakt: traktState } = useStore();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  const colsPerRow = useMemo(() => {
+    if (typeof window === 'undefined') return 5;
+    const w = window.innerWidth;
+    if (w < 640) return 2;
+    if (w < 768) return 3;
+    if (w < 1024) return 4;
+    return 5;
+  }, []);
+
+  const handleSelect = (idx) => {
+    const item = results[idx];
+    if (item) navigate(`/detail/${item.media_type || (item.first_air_date ? 'tv' : 'movie')}/${item.id}`);
+  };
+
+  const { focusIndex, containerRef } = useKeyboardNav(results.length, colsPerRow, handleSelect);
 
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
@@ -74,9 +93,9 @@ export default function Search() {
           <p className="text-mist">Try a different search term</p>
         </motion.div>
       ) : results.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div ref={containerRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {results.map((item, i) => (
-            <PosterCard key={item.id} item={item} index={i} />
+            <PosterCard key={item.id} item={item} index={i} focused={i === focusIndex} />
           ))}
         </div>
       ) : null}

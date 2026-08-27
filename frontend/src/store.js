@@ -5,17 +5,20 @@ const useStore = create(
   persist(
     (set, get) => ({
       // Auth state
-      wetrakr: { connected: false, username: null, accessToken: null, refreshToken: null },
-      trakt: { connected: false, username: null, token: null, apiKey: null },
-      tmdb: { connected: false, username: null, apiKey: null },
-      imdb: { connected: false, sessionId: null, atMain: null, sessionToken: null, ubidMain: null, sessAtMain: null },
-      plex: { connected: false, username: null, token: null, baseUrl: null },
-      anilist: { connected: false, username: null, accessToken: null },
-      simkl: { connected: false, username: null, accessToken: null, clientId: null },
-      jellyfin: { connected: false, username: null, apiKey: null, userId: null, baseUrl: null },
-      kodi: { connected: false, username: null, baseUrl: null },
-        stremio: { connected: true, username: null },
-        nuvio: { connected: true, username: null },
+      wetrakr: { connected: false, username: null, accessToken: null, refreshToken: null, health: null, lastChecked: null },
+      trakt: { connected: false, username: null, token: null, apiKey: null, health: null, lastChecked: null },
+      tmdb: { connected: false, username: null, apiKey: null, health: null, lastChecked: null },
+      imdb: { connected: false, sessionId: null, atMain: null, sessionToken: null, ubidMain: null, sessAtMain: null, health: null, lastChecked: null },
+      plex: { connected: false, username: null, token: null, baseUrl: null, health: null, lastChecked: null },
+      anilist: { connected: false, username: null, accessToken: null, health: null, lastChecked: null },
+      simkl: { connected: false, username: null, accessToken: null, clientId: null, health: null, lastChecked: null },
+      jellyfin: { connected: false, username: null, apiKey: null, userId: null, baseUrl: null, health: null, lastChecked: null },
+      kodi: { connected: false, username: null, baseUrl: null, health: null, lastChecked: null },
+      realdebrid: { connected: false, username: null, apiKey: null, health: null, lastChecked: null, premium: false },
+      torbox: { connected: false, username: null, apiKey: null, health: null, lastChecked: null },
+      alldebrid: { connected: false, username: null, apiKey: null, health: null, lastChecked: null, premium: false },
+      letterboxd: { connected: false, username: null, cookies: null, csrf: null, health: null, lastChecked: null },
+      sofasidekick: { connected: false, username: null, sessionId: null, cfClearance: null, cfBm: null, health: null, lastChecked: null },
 
       // Library state
       library: [],
@@ -42,36 +45,68 @@ const useStore = create(
 
       // Auth actions
       connectWeTrakr: (username, accessToken, refreshToken) =>
-        set({ wetrakr: { connected: true, username, accessToken, refreshToken } }),
+        set({ wetrakr: { connected: true, username, accessToken, refreshToken, health: null, lastChecked: null } }),
 
       connectTrakt: (username, token, apiKey) =>
-        set({ trakt: { connected: true, username, token, apiKey } }),
+        set({ trakt: { connected: true, username, token, apiKey, health: null, lastChecked: null } }),
 
       connectTMDB: (username, apiKey) =>
-        set({ tmdb: { connected: true, username, apiKey } }),
+        set({ tmdb: { connected: true, username, apiKey, health: null, lastChecked: null } }),
 
       connectIMDb: (sessionId, atMain, sessionToken, ubidMain = null, sessAtMain = null) =>
-        set({ imdb: { connected: true, sessionId, atMain, sessionToken, ubidMain, sessAtMain } }),
+        set({ imdb: { connected: true, sessionId, atMain, sessionToken, ubidMain, sessAtMain, health: null, lastChecked: null } }),
 
       connectPlex: (username, token, baseUrl) =>
-        set({ plex: { connected: true, username, token, baseUrl } }),
+        set({ plex: { connected: true, username, token, baseUrl, health: null, lastChecked: null } }),
 
       connectAniList: (username, accessToken) =>
-        set({ anilist: { connected: true, username, accessToken } }),
+        set({ anilist: { connected: true, username, accessToken, health: null, lastChecked: null } }),
 
       connectSimkl: (username, accessToken, clientId) =>
-        set({ simkl: { connected: true, username, accessToken, clientId } }),
+        set({ simkl: { connected: true, username, accessToken, clientId, health: null, lastChecked: null } }),
 
       connectJellyfin: (username, apiKey, userId, baseUrl) =>
-        set({ jellyfin: { connected: true, username, apiKey, userId, baseUrl } }),
+        set({ jellyfin: { connected: true, username, apiKey, userId, baseUrl, health: null, lastChecked: null } }),
 
       connectKodi: (username, baseUrl) =>
-        set({ kodi: { connected: true, username, baseUrl } }),
+        set({ kodi: { connected: true, username, baseUrl, health: null, lastChecked: null } }),
+
+      connectRealDebrid: (username, apiKey, premium = false) =>
+        set({ realdebrid: { connected: true, username, apiKey, health: null, lastChecked: null, premium } }),
+
+      connectTorBox: (username, apiKey) =>
+        set({ torbox: { connected: true, username, apiKey, health: null, lastChecked: null } }),
+
+      connectAllDebrid: (username, apiKey, premium = false) =>
+        set({ alldebrid: { connected: true, username, apiKey, health: null, lastChecked: null, premium } }),
+
+      connectLetterboxd: (username, cookies, csrf) =>
+        set({ letterboxd: { connected: true, username, cookies, csrf, health: null, lastChecked: null } }),
+
+      connectSofaSidekick: (username, sessionId, cfClearance, cfBm) =>
+        set({ sofasidekick: { connected: true, username, sessionId, cfClearance, cfBm, health: null, lastChecked: null } }),
 
       disconnectService: (service) =>
         set((state) => ({
-          [service]: { connected: false, username: null, token: null, apiKey: null },
+          [service]: { connected: false, username: null, token: null, apiKey: null, health: null, lastChecked: null },
         })),
+
+      // Health check actions
+      setServiceHealth: (service, health, detail = null) =>
+        set((state) => ({
+          [service]: { ...state[service], health, lastChecked: Date.now(), healthDetail: detail },
+        })),
+
+      checkAllHealth: async () => {
+        const state = get();
+        const services = ['wetrakr', 'trakt', 'tmdb', 'imdb', 'letterboxd', 'sofasidekick', 'realdebrid', 'torbox', 'alldebrid', 'plex', 'anilist', 'simkl', 'jellyfin', 'kodi'];
+        for (const svc of services) {
+          if (state[svc]?.connected) {
+            // Set checking state
+            set((s) => ({ [svc]: { ...s[svc], health: 'checking' } }));
+          }
+        }
+      },
 
       // Extension actions
       setExtensionDetected: (detected) =>
@@ -193,6 +228,11 @@ const useStore = create(
         simkl: state.simkl,
         jellyfin: state.jellyfin,
         kodi: state.kodi,
+        realdebrid: state.realdebrid,
+        torbox: state.torbox,
+        alldebrid: state.alldebrid,
+        letterboxd: state.letterboxd,
+        sofasidekick: state.sofasidekick,
         extension: state.extension,
         library: state.library,
         watchlist: state.watchlist,

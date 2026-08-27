@@ -3,7 +3,7 @@ import { Star, Eye, Heart, Bookmark, Tv, Film } from 'lucide-react';
 import { tmdbImage } from '../api';
 import { useNavigate } from 'react-router-dom';
 
-export default function PosterCard({ item, index = 0, showMeta = true }) {
+export default function PosterCard({ item, index = 0, showMeta = true, focused = false }) {
   const navigate = useNavigate();
   const title = item.title || item.name;
   const year = item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4);
@@ -11,7 +11,8 @@ export default function PosterCard({ item, index = 0, showMeta = true }) {
 
   return (
     <motion.div
-      className="poster-card cursor-pointer group"
+      className={`poster-card cursor-pointer group ${focused ? 'ring-2 ring-glow ring-offset-2 ring-offset-void' : ''}`}
+      data-keyboard-card
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}

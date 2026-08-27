@@ -1,15 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Film, TrendingUp, Clock, Star, Tv, ArrowRight, Zap, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import PosterCard from '../components/PosterCard';
 import { tmdb, tmdbBackdrop } from '../api';
+import useKeyboardNav from '../hooks/useKeyboardNav';
 
 export default function Dashboard() {
-  const { wetrakr, trakt, tmdb: tmdbState, library, nowPlaying } = useStore();
+  const { wetrakr, trakt, tmdb: tmdbState, imdb, plex, anilist, simkl, jellyfin, kodi, letterboxd, sofasidekick, realdebrid, torbox, alldebrid, library, nowPlaying } = useStore();
+  const navigate = useNavigate();
   const [trending, setTrending] = useState([]);
   const [popular, setPopular] = useState([]);
   const [stats, setStats] = useState({ movies: 0, shows: 0, hours: 0 });
+
+  const colsPerRow = useMemo(() => {
+    if (typeof window === 'undefined') return 5;
+    const w = window.innerWidth;
+    if (w < 640) return 2;
+    if (w < 768) return 3;
+    if (w < 1024) return 4;
+    return 5;
+  }, []);
+
+  const allItems = useMemo(() => [...trending, ...popular], [trending, popular]);
+
+  const handleSelect = (idx) => {
+    const item = allItems[idx];
+    if (item) navigate(`/detail/${item.media_type || (item.first_air_date ? 'tv' : 'movie')}/${item.id}`);
+  };
+
+  const { focusIndex, containerRef } = useKeyboardNav(allItems.length, colsPerRow, handleSelect);
 
   useEffect(() => {
     if (tmdbState.connected && tmdbState.apiKey) {
@@ -24,7 +45,12 @@ export default function Dashboard() {
     setStats({ movies, shows, hours: movies * 2 + shows * 8 });
   }, [library]);
 
-  const connectedCount = [wetrakr.connected, trakt.connected, tmdbState.connected].filter(Boolean).length;
+  const connectedCount = [
+    wetrakr.connected, trakt.connected, tmdbState.connected,
+    imdb.connected, plex.connected, anilist.connected, simkl.connected,
+    jellyfin.connected, kodi.connected, letterboxd.connected, sofasidekick.connected,
+    realdebrid.connected, torbox.connected, alldebrid.connected,
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-8">
@@ -62,7 +88,7 @@ export default function Dashboard() {
             <StatCard icon={Film} label="Movies" value={stats.movies} color="text-glow" />
             <StatCard icon={Tv} label="Shows" value={stats.shows} color="text-ember" />
             <StatCard icon={Clock} label="Hours" value={stats.hours} color="text-flame" />
-            <StatCard icon={Zap} label="Services" value={`${connectedCount}/9`} color="text-mint" />
+            <StatCard icon={Zap} label="Services" value={`${connectedCount}/14`} color="text-mint" />
           </div>
         </div>
       </motion.div>
@@ -118,21 +144,24 @@ export default function Dashboard() {
       )}
 
       {/* Service cards */}
-      {connectedCount < 9 && (
+      {connectedCount < 14 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {!wetrakr.connected && <ServicePrompt name="StreamSyncr" color="glow" path="/settings" />}
           {!trakt.connected && <ServicePrompt name="Trakt" color="ember" path="/settings" />}
           {!tmdbState.connected && <ServicePrompt name="TMDB" color="flame" path="/settings" />}
+          {!realdebrid.connected && !torbox.connected && !alldebrid.connected && (
+            <ServicePrompt name="Debrid Service" color="yellow-400" path="/settings" />
+          )}
         </div>
       )}
 
       {/* Trending */}
       {trending.length > 0 && (
-        <section>
+        <section ref={containerRef}>
           <SectionHeader icon={TrendingUp} title="Trending This Week" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {trending.map((item, i) => (
-              <PosterCard key={item.id} item={item} index={i} />
+              <PosterCard key={item.id} item={item} index={i} focused={i === focusIndex} />
             ))}
           </div>
         </section>
@@ -144,7 +173,7 @@ export default function Dashboard() {
           <SectionHeader icon={Star} title="Popular Movies" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {popular.map((item, i) => (
-              <PosterCard key={item.id} item={{ ...item, media_type: 'movie' }} index={i} />
+              <PosterCard key={item.id} item={{ ...item, media_type: 'movie' }} index={i} focused={trending.length + i === focusIndex} />
             ))}
           </div>
         </section>

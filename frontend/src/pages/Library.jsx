@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Film, Tv, Grid3X3, List, Filter, SlidersHorizontal } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import PosterCard from '../components/PosterCard';
+import useKeyboardNav from '../hooks/useKeyboardNav';
 
 const tabs = [
   { id: 'all', label: 'All', icon: Grid3X3 },
@@ -19,6 +21,7 @@ const sortOptions = [
 
 export default function Library() {
   const { library } = useStore();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [viewMode, setViewMode] = useState('grid');
@@ -35,6 +38,23 @@ export default function Library() {
     if (sortBy === 'year') return (b.release_date || '').localeCompare(a.release_date || '');
     return 0;
   });
+
+  const colsPerRow = useMemo(() => {
+    if (typeof window === 'undefined') return 5;
+    const w = window.innerWidth;
+    if (w < 640) return 2;
+    if (w < 768) return 3;
+    if (w < 1024) return 4;
+    if (w < 1280) return 5;
+    return 6;
+  }, []);
+
+  const handleSelect = (idx) => {
+    const item = sorted[idx];
+    if (item) navigate(`/detail/${item.media_type || (item.first_air_date ? 'tv' : 'movie')}/${item.id}`);
+  };
+
+  const { focusIndex, containerRef } = useKeyboardNav(sorted.length, colsPerRow, handleSelect);
 
   return (
     <div className="space-y-6">
@@ -104,13 +124,14 @@ export default function Library() {
           viewMode === 'grid' ? (
             <motion.div
               key="grid"
+              ref={containerRef}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
             >
               {sorted.map((item, i) => (
-                <PosterCard key={item.id} item={item} index={i} />
+                <PosterCard key={item.id} item={item} index={i} focused={i === focusIndex} />
               ))}
             </motion.div>
           ) : (

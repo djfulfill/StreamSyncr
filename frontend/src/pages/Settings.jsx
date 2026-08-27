@@ -38,7 +38,7 @@ const services = [
     color: 'ember',
     gradient: 'from-ember to-c084fc',
     fields: [
-      { key: 'apiKey', label: 'API Key', type: 'password' },
+      { key: 'apiKey', label: 'API Key (Client ID)', type: 'password' },
       { key: 'token', label: 'Bearer Token', type: 'password' },
       { key: 'username', label: 'Username', type: 'text' },
     ],
@@ -70,6 +70,33 @@ const services = [
       { key: 'sessAtMain', label: 'Sess AT Main (optional)', type: 'password' },
     ],
     docsUrl: 'https://www.imdb.com',
+  },
+  {
+    id: 'letterboxd',
+    name: 'Letterboxd',
+    description: 'Cookie-based. Search films, create lists, mark watched.',
+    color: 'emerald-400',
+    gradient: 'from-emerald-400 to-green-600',
+    fields: [
+      { key: 'cookies', label: 'Cookies (full cookie string)', type: 'password' },
+      { key: 'csrf', label: 'CSRF Token', type: 'password' },
+      { key: 'username', label: 'Username', type: 'text' },
+    ],
+    docsUrl: 'https://letterboxd.com',
+  },
+  {
+    id: 'sofasidekick',
+    name: 'Sofa Sidekick',
+    description: 'Cookie-based. TV tracking with TheTVDB metadata.',
+    color: 'orange-400',
+    gradient: 'from-orange-400 to-amber-600',
+    fields: [
+      { key: 'sessionId', label: 'Session ID', type: 'password' },
+      { key: 'cfClearance', label: 'CF Clearance', type: 'password' },
+      { key: 'cfBm', label: 'CF __cf_bm', type: 'password' },
+      { key: 'username', label: 'Username', type: 'text' },
+    ],
+    docsUrl: 'https://app.sofasidekick.com',
   },
   {
     id: 'plex',
@@ -138,10 +165,124 @@ const services = [
   },
 ];
 
+const debridServices = [
+  {
+    id: 'realdebrid',
+    name: 'Real-Debrid',
+    description: 'Torrent-to-streaming. Premium required for magnet upload.',
+    color: 'yellow-400',
+    gradient: 'from-yellow-400 to-amber-500',
+    fields: [
+      { key: 'apiKey', label: 'API Token', type: 'password' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+    ],
+    docsUrl: 'https://real-debrid.com/apitoken',
+  },
+  {
+    id: 'torbox',
+    name: 'TorBox',
+    description: 'Torrent-to-streaming. Cloudflare-protected API.',
+    color: 'cyan-400',
+    gradient: 'from-cyan-400 to-blue-500',
+    fields: [
+      { key: 'apiKey', label: 'API Key', type: 'password' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+    ],
+    docsUrl: 'https://torbox.app/settings',
+  },
+  {
+    id: 'alldebrid',
+    name: 'AllDebrid',
+    description: 'Torrent-to-streaming. Premium required for magnet upload.',
+    color: 'violet-400',
+    gradient: 'from-violet-400 to-purple-500',
+    fields: [
+      { key: 'apiKey', label: 'API Key', type: 'password' },
+      { key: 'username', label: 'Username (optional)', type: 'text' },
+    ],
+    docsUrl: 'https://alldebrid.com/api',
+  },
+];
+
 export default function Settings() {
   const store = useStore();
   const [extensionStatus, setExtensionStatus] = useState(null);
   const [extensionLoading, setExtensionLoading] = useState(true);
+  const [healthLoading, setHealthLoading] = useState(true);
+  const [lastHealthCheck, setLastHealthCheck] = useState(null);
+
+  // Fetch real health status from backend on mount
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const raw = localStorage.getItem('streamsyncr_config');
+        if (!raw) {
+          setHealthLoading(false);
+          return;
+        }
+        const config = JSON.parse(raw);
+        const resp = await fetch('http://localhost:7800/api/services/health', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const health = await resp.json();
+        setLastHealthCheck(Date.now());
+
+        // Map backend health to store service names and sync
+        const storeMap = {
+          wetrakr: 'wetrakr', trakt: 'trakt', tmdb: 'tmdb', imdb: 'imdb',
+          letterboxd: 'letterboxd', sofasidekick: 'sofasidekick',
+          plex: 'plex', anilist: 'anilist', simkl: 'simkl',
+          jellyfin: 'jellyfin', kodi: 'kodi',
+          realdebrid: 'realdebrid', torbox: 'torbox', alldebrid: 'alldebrid',
+        };
+
+        for (const [svcId, storeKey] of Object.entries(storeMap)) {
+          const h = health[svcId];
+          if (!h) continue;
+
+          if (h.status === 'ok') {
+            // If backend says it's OK but frontend says disconnected, connect it
+            if (!store[storeKey]?.connected) {
+              const username = h.username || config[`${svcId}_username`] || config[`${svcId.replace('realdebrid', 'realdebrid')}_username`] || null;
+              if (svcId === 'realdebrid') store.connectRealDebrid(username, config.realdebrid_key, h.premium);
+              else if (svcId === 'torbox') store.connectTorBox(username, config.torbox_key);
+              else if (svcId === 'alldebrid') store.connectAllDebrid(username, config.alldebrid_key, h.premium);
+              else if (svcId === 'letterboxd') store.connectLetterboxd(username, config.letterboxd_cookies, config.letterboxd_csrf);
+              else if (svcId === 'sofasidekick') store.connectSofaSidekick(username, config.sofasidekick_session_id, config.sofasidekick_cf_clearance, config.sofasidekick_cf_bm);
+              else if (svcId === 'trakt') store.connectTrakt(username, config.trakt_token, config.trakt_client_id);
+              else if (svcId === 'tmdb') store.connectTMDB(username, config.tmdb_api_key);
+              else if (svcId === 'imdb') store.connectIMDb(config.imdb_session_id, config.imdb_at_main, config.imdb_session_token, config.imdb_ubid_main, config.imdb_sess_at_main);
+              else if (svcId === 'wetrakr') store.connectWeTrakr(config.wetrakr_username, config.wetrakr_access_token, config.wetrakr_refresh_token);
+              else if (svcId === 'anilist') store.connectAniList(h.username || username, config.anilist_token);
+              else if (svcId === 'simkl') store.connectSimkl(username, config.simkl_access_token, config.simkl_client_id);
+              else if (svcId === 'plex') store.connectPlex(username, config.plex_token, config.plex_url);
+              else if (svcId === 'jellyfin') store.connectJellyfin(username, config.jellyfin_api_key, config.jellyfin_user_id, config.jellyfin_url);
+              else if (svcId === 'kodi') store.connectKodi(username, config.kodi_url);
+              else if (svcId === 'mdblist') {
+                // MDBList doesn't have a store entry yet, just mark connected
+              }
+            }
+            store.setServiceHealth(storeKey, 'healthy', h.note || null);
+          } else if (h.status === 'error') {
+            store.setServiceHealth(storeKey, 'error', h.error || 'Connection failed');
+          } else if (h.status === 'incomplete') {
+            store.setServiceHealth(storeKey, 'degraded', h.error || 'Incomplete config');
+          } else {
+            store.setServiceHealth(storeKey, null);
+          }
+        }
+      } catch (err) {
+        console.error('[Health] Failed to fetch:', err);
+      } finally {
+        setHealthLoading(false);
+      }
+    };
+
+    fetchHealth();
+  }, []);
 
   // Listen for content script messages
   useEffect(() => {
@@ -228,28 +369,106 @@ export default function Settings() {
         </div>
       </motion.div>
 
+      {/* Health check status */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="glass p-4 flex items-center gap-3"
+      >
+        {healthLoading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-glow/30 border-t-glow rounded-full animate-spin" />
+            <div>
+              <p className="text-sm text-snow font-medium">Checking service connections...</p>
+              <p className="text-xs text-mist mt-0.5">Verifying API keys and tokens with each service</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={`w-2.5 h-2.5 rounded-full ${Object.values(store).some(s => s?.health === 'error') ? 'bg-rose' : 'bg-mint'}`} />
+            <div className="flex-1">
+              <p className="text-sm text-snow font-medium">
+                {lastHealthCheck ? `Last checked ${new Date(lastHealthCheck).toLocaleTimeString()}` : 'Health check complete'}
+              </p>
+              <p className="text-xs text-mist mt-0.5">
+                {Object.values(store).filter(s => s?.health === 'healthy').length} healthy
+                {Object.values(store).filter(s => s?.health === 'error').length > 0 && `, ${Object.values(store).filter(s => s?.health === 'error').length} errors`}
+                {Object.values(store).filter(s => s?.health === 'degraded').length > 0 && `, ${Object.values(store).filter(s => s?.health === 'degraded').length} degraded`}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setHealthLoading(true);
+                window.location.reload();
+              }}
+              className="p-2 glass rounded-lg text-mist hover:text-snow transition-colors"
+              title="Re-check all services"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </>
+        )}
+      </motion.div>
+
       {/* Service cards */}
-      {services.map((service, i) => (
-        <ServiceCard
-          key={service.id}
-          service={service}
-          connected={store[service.id]?.connected}
-          username={store[service.id]?.username}
-          onConnect={(data) => {
-            if (service.id === 'wetrakr') store.connectWeTrakr(data.username, data.accessToken, data.refreshToken);
-            else if (service.id === 'trakt') store.connectTrakt(data.username, data.token, data.apiKey);
-            else if (service.id === 'tmdb') store.connectTMDB(data.username, data.apiKey);
-            else if (service.id === 'imdb') store.connectIMDb(data.sessionId, data.atMain, data.sessionToken, data.ubidMain, data.sessAtMain);
-            else if (service.id === 'plex') store.connectPlex(data.username, data.token, data.baseUrl);
-            else if (service.id === 'anilist') store.connectAniList(data.username, data.accessToken);
-            else if (service.id === 'simkl') store.connectSimkl(data.username, data.accessToken, data.clientId);
-            else if (service.id === 'jellyfin') store.connectJellyfin(data.username, data.apiKey, data.userId, data.baseUrl);
-            else if (service.id === 'kodi') store.connectKodi(data.username, data.baseUrl);
-          }}
-          onDisconnect={() => store.disconnectService(service.id)}
-          index={i}
-        />
-      ))}
+      <div>
+        <h2 className="font-display text-lg font-semibold text-snow mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-glow" />
+          Tracking &amp; Media Services
+        </h2>
+        {services.map((service, i) => (
+          <ServiceCard
+            key={service.id}
+            service={service}
+            connected={store[service.id]?.connected}
+            username={store[service.id]?.username}
+            health={store[service.id]?.health}
+            lastChecked={store[service.id]?.lastChecked}
+            onConnect={(data) => {
+              if (service.id === 'wetrakr') store.connectWeTrakr(data.username, data.accessToken, data.refreshToken);
+              else if (service.id === 'trakt') store.connectTrakt(data.username, data.token, data.apiKey);
+              else if (service.id === 'tmdb') store.connectTMDB(data.username, data.apiKey);
+              else if (service.id === 'imdb') store.connectIMDb(data.sessionId, data.atMain, data.sessionToken, data.ubidMain, data.sessAtMain);
+              else if (service.id === 'letterboxd') store.connectLetterboxd(data.username, data.cookies, data.csrf);
+              else if (service.id === 'sofasidekick') store.connectSofaSidekick(data.username, data.sessionId, data.cfClearance, data.cfBm);
+              else if (service.id === 'plex') store.connectPlex(data.username, data.token, data.baseUrl);
+              else if (service.id === 'anilist') store.connectAniList(data.username, data.accessToken);
+              else if (service.id === 'simkl') store.connectSimkl(data.username, data.accessToken, data.clientId);
+              else if (service.id === 'jellyfin') store.connectJellyfin(data.username, data.apiKey, data.userId, data.baseUrl);
+              else if (service.id === 'kodi') store.connectKodi(data.username, data.baseUrl);
+            }}
+            onDisconnect={() => store.disconnectService(service.id)}
+            index={i}
+          />
+        ))}
+      </div>
+
+      {/* Debrid services */}
+      <div>
+        <h2 className="font-display text-lg font-semibold text-snow mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-yellow-400" />
+          Debrid Services
+        </h2>
+        {debridServices.map((service, i) => (
+          <ServiceCard
+            key={service.id}
+            service={service}
+            connected={store[service.id]?.connected}
+            username={store[service.id]?.username}
+            health={store[service.id]?.health}
+            lastChecked={store[service.id]?.lastChecked}
+            premium={store[service.id]?.premium}
+            onConnect={(data) => {
+              if (service.id === 'realdebrid') store.connectRealDebrid(data.username, data.apiKey);
+              else if (service.id === 'torbox') store.connectTorBox(data.username, data.apiKey);
+              else if (service.id === 'alldebrid') store.connectAllDebrid(data.username, data.apiKey);
+            }}
+            onDisconnect={() => store.disconnectService(service.id)}
+            index={i + services.length}
+          />
+        ))}
+      </div>
 
       {/* Data management */}
       <motion.div
@@ -458,7 +677,7 @@ function ExtensionPanel({ detected, status, loading, onSyncAll, onSyncService, o
   );
 }
 
-function ServiceCard({ service, connected, username, onConnect, onDisconnect, index }) {
+function ServiceCard({ service, connected, username, health, lastChecked, premium, onConnect, onDisconnect, index }) {
   const [expanded, setExpanded] = useState(false);
   const [showPasswords, setShowPasswords] = useState({});
   const [form, setForm] = useState({});
@@ -474,12 +693,69 @@ function ServiceCard({ service, connected, username, onConnect, onDisconnect, in
     setShowPasswords((p) => ({ ...p, [key]: !p[key] }));
   };
 
+  const getHealthBadge = () => {
+    if (!connected) return null;
+    if (health === 'healthy') {
+      return (
+        <span className="flex items-center gap-1 text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
+          <Check className="w-3 h-3" />
+          Connected
+        </span>
+      );
+    }
+    if (health === 'degraded') {
+      return (
+        <span className="flex items-center gap-1 text-xs bg-yellow-400/20 text-yellow-400 px-2 py-0.5 rounded-full">
+          <AlertTriangle className="w-3 h-3" />
+          Degraded
+        </span>
+      );
+    }
+    if (health === 'error') {
+      return (
+        <span className="flex items-center gap-1 text-xs bg-rose/20 text-rose px-2 py-0.5 rounded-full">
+          <X className="w-3 h-3" />
+          Error
+        </span>
+      );
+    }
+    if (health === 'checking') {
+      return (
+        <span className="flex items-center gap-1 text-xs bg-ghost text-mist px-2 py-0.5 rounded-full">
+          <div className="w-3 h-3 border-2 border-mist/30 border-t-mist rounded-full animate-spin" />
+          Checking
+        </span>
+      );
+    }
+    // Connected but not checked yet
+    return (
+      <span className="flex items-center gap-1 text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
+        <Check className="w-3 h-3" />
+        Connected
+      </span>
+    );
+  };
+
+  const getHealthNote = () => {
+    if (!connected) return null;
+    if (premium === false && (service.id === 'realdebrid' || service.id === 'alldebrid')) {
+      return <p className="text-xs text-yellow-400 mt-1">Free tier — magnet upload requires premium</p>;
+    }
+    if (health === 'error' && service.id === 'trakt') {
+      return <p className="text-xs text-rose mt-1">Token expired — reconnect required</p>;
+    }
+    if (health === 'error' && service.id === 'torbox') {
+      return <p className="text-xs text-rose mt-1">Cloudflare blocked — API access restricted</p>;
+    }
+    return null;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 + index * 0.05 }}
-      className={`glass-strong overflow-hidden ${connected ? 'border border-' + service.color + '/30' : ''}`}
+      className={`glass-strong overflow-hidden mb-4 ${connected ? 'border border-' + service.color + '/30' : ''}`}
     >
       {/* Header */}
       <div className="p-5 flex items-center gap-4">
@@ -489,15 +765,11 @@ function ServiceCard({ service, connected, username, onConnect, onDisconnect, in
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-display font-semibold text-snow">{service.name}</h3>
-            {connected && (
-              <span className="flex items-center gap-1 text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
-                <Check className="w-3 h-3" />
-                Connected
-              </span>
-            )}
+            {getHealthBadge()}
           </div>
           <p className="text-sm text-mist mt-0.5">{service.description}</p>
           {connected && <p className="text-xs text-mist mt-1">as {username}</p>}
+          {getHealthNote()}
         </div>
         <div className="flex gap-2">
           <a
