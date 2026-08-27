@@ -343,6 +343,57 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             </div>
         </div>
 
+        <!-- Metadata Providers -->
+        <div class="section">
+            <div class="section-header" onclick="toggleSection(this)">
+                <span class="icon">🎨</span>
+                <h2>Metadata Providers</h2>
+                <span class="badge optional">Customize</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="help" style="margin-bottom:12px;">Choose your preferred metadata source for each content type. Falls back to other providers if the preferred source is unavailable.</div>
+                <div class="field">
+                    <label>Movie Metadata Provider</label>
+                    <select id="meta_provider_movie">
+                        <option value="">TMDB (default)</option>
+                        <option value="simkl">Simkl</option>
+                        <option value="imdb">IMDb (requires cookies)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Series Metadata Provider</label>
+                    <select id="meta_provider_series">
+                        <option value="">TMDB (default)</option>
+                        <option value="simkl">Simkl</option>
+                        <option value="imdb">IMDb (requires cookies)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Anime Metadata Provider</label>
+                    <select id="meta_provider_anime">
+                        <option value="">AniList (default)</option>
+                        <option value="simkl">Simkl</option>
+                        <option value="tmdb">TMDB</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalog Builder -->
+        <div class="section">
+            <div class="section-header" onclick="toggleSection(this)">
+                <span class="icon">📋</span>
+                <h2>Catalog Builder</h2>
+                <span class="badge optional">Customize</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="help" style="margin-bottom:12px;">Drag to reorder catalogs. Uncheck to hide. Changes apply after saving.</div>
+                <div id="catalog-builder-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+        </div>
+
         <!-- Actions -->
         <div class="actions">
             <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
@@ -364,6 +415,7 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         const FIELDS = [
             'realdebrid_key', 'torbox_key', 'alldebrid_key',
             'sootio_url', 'sootio_enabled',
+            'meta_provider_movie', 'meta_provider_series', 'meta_provider_anime',
             'trakt_token', 'trakt_client_id', 'simkl_client_id', 'anilist_token',
             'tmdb_api_key', 'imdb_api_key',
             'mdblist_api_key',
@@ -413,9 +465,18 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         function getConfig() {
             const config = {};
             FIELDS.forEach(key => {
-                const val = document.getElementById(key).value.trim();
+                const el = document.getElementById(key);
+                if (!el) return;
+                const val = el.value.trim();
                 if (val) config[key] = val;
             });
+            // Include catalog builder state from localStorage
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const savedConfig = JSON.parse(saved);
+                if (savedConfig.catalog_order) config.catalog_order = savedConfig.catalog_order;
+                if (savedConfig.disabled_catalogs) config.disabled_catalogs = savedConfig.disabled_catalogs;
+            }
             return config;
         }
 
@@ -728,6 +789,79 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             const el = document.getElementById(key);
             if (el) el.addEventListener('input', updateServiceStatusGrid);
         });
+
+        // ── Catalog Builder ───────────────────────────────
+
+        const BASE_CATALOGS = [
+            {type:'movie',id:'trakt-trending',name:'Trakt Trending'},
+            {type:'movie',id:'trakt-popular',name:'Trakt Popular'},
+            {type:'movie',id:'tmdb-trending',name:'TMDB Trending'},
+            {type:'movie',id:'tmdb-popular',name:'TMDB Popular'},
+            {type:'movie',id:'tmdb-top-rated',name:'TMDB Top Rated'},
+            {type:'movie',id:'tmdb-now-playing',name:'Now Playing'},
+            {type:'movie',id:'tmdb-upcoming',name:'Upcoming'},
+            {type:'movie',id:'simkl-trending',name:'Simkl Trending'},
+            {type:'movie',id:'simkl-popular',name:'Simkl Popular'},
+            {type:'series',id:'trakt-trending-shows',name:'Trakt Trending Shows'},
+            {type:'series',id:'trakt-popular-shows',name:'Trakt Popular Shows'},
+            {type:'series',id:'tmdb-trending-tv',name:'TMDB Trending TV'},
+            {type:'series',id:'tmdb-popular-tv',name:'TMDB Popular TV'},
+            {type:'series',id:'simkl-trending-shows',name:'Simkl Trending Shows'},
+            {type:'series',id:'simkl-popular-shows',name:'Simkl Popular Shows'},
+            {type:'anime',id:'anilist-trending',name:'AniList Trending'},
+            {type:'anime',id:'anilist-popular',name:'AniList Popular'},
+            {type:'anime',id:'simkl-anime-trending',name:'Simkl Anime Trending'},
+            {type:'anime',id:'simkl-anime-popular',name:'Simkl Anime Popular'},
+        ];
+
+        function renderCatalogBuilder() {
+            const container = document.getElementById('catalog-builder-list');
+            if (!container) return;
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const config = saved ? JSON.parse(saved) : {};
+            const order = config.catalog_order || [];
+            const disabled = config.disabled_catalogs || [];
+
+            // Build catalog list: ordered first, then remaining
+            const ordered = order.map(id => BASE_CATALOGS.find(c => c.id === id)).filter(Boolean);
+            const remaining = BASE_CATALOGS.filter(c => !order.includes(c.id));
+            const all = [...ordered, ...remaining];
+
+            container.innerHTML = all.map((cat, i) => {
+                const isDisabled = disabled.includes(cat.id);
+                return `<div class="catalog-item" draggable="true" data-id="${cat.id}" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card);border-radius:8px;cursor:grab;">
+                    <span style="opacity:0.4;font-size:14px;">⠿</span>
+                    <input type="checkbox" ${!isDisabled ? 'checked' : ''} data-cat-id="${cat.id}" style="accent-color:var(--accent,#6366f1);" />
+                    <span style="font-size:13px;flex:1;">${cat.name}</span>
+                    <span style="font-size:11px;opacity:0.5;text-transform:uppercase;">${cat.type}</span>
+                </div>`;
+            }).join('');
+
+            // Drag-and-drop
+            let dragSrc = null;
+            container.querySelectorAll('.catalog-item').forEach(item => {
+                item.addEventListener('dragstart', e => { dragSrc = item; item.style.opacity = '0.5'; });
+                item.addEventListener('dragend', e => { item.style.opacity = '1'; saveCatalogOrder(); });
+                item.addEventListener('dragover', e => { e.preventDefault(); const after = e.clientY > item.getBoundingClientRect().top + item.offsetHeight/2; if (dragSrc && dragSrc !== item) container.insertBefore(dragSrc, after ? item.nextSibling : item); });
+            });
+            container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+                cb.addEventListener('change', saveCatalogOrder);
+            });
+        }
+
+        function saveCatalogOrder() {
+            const container = document.getElementById('catalog-builder-list');
+            const items = container.querySelectorAll('.catalog-item');
+            const order = Array.from(items).map(i => i.dataset.id);
+            const disabled = Array.from(container.querySelectorAll('input[type=checkbox]:not(:checked)')).map(cb => cb.dataset.catId);
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const config = saved ? JSON.parse(saved) : {};
+            config.catalog_order = order;
+            config.disabled_catalogs = disabled;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        }
+
+        document.addEventListener('DOMContentLoaded', renderCatalogBuilder);
     </script>
 </body>
 </html>

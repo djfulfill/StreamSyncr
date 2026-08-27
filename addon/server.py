@@ -214,16 +214,21 @@ async def manifest(request: Request, config_token: str | None = None):
 
 
 def _build_manifest(data: dict, user_config: dict) -> JSONResponse:
+    # Build the full list of available catalogs (base + dynamic)
+    available = list(data.get("catalogs", []))
+
+    # Dynamic catalogs from connected services
+    dynamic_catalogs = []
 
     if user_config.get("trakt_token"):
-        data["catalogs"].extend([
+        dynamic_catalogs.extend([
             {"type": "movie", "id": "trakt-watchlist", "name": "My Trakt Watchlist"},
             {"type": "movie", "id": "trakt-favorites", "name": "My Trakt Favorites"},
             {"type": "series", "id": "trakt-watchlist-shows", "name": "My Trakt Watchlist Shows"},
         ])
 
     if user_config.get("wetrakr_access_token"):
-        data["catalogs"].extend([
+        dynamic_catalogs.extend([
             {"type": "movie", "id": "wetrakr-favorites", "name": "WeTrakr Favorites"},
             {"type": "movie", "id": "wetrakr-watchlist", "name": "WeTrakr Plan to Watch"},
             {"type": "series", "id": "wetrakr-watching", "name": "WeTrakr Watching"},
@@ -231,7 +236,7 @@ def _build_manifest(data: dict, user_config: dict) -> JSONResponse:
         ])
 
     if user_config.get("sofasidekick_session_id"):
-        data["catalogs"].extend([
+        dynamic_catalogs.extend([
             {"type": "series", "id": "sofasidekick-shows", "name": "Sofa Sidekick Shows"},
             {"type": "movie", "id": "sofasidekick-movies", "name": "Sofa Sidekick Movies"},
             {"type": "movie", "id": "sofasidekick-watchlist", "name": "Sofa Sidekick Watchlist"},
@@ -242,21 +247,47 @@ def _build_manifest(data: dict, user_config: dict) -> JSONResponse:
         try:
             user_lists = mdblist.user_lists(api_key=user_config["mdblist_api_key"])
             for lst in user_lists[:20]:
-                catalog_id = f"mdblist-list-{lst['id']}"
-                data["catalogs"].append({
+                dynamic_catalogs.append({
                     "type": lst["type"],
-                    "id": catalog_id,
+                    "id": f"mdblist-list-{lst['id']}",
                     "name": f"MDBList: {lst['name']}",
                 })
         except Exception:
             pass
 
     if user_config.get("imdb_full_cookies"):
-        data["catalogs"].extend([
+        dynamic_catalogs.extend([
             {"type": "movie", "id": "imdb-lists", "name": "IMDb Lists"},
             {"type": "movie", "id": "imdb-recently-viewed", "name": "IMDb Recently Viewed"},
             {"type": "movie", "id": "imdb-ratings", "name": "IMDb Ratings"},
         ])
+
+    available.extend(dynamic_catalogs)
+
+    # If user has a custom catalog order, apply it
+    custom_order = user_config.get("catalog_order", [])
+    if custom_order:
+        # Build ordered list: catalogs in custom_order first, then any remaining
+        by_id = {c["id"]: c for c in available}
+        ordered = []
+        seen = set()
+        for cat_id in custom_order:
+            if cat_id in by_id:
+                ordered.append(by_id[cat_id])
+                seen.add(cat_id)
+        # Append any catalogs not in the custom order
+        for c in available:
+            if c["id"] not in seen:
+                ordered.append(c)
+                seen.add(c["id"])
+        data["catalogs"] = ordered
+    else:
+        data["catalogs"] = available
+
+    # If user has disabled specific catalogs, filter them out
+    disabled = user_config.get("disabled_catalogs", [])
+    if disabled:
+        data["catalogs"] = [c for c in data["catalogs"] if c["id"] not in disabled]
 
     return JSONResponse(data)
 
@@ -449,38 +480,11 @@ async def meta_token(config_token: str, meta_type: str, meta_id: str, request: R
 
 
 async def _handle_meta(meta_type: str, meta_id: str, user_config: dict):
-    tmdb_key = user_config.get("tmdb_api_key", os.environ.get("TMDB_API_KEY", ""))
     try:
-        if meta_id.startswith("tt"):
-            from utils.id_mapping import imdb_to_tmdb
-            tmdb_id = imdb_to_tmdb(meta_id)
-            if tmdb_id:
-                result = enricher.enrich(tmdb_id, meta_type, tmdb_key)
-                if result:
-                    return JSONResponse({"meta": result})
-
-        if meta_id.isdigit():
-            result = enricher.enrich(int(meta_id), meta_type, tmdb_key)
-            if result:
-                return JSONResponse({"meta": result})
-
-        if meta_id.startswith("anilist:"):
-            anime_id = int(meta_id.split(":")[1])
-            from anilist_api import AniListClient
-            client = AniListClient()
-            item = client.get_anime(anime_id)
-            if item:
-                title = item.get("title", {})
-                cover = item.get("coverImage", {})
-                return JSONResponse({"meta": {
-                    "id": meta_id,
-                    "type": "series",
-                    "name": title.get("english") or title.get("romaji", ""),
-                    "poster": cover.get("large"),
-                    "description": item.get("description"),
-                    "genres": item.get("genres", []),
-                    "imdb_rating": item.get("averageScore"),
-                }})
+        # Multi-source enricher: routes to preferred provider with fallback chain
+        result = enricher.enrich(meta_id, meta_type, user_config)
+        if result:
+            return JSONResponse({"meta": result})
 
         return JSONResponse({"meta": {}}, status_code=404)
     except Exception as e:
