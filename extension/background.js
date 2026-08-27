@@ -13,8 +13,8 @@ const SERVICE_COOKIES = {
   },
   letterboxd: {
     domain: '.letterboxd.com',
-    cookies: ['lfu-session', 'remember', 'com.xk72.webparts.csrf'],
-    required: ['lfu-session', 'remember'],
+    cookies: ['letterboxd.user', 'letterboxd.signed.in.as', 'com.xk72.webparts.csrf', 'cf_clearance'],
+    required: ['letterboxd.user'],
   },
   wetrakr: {
     domain: '.wetrakr.com',
@@ -55,6 +55,11 @@ const SERVICE_COOKIES = {
     domain: '.simkl.com',
     cookies: ['simkl', 'cf_clearance', '__cflb', 'cc'],
     required: ['simkl'],
+  },
+  trakt: {
+    domain: '.trakt.tv',
+    cookies: ['cf_clearance', 'trakt-oidc-auth', 'remember_user_token'],
+    required: ['trakt-oidc-auth'],
   },
 };
 
@@ -173,7 +178,11 @@ async function syncAllServices() {
   }
 
   // 2. Token-based services (trakt, anilist) — send stored tokens to server
+  // Only sync tokens if cookie sync didn't already handle it
   for (const serviceId of ['trakt', 'anilist']) {
+    // If cookie sync already succeeded, skip token sync
+    if (results[serviceId]?.synced) continue;
+
     const stored = await chrome.storage.local.get([`tokens_${serviceId}`, `${serviceId}_client_id`]);
     const tokens = stored[`tokens_${serviceId}`];
     const clientId = stored[`${serviceId}_client_id`];
@@ -194,7 +203,9 @@ async function syncAllServices() {
         results[serviceId] = { extracted: true, synced: false, error: error.message };
       }
     } else {
-      results[serviceId] = { extracted: false, synced: false, note: 'no tokens stored' };
+      if (!results[serviceId]) {
+        results[serviceId] = { extracted: false, synced: false, note: 'no tokens stored' };
+      }
     }
   }
 
@@ -276,7 +287,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           };
         }
         // Check for localStorage/sessionStorage tokens (trakt, anilist)
+        // Only override cookie-based status if we don't have cookies but DO have tokens
         for (const serviceId of ['trakt', 'anilist']) {
+          // If already marked valid via cookies, keep it
+          if (status.services[serviceId]?.valid) continue;
+
           const stored = await chrome.storage.local.get([`tokens_${serviceId}`, `${serviceId}_client_id`]);
           const tokens = stored[`tokens_${serviceId}`];
           const clientId = stored[`${serviceId}_client_id`];
@@ -300,7 +315,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               };
             }
           }
-          // Default if no tokens found
+          // Default if no tokens found and not already valid via cookies
           if (!status.services[serviceId]) {
             const url = serviceId === 'trakt' ? 'app.trakt.tv' : serviceId + '.co';
             status.services[serviceId] = {

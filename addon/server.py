@@ -584,6 +584,38 @@ async def extension_cookies(request: Request):
                 mapper_ctx[k] = v
 
     # Map service cookies to config format
+    def _trakt_mapper(c):
+        """Extract Trakt config from cookies + tokens.
+
+        Trakt auth comes from two sources:
+        1. Cookies (trakt-oidc-auth) — web session, not an API token
+        2. Tokens (access_token, client_id) — from localStorage via content script
+
+        The cookie token is NOT a valid API bearer token, but we store it
+        as trakt_cf_clearance for Cloudflare-protected web endpoints.
+        The real API token comes from the tokens dict (OAuth2 flow).
+        """
+        result = {}
+        # API token from tokens dict (set by content script or OAuth flow)
+        token = (c.get("access_token", "") or
+                 c.get("id_token", "") or
+                 (c.get("tokens", {}).get("access_token", "") if isinstance(c.get("tokens"), dict) else "") or
+                 (c.get("tokens", {}).get("id_token", "") if isinstance(c.get("tokens"), dict) else ""))
+        if token:
+            result["trakt_token"] = token
+
+        client_id = (c.get("client_id", "") or
+                     (c.get("tokens", {}).get("client_id", "") if isinstance(c.get("tokens"), dict) else ""))
+        if client_id:
+            result["trakt_client_id"] = client_id
+
+        # cf_clearance cookie for Cloudflare-protected web endpoints
+        cf = c.get("cf_clearance", "")
+        if cf:
+            result["trakt_cf_clearance"] = cf
+
+        return result
+
     config_mapping = {
         "imdb": lambda c: {
             "imdb_full_cookies": "; ".join(f"{k}={v}" for k, v in c.items()),
@@ -595,8 +627,7 @@ async def extension_cookies(request: Request):
         },
         "letterboxd": lambda c: {
             "letterboxd_cookies": "; ".join(f"{k}={v}" for k, v in c.items()),
-            "letterboxd_session": c.get("lfu-session", ""),
-            "letterboxd_remember": c.get("remember", ""),
+            "letterboxd_session": c.get("letterboxd.user", ""),
             "letterboxd_csrf": c.get("com.xk72.webparts.csrf", ""),
         },
         "wetrakr": lambda c: {
@@ -609,10 +640,7 @@ async def extension_cookies(request: Request):
             "sofasidekick_cf_clearance": c.get("cf_clearance", ""),
             "sofasidekick_cf_bm": c.get("__cf_bm", ""),
         },
-        "trakt": lambda c: {
-            "trakt_token": c.get("id_token", "") or c.get("access_token", "") or (c.get("tokens", {}).get("id_token", "") if isinstance(c.get("tokens"), dict) else ""),
-            "trakt_client_id": c.get("client_id", "") or (c.get("tokens", {}).get("client_id", "") if isinstance(c.get("tokens"), dict) else ""),
-        },
+        "trakt": lambda c: _trakt_mapper(c),
         "anilist": lambda c: {
             "anilist_token": c.get("access_token", "") or (c.get("tokens", {}).get("access_token", "") if isinstance(c.get("tokens"), dict) else ""),
         },

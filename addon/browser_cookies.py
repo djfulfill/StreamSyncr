@@ -32,8 +32,9 @@ SERVICE_COOKIE_MAP = {
     },
     "letterboxd": {
         "domain": ".letterboxd.com",
-        "cookies": ["lfu-session", "remember", "com.xk72.webparts.csrf"],
-        "required": ["lfu-session", "remember"],
+        "cookies": ["letterboxd.user", "letterboxd.signed.in.as",
+                     "com.xk72.webparts.csrf", "cf_clearance"],
+        "required": ["letterboxd.user"],
     },
     "sofasidekick": {
         "domain": ".sofasidekick.com",
@@ -164,8 +165,7 @@ def cookies_to_config(service_id: str, cookies: Dict[str, str]) -> Dict[str, str
     if service_id == "letterboxd":
         return {
             "letterboxd_cookies": "; ".join(f"{k}={v}" for k, v in c.items()),
-            "letterboxd_session": c.get("lfu-session", ""),
-            "letterboxd_remember": c.get("remember", ""),
+            "letterboxd_session": c.get("letterboxd.user", ""),
             "letterboxd_csrf": c.get("com.xk72.webparts.csrf", ""),
         }
 
