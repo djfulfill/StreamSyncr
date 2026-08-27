@@ -398,10 +398,45 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         <div class="actions">
             <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
             <button class="btn btn-secondary" onclick="exportData()" style="background:#2ecc71;color:#fff">Export Data</button>
+            <button class="btn btn-secondary" onclick="generatePreview()" style="background:#6366f1;color:#fff">Preview</button>
             <button class="btn btn-primary" onclick="saveConfig()">Save & Install</button>
         </div>
 
         <div class="status" id="status"></div>
+
+        <!-- Live Preview -->
+        <div id="preview-panel" style="display:none;margin-top:16px;">
+            <div class="section">
+                <div class="section-header open" onclick="toggleSection(this)">
+                    <span class="icon">👁️</span>
+                    <h2>Live Preview</h2>
+                    <span class="badge" id="preview-badge">—</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-body open">
+                    <div class="help" style="margin-bottom:12px;">This is what Stremio will display with your current configuration.</div>
+
+                    <!-- Manifest summary -->
+                    <div id="preview-manifest" style="margin-bottom:16px;"></div>
+
+                    <!-- Catalog grid preview -->
+                    <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;">Catalogs</div>
+                    <div id="preview-catalogs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;"></div>
+
+                    <!-- Sample meta preview -->
+                    <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;">Sample Metadata (first catalog, first item)</div>
+                    <div id="preview-meta" style="display:flex;gap:12px;padding:12px;background:var(--card);border-radius:8px;min-height:120px;align-items:flex-start;">
+                        <div style="color:var(--text-muted);font-size:13px;">Click Preview to load...</div>
+                    </div>
+
+                    <!-- Stream resolution preview -->
+                    <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;margin-top:16px;">Stream Resolution</div>
+                    <div id="preview-streams" style="padding:12px;background:var(--card);border-radius:8px;min-height:60px;">
+                        <div style="color:var(--text-muted);font-size:13px;">Resolves after metadata loads...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
@@ -789,6 +824,144 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             const el = document.getElementById(key);
             if (el) el.addEventListener('input', updateServiceStatusGrid);
         });
+
+        // ── Live Preview ─────────────────────────────────
+
+        async function generatePreview() {
+            const panel = document.getElementById('preview-panel');
+            const badge = document.getElementById('preview-badge');
+            const manifestDiv = document.getElementById('preview-manifest');
+            const catalogsDiv = document.getElementById('preview-catalogs');
+            const metaDiv = document.getElementById('preview-meta');
+            const streamsDiv = document.getElementById('preview-streams');
+
+            panel.style.display = 'block';
+            badge.textContent = 'loading...';
+            badge.style.color = '#f39c12';
+            manifestDiv.innerHTML = '';
+            catalogsDiv.innerHTML = '';
+            metaDiv.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading manifest...</div>';
+            streamsDiv.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Waiting for metadata...</div>';
+
+            // Save config first so the server has it
+            const config = getConfig();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+
+            let token = null;
+            try {
+                const resp = await fetch(`${BASE_URL}/api/save-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                const data = await resp.json();
+                token = data.token;
+            } catch (err) {
+                badge.textContent = 'error';
+                badge.style.color = '#e74c3c';
+                manifestDiv.innerHTML = `<div style="color:#e74c3c;">Failed to save config: ${err.message}</div>`;
+                return;
+            }
+
+            // Fetch manifest
+            let manifest = null;
+            try {
+                const mResp = await fetch(`${BASE_URL}/${token}/manifest.json`);
+                manifest = await mResp.json();
+            } catch (err) {
+                badge.textContent = 'offline';
+                badge.style.color = '#e74c3c';
+                manifestDiv.innerHTML = `<div style="color:#e74c3c;">StreamSyncr addon not reachable. Is the server running on ${BASE_URL}?</div>`;
+                return;
+            }
+
+            const catalogs = manifest.catalogs || [];
+            badge.textContent = `${catalogs.length} catalogs`;
+            badge.style.color = '#2ecc71';
+
+            // Manifest summary
+            manifestDiv.innerHTML = `
+                <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;">
+                    <div><strong>${manifest.name || 'StreamSyncr'}</strong> v${manifest.version || '?'}</div>
+                    <div style="opacity:0.7;">Types: ${(manifest.types || []).join(', ')}</div>
+                    <div style="opacity:0.7;">Resources: ${(manifest.resources || []).map(r => typeof r === 'string' ? r : r.name).join(', ')}</div>
+                </div>
+            `;
+
+            // Catalog grid
+            catalogsDiv.innerHTML = catalogs.map(cat => {
+                const typeColor = cat.type === 'movie' ? '#e94560' : cat.type === 'series' ? '#6366f1' : '#2ecc71';
+                return `<div style="padding:8px;background:var(--card);border-radius:8px;border-left:3px solid ${typeColor};">
+                    <div style="font-size:12px;font-weight:600;">${cat.name}</div>
+                    <div style="font-size:10px;opacity:0.5;text-transform:uppercase;margin-top:2px;">${cat.type}</div>
+                </div>`;
+            }).join('');
+
+            if (catalogs.length === 0) {
+                catalogsDiv.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No catalogs configured.</div>';
+                metaDiv.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No catalogs to preview.</div>';
+                streamsDiv.innerHTML = '';
+                return;
+            }
+
+            // Fetch first catalog items
+            const firstCat = catalogs[0];
+            metaDiv.innerHTML = `<div style="color:var(--text-muted);font-size:13px;">Loading ${firstCat.name}...</div>`;
+
+            let metas = [];
+            try {
+                const cResp = await fetch(`${BASE_URL}/${token}/catalog/${firstCat.type}/${firstCat.id}.json`);
+                const cData = await cResp.json();
+                metas = cData.metas || [];
+            } catch (err) {
+                metaDiv.innerHTML = `<div style="color:#e74c3c;">Failed to load catalog: ${err.message}</div>`;
+                return;
+            }
+
+            if (metas.length === 0) {
+                metaDiv.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Catalog returned no items. Check API keys for this service.</div>';
+                streamsDiv.innerHTML = '';
+                return;
+            }
+
+            // Show first 5 items as mini posters
+            metaDiv.innerHTML = metas.slice(0, 5).map(m => {
+                const poster = m.poster || '';
+                const imgHtml = poster
+                    ? `<img src="${poster}" style="width:80px;height:120px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">`
+                    : `<div style="width:80px;height:120px;background:var(--card);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0.4;">No img</div>`;
+                return `<div style="text-align:center;">
+                    ${imgHtml}
+                    <div style="font-size:11px;margin-top:4px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name || '?'}</div>
+                </div>`;
+            }).join('');
+
+            // Fetch meta for first item
+            const firstMeta = metas[0];
+            if (firstMeta) {
+                streamsDiv.innerHTML = `<div style="color:var(--text-muted);font-size:13px;">Resolving streams for ${firstMeta.name}...</div>`;
+                try {
+                    const sResp = await fetch(`${BASE_URL}/${token}/stream/${firstMeta.type}/${firstMeta.id}.json`);
+                    const sData = await sResp.json();
+                    const streams = sData.streams || [];
+
+                    if (streams.length === 0) {
+                        streamsDiv.innerHTML = '<div style="color:#f39c12;font-size:13px;">No streams found. Check debrid keys and ensure Sootio is running.</div>';
+                    } else {
+                        streamsDiv.innerHTML = streams.slice(0, 5).map(s => {
+                            const name = s.name || '?';
+                            const title = (s.title || '').split('\\n')[0];
+                            return `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+                                <span style="font-weight:600;min-width:60px;">${name}</span>
+                                <span style="opacity:0.7;flex:1;">${title}</span>
+                            </div>`;
+                        }).join('');
+                    }
+                } catch (err) {
+                    streamsDiv.innerHTML = `<div style="color:#e74c3c;font-size:13px;">Stream resolution failed: ${err.message}</div>`;
+                }
+            }
+        }
 
         // ── Catalog Builder ───────────────────────────────
 
