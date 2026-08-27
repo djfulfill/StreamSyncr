@@ -1,4 +1,5 @@
 import json
+import time
 from typing import List, Dict
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -36,7 +37,6 @@ class TorBoxClient:
 
     def get_torrents(self) -> List[Dict]:
         result = self._request("GET", "/api/torrents/mylist")
-        # TorBox wraps responses in {success, data, detail}
         if isinstance(result, dict) and "data" in result:
             return result["data"]
         if isinstance(result, list):
@@ -58,7 +58,27 @@ class TorBoxClient:
             return result["data"]
         return result.get("data", "")
 
+    def add_magnet(self, magnet: str) -> Dict:
+        """Add a magnet and return the torrent info."""
+        result = self.create_torrent(magnet)
+        if isinstance(result, dict) and "data" in result:
+            return result["data"]
+        return result
+
+    def wait_for_torrent(self, torrent_id: int, max_wait: int = 30) -> Dict:
+        """Wait for a torrent to be ready."""
+        for _ in range(max_wait):
+            info = self.get_torrent_info(torrent_id)
+            status = info.get("status", "")
+            if status in ("downloaded", "ready"):
+                return info
+            if status in ("error", "dead", "magnet_error"):
+                raise Exception(f"Torrent failed: {status}")
+            time.sleep(1)
+        raise Exception("Torrent download timed out")
+
     def resolve_imdb(self, imdb_id: str) -> List[Dict]:
+        """Resolve an IMDB ID by checking existing torrents."""
         torrents = self.get_torrents()
         streams = []
 
@@ -83,3 +103,36 @@ class TorBoxClient:
                             pass
 
         return streams
+
+    def add_and_resolve(self, magnet: str) -> List[Dict]:
+        """Add a magnet and resolve to streaming links."""
+        try:
+            result = self.add_magnet(magnet)
+            torrent_id = result.get("id") if isinstance(result, dict) else None
+            if not torrent_id:
+                return []
+
+            info = self.wait_for_torrent(torrent_id, max_wait=30)
+            streams = []
+
+            for f in info.get("files", []):
+                name = f.get("short_name", "") or f.get("name", "")
+                if name.lower().endswith((".mkv", ".mp4", ".avi")):
+                    try:
+                        link = self.get_download_link(torrent_id, f["id"])
+                        if link:
+                            streams.append({
+                                "name": "TorBox",
+                                "title": name,
+                                "url": link,
+                                "behaviorHints": {
+                                    "bingeGroup": f"torbox-{torrent_id}",
+                                },
+                            })
+                    except Exception:
+                        pass
+
+            return streams
+        except Exception as e:
+            print(f"[TorBox] add_and_resolve error: {e}")
+            return []
