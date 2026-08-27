@@ -5,7 +5,7 @@
   'use strict';
 
   const hostname = window.location.hostname;
-  const isStreamingSite = hostname.includes('trakt.tv') || hostname.includes('anilist.co') || hostname.includes('simkl.com');
+  const isStreamingSite = hostname.includes('trakt.tv') || hostname.includes('anilist.co') || hostname.includes('simkl.com') || hostname.includes('wetrakr.com');
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
   if (!isStreamingSite && !isLocalhost) return;
@@ -86,6 +86,17 @@
     return tokens;
   }
 
+  function extractWeTrakrUsername() {
+    const tokens = {};
+    // Username is in the URL: wetrakr.com/user/{username}
+    const match = window.location.pathname.match(/\/user\/([^/]+)/);
+    if (match) tokens.username = match[1];
+    // Also check for it in the page
+    const el = document.querySelector('[data-username]');
+    if (el) tokens.username = el.dataset.username;
+    return tokens;
+  }
+
   // ── Auto-extract and send tokens ───────────────────────────
 
   async function sendTokensToBackground(service, tokens) {
@@ -118,6 +129,11 @@
     const tokens = extractSimklTokens();
     if (Object.keys(tokens).length > 0) {
       sendTokensToBackground('simkl', tokens);
+    }
+  } else if (hostname.includes('wetrakr.com')) {
+    const tokens = extractWeTrakrUsername();
+    if (Object.keys(tokens).length > 0) {
+      sendTokensToBackground('wetrakr', tokens);
     }
   }
 

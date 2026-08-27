@@ -1,7 +1,7 @@
 // StreamSyncr Chrome Extension - Background Service Worker
 // Handles cookie extraction, auto-sync, and communication with StreamSyncr
 
-const STREAMSYNCR_PORT = 3030;
+const STREAMSYNCR_PORT = 7800;
 const STREAMSYNCR_URL = `http://localhost:${STREAMSYNCR_PORT}`;
 
 // Service definitions: which cookies each service needs
@@ -124,24 +124,15 @@ async function sendCookiesToStreamSyncr(serviceId, cookieData) {
     }
   }
 
-  // Local delivery (self-hosted mode)
+  // Local delivery — always POST directly to server
   try {
-    const tabs = await chrome.tabs.query({ url: `http://localhost:${STREAMSYNCR_PORT}/*` });
-    if (tabs.length > 0) {
-      chrome.tabs.sendMessage(tabs[0].id, {
-        type: 'COOKIE_UPDATE',
-        service: serviceId,
-        data: payload,
-      });
-      results.push({ target: 'local', method: 'content_script', success: true });
-    } else {
-      const response = await fetch(`${STREAMSYNCR_URL}/api/extension/cookies`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      results.push({ target: 'local', method: 'direct_post', success: response.ok });
-    }
+    const response = await fetch(`${STREAMSYNCR_URL}/api/extension/cookies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    results.push({ target: 'local', method: 'direct_post', success: response.ok, result });
   } catch (error) {
     results.push({ target: 'local', method: 'none', success: false, error: error.message });
   }
@@ -169,6 +160,8 @@ async function sendCookiesToStreamSyncr(serviceId, cookieData) {
 
 async function syncAllServices() {
   const results = {};
+
+  // 1. Cookie-based services
   for (const [serviceId, service] of Object.entries(SERVICE_COOKIES)) {
     const data = await extractCookiesForService(serviceId);
     if (data && data.valid) {
@@ -178,6 +171,33 @@ async function syncAllServices() {
       results[serviceId] = { extracted: false, valid: false, missing: data?.missing || [] };
     }
   }
+
+  // 2. Token-based services (trakt, anilist) — send stored tokens to server
+  for (const serviceId of ['trakt', 'anilist']) {
+    const stored = await chrome.storage.local.get([`tokens_${serviceId}`, `${serviceId}_client_id`]);
+    const tokens = stored[`tokens_${serviceId}`];
+    const clientId = stored[`${serviceId}_client_id`];
+
+    if (tokens && Object.keys(tokens).length > 0) {
+      const payload = { service: serviceId, cookies: tokens, valid: true, tokens, timestamp: Date.now() };
+      if (clientId) payload.cookies.client_id = clientId;
+
+      try {
+        const response = await fetch(`${STREAMSYNCR_URL}/api/extension/cookies`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        results[serviceId] = { extracted: true, synced: response.ok, result };
+      } catch (error) {
+        results[serviceId] = { extracted: true, synced: false, error: error.message };
+      }
+    } else {
+      results[serviceId] = { extracted: false, synced: false, note: 'no tokens stored' };
+    }
+  }
+
   return results;
 }
 

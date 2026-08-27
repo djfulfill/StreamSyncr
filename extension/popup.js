@@ -266,3 +266,37 @@ document.getElementById('servicesList').addEventListener('click', async (e) => {
 function setupEventListeners() {
   // Toggles and buttons set up above
 }
+
+// ── Clear Storage Button ──────────────────────────────────────
+document.getElementById('clearStorageBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('clearStorageBtn');
+  btn.textContent = 'Clearing...';
+  btn.disabled = true;
+
+  try {
+    await chrome.storage.local.clear();
+    btn.textContent = '✓ Cleared!';
+    btn.style.background = '#22c55e';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#22c55e';
+    setTimeout(() => {
+      btn.textContent = 'Clear Extension Storage';
+      btn.style.background = '#1e1e2e';
+      btn.style.color = '#6b7280';
+      btn.style.borderColor = '#374151';
+      btn.disabled = false;
+      loadStatus();
+    }, 1500);
+  } catch (error) {
+    btn.textContent = 'Failed';
+    btn.style.background = '#ef4444';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.textContent = 'Clear Extension Storage';
+      btn.style.background = '#1e1e2e';
+      btn.style.color = '#6b7280';
+      btn.style.borderColor = '#374151';
+      btn.disabled = false;
+    }, 1500);
+  }
+});

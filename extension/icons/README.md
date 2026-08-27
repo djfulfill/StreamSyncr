@@ -1,38 +1,63 @@
 # StreamSyncr Chrome Extension Icons
 
-To generate the required icons (icon16.png, icon48.png, icon128.png), 
-you can use any image editor or convert from the SVG below.
+## Icon Variants
+
+| File | Description | Use Case |
+|------|-------------|----------|
+| `icon.svg` | **Animated** — rotating sync rings, pulsing play button | Modern browsers, extension popup (if using SVG directly) |
+| `icon-static.svg` | **Static** — clean, no animations | PNG generation, Chrome Web Store, fallback |
+| `icon16.png` / `icon48.png` / `icon128.png` | Generated from `icon.svg` | Current manifest (animated source) |
+| `icon16-static.png` / `icon48-static.png` / `icon128-static.png` | Generated from `icon-static.svg` | Alternative static set |
 
 ## Quick Generate (using ImageMagick)
 
 ```bash
 # Install ImageMagick if needed: apt install imagemagick
 
-# Create icons from the SVG
+# From animated SVG (current)
 convert -size 16x16 icon.svg icon16.png
 convert -size 48x48 icon.svg icon48.png
 convert -size 128x128 icon.svg icon128.png
+
+# From static SVG (cleaner rendering)
+convert -size 16x16 icon-static.svg icon16.png
+convert -size 48x48 icon-static.svg icon48.png
+convert -size 128x128 icon-static.svg icon128.png
 ```
 
-## Or use this minimal SVG as icon.svg
+## Design
 
-```svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1"/>
-      <stop offset="100%" style="stop-color:#8b5cf6"/>
-    </linearGradient>
-  </defs>
-  <rect width="128" height="128" rx="24" fill="url(#grad)"/>
-  <text x="64" y="80" font-family="Arial" font-size="60" font-weight="bold" fill="white" text-anchor="middle">S</text>
-</svg>
-```
+- **Background**: Blue → Indigo → Violet gradient (`#0ea5e9` → `#6366f1` → `#8b5cf6`)
+- **Play button**: White circle with cyan triangle (streaming)
+- **Sync rings**: Cyan → Purple gradient, dashed circles with positioned dots (synchronization)
+- **Rounded square**: 28px radius with subtle drop shadow
 
-## Chrome Web Store
+## Chrome Web Store Requirements
 
 For publishing to the Chrome Web Store, you'll also need:
-- icon128.png (128x128) - Store listing icon
-- icon48.png (48x48) - Extensions page
-- icon16.png (16x16) - Favicon/small displays
-- screenshot1.png (1280x800) - Store screenshot
+- `icon128.png` (128×128) — Store listing icon
+- `icon48.png` (48×48) — Extensions page
+- `icon16.png` (16×16) — Favicon/small displays
+- `screenshot1.png` (1280×800) — Store screenshot
+- `screenshot2.png` (1280×800) — Additional screenshot
+- `promo-tile.png` (440×280) — Promotional tile
+- `marquee.png` (1400×560) — Marquee banner
+
+## Current Manifest References
+
+```json
+"action": {
+  "default_icon": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+},
+"icons": {
+  "16": "icons/icon16.png",
+  "48": "icons/icon48.png",
+  "128": "icons/icon128.png"
+}
+```
+
+Switch to static variants by renaming `icon16-static.png → icon16.png`, etc., or update the manifest paths.
