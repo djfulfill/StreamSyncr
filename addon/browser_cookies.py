@@ -73,8 +73,8 @@ SERVICE_COOKIE_MAP = {
     },
     "trakt": {
         "domain": ".trakt.tv",
-        "cookies": ["cf_clearance", "trakt-oidc-auth"],
-        "required": [],  # Trakt auth is in localStorage, cookies alone aren't enough
+        "cookies": ["cf_clearance", "trakt-oidc-auth", "remember_user_token"],
+        "required": [],  # Trakt API needs OAuth2 token, not cookies. See trakt_device_flow().
     },
     "anilist": {
         "domain": ".anilist.co",
@@ -203,7 +203,82 @@ def cookies_to_config(service_id: str, cookies: Dict[str, str]) -> Dict[str, str
             "wetrakr_refresh_token": c.get("wta_rt", ""),
         }
 
+    if service_id == "trakt":
+        # Trakt API requires an OAuth2 access token, not cookies.
+        # The cf_clearance cookie is useful for Cloudflare-protected web endpoints.
+        # The trakt-oidc-auth cookie contains a web session token (not an API token).
+        # Use trakt_device_flow() to get a proper API token.
+        return {
+            "trakt_cf_clearance": c.get("cf_clearance", ""),
+        }
+
     return {}
+
+
+# ── Trakt Device Code Flow ─────────────────────────────────────
+# Trakt's API requires an OAuth2 access token. Browser cookies
+# (trakt-oidc-auth, remember_user_token) are web session tokens
+# and CANNOT be used as API bearer tokens. The device code flow
+# lets the user authenticate by visiting a URL and entering a code,
+# without requiring a redirect URI.
+
+def trakt_device_flow(client_id: str) -> dict:
+    """Start a Trakt device-code auth flow.
+
+    Returns a dict with device_code, user_code, verification_url,
+    and expires_in. The user visits the URL, enters the code, then
+    you poll trakt_device_poll() until it returns an access_token.
+
+    Requires TRAKT_CLIENT_ID (the same client_id used for the API).
+    """
+    import json as _json
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+
+    data = urlencode({"client_id": client_id}).encode()
+    req = Request(
+        "https://api.trakt.tv/oauth/device/code",
+        data=data,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "trakt-api-version": "2",
+            "trakt-api-key": client_id,
+        },
+        method="POST",
+    )
+    with urlopen(req) as resp:
+        return _json.loads(resp.read())
+
+
+def trakt_device_poll(client_id: str, client_secret: str, device_code: str) -> dict:
+    """Poll for a Trakt device-code token. Returns dict with access_token
+    on success, or {"error": "..."} if still pending or failed."""
+    import json as _json
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+
+    req = Request(
+        "https://api.trakt.tv/oauth/device/token",
+        data=_json.dumps({
+            "code": device_code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "trakt-api-version": "2",
+            "trakt-api-key": client_id,
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(req) as resp:
+            return _json.loads(resp.read())
+    except HTTPError as e:
+        body = e.read().decode()
+        if e.code == 400:
+            return {"error": "pending"}  # User hasn't entered code yet
+        return {"error": f"{e.code}: {body}"}
 
 
 def merge_into_config(existing: dict, browser_cookies: Dict[str, Dict]) -> dict:

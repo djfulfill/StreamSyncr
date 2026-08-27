@@ -17,12 +17,32 @@
   function extractTraktTokens() {
     const tokens = {};
 
-    // Trakt stores id_token in localStorage
-    const idToken = localStorage.getItem('id_token');
-    if (idToken) tokens.id_token = idToken;
+    // Trakt stores the OAuth token in the trakt-oidc-auth cookie (JSON)
+    // The cookie is on app.trakt.tv domain, accessible via document.cookie
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    for (const cookie of cookies) {
+      if (cookie.startsWith('trakt-oidc-auth=')) {
+        const rawValue = cookie.split('=').slice(1).join('=');
+        try {
+          const decoded = decodeURIComponent(rawValue);
+          const data = JSON.parse(decoded);
+          if (data.token) {
+            tokens.access_token = data.token;
+          }
+        } catch {
+          // Not JSON, use raw value
+          tokens.access_token = rawValue;
+        }
+      }
+    }
 
-    const accessToken = localStorage.getItem('access_token');
-    if (accessToken) tokens.access_token = accessToken;
+    // Also check localStorage (older Trakt versions)
+    if (!tokens.access_token) {
+      const idToken = localStorage.getItem('id_token');
+      if (idToken) tokens.access_token = idToken;
+      const accessToken = localStorage.getItem('access_token');
+      if (accessToken) tokens.access_token = accessToken;
+    }
 
     // Try to find client_id by intercepting fetch requests
     // The Trakt web app sends trakt-api-key header with every API call

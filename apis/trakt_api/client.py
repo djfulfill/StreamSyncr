@@ -33,8 +33,9 @@ class TraktClient:
         self.token = token or os.environ.get("TRAKT_TOKEN")
         if not self.api_key:
             raise ValueError("TRAKT_API_KEY not set")
-        if not self.token:
-            raise ValueError("TRAKT_TOKEN not set")
+        # Token is optional — public endpoints (trending, popular) work
+        # with just the API key. User endpoints (watchlist, favorites)
+        # require a valid OAuth2 bearer token.
 
     def _request(self, method: str, path: str, params: dict = None,
                  data: dict = None, allow_409: bool = False) -> Union[dict, list]:
@@ -43,7 +44,6 @@ class TraktClient:
             url += "?" + urlencode(params)
 
         headers = {
-            "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json",
             "trakt-api-key": self.api_key,
             "trakt-api-version": "2",
@@ -51,6 +51,9 @@ class TraktClient:
             "Origin": "https://app.trakt.tv",
             "Referer": "https://app.trakt.tv/",
         }
+        # Only send Authorization header when we have a token
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
 
         body = json.dumps(data).encode() if data else None
         req = Request(url, data=body, headers=headers, method=method)

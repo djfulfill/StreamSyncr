@@ -154,10 +154,10 @@ def get_user_config(request: Request) -> dict:
 
 
 CATALOG_HANDLERS = {
-    "trakt-trending": lambda t, s, c, g: trakt.trending_movies(skip=s, api_key=c.get("trakt_client_id",""), token=c.get("trakt_token","")) if t == "movie" else trakt.trending_shows(skip=s, api_key=c.get("trakt_client_id",""), token=c.get("trakt_token","")),
-    "trakt-popular": lambda t, s, c, g: trakt.popular_movies(skip=s, api_key=c.get("trakt_client_id",""), token=c.get("trakt_token","")) if t == "movie" else trakt.popular_shows(skip=s, api_key=c.get("trakt_client_id",""), token=c.get("trakt_token","")),
-    "trakt-trending-shows": lambda t, s, c, g: trakt.trending_shows(skip=s, api_key=c.get("trakt_client_id",""), token=c.get("trakt_token","")),
-    "trakt-popular-shows": lambda t, s, c, g: trakt.popular_shows(skip=s, api_key=c.get("trakt_client_id",""), token=c.get("trakt_token","")),
+    "trakt-trending": lambda t, s, c, g: trakt.trending_movies(skip=s, api_key=c.get("trakt_client_id",""), token=None) if t == "movie" else trakt.trending_shows(skip=s, api_key=c.get("trakt_client_id",""), token=None),
+    "trakt-popular": lambda t, s, c, g: trakt.popular_movies(skip=s, api_key=c.get("trakt_client_id",""), token=None) if t == "movie" else trakt.popular_shows(skip=s, api_key=c.get("trakt_client_id",""), token=None),
+    "trakt-trending-shows": lambda t, s, c, g: trakt.trending_shows(skip=s, api_key=c.get("trakt_client_id",""), token=None),
+    "trakt-popular-shows": lambda t, s, c, g: trakt.popular_shows(skip=s, api_key=c.get("trakt_client_id",""), token=None),
     "tmdb-trending": lambda t, s, c, g: tmdb.trending_movies(api_key=c.get("tmdb_api_key",""), skip=s),
     "tmdb-popular": lambda t, s, c, g: tmdb.popular_movies(api_key=c.get("tmdb_api_key",""), skip=s),
     "tmdb-top-rated": lambda t, s, c, g: tmdb.top_rated_movies(api_key=c.get("tmdb_api_key",""), skip=s),
@@ -774,6 +774,70 @@ async def browser_cookies_merge(request: Request):
         "browser_services": list(browser_cookies.keys()),
         "extension_keys": len(ext_config),
     })
+
+
+# ── Trakt Device Code Auth ────────────────────────────────────
+
+@app.post("/api/trakt/device/start")
+async def trakt_device_start(request: Request):
+    """Start a Trakt device-code auth flow. Returns a URL + code for the user
+    to visit, plus a device_code to poll for completion.
+
+    Body: {"client_id": "<trakt_client_id>"}
+    """
+    from browser_cookies import trakt_device_flow
+
+    body = await request.json()
+    client_id = body.get("client_id", "")
+    if not client_id:
+        return JSONResponse({"error": "client_id required"}, status_code=400)
+
+    try:
+        result = trakt_device_flow(client_id)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/trakt/device/poll")
+async def trakt_device_poll_endpoint(request: Request):
+    """Poll for a Trakt device-code token. Save the access_token to config.
+
+    Body: {"client_id": "...", "client_secret": "...", "device_code": "...",
+           "token": "<config_token>"}
+    """
+    from browser_cookies import trakt_device_poll as _poll
+
+    body = await request.json()
+    client_id = body.get("client_id", "")
+    client_secret = body.get("client_secret", "")
+    device_code = body.get("device_code", "")
+    config_token = body.get("token", "")
+
+    if not all([client_id, client_secret, device_code]):
+        return JSONResponse({"error": "client_id, client_secret, device_code required"}, status_code=400)
+
+    result = _poll(client_id, client_secret, device_code)
+
+    if result.get("access_token"):
+        # Save to config store
+        with _store_lock:
+            if config_token and config_token in config_store:
+                cfg = config_store[config_token]
+                cfg["trakt_token"] = result["access_token"]
+                config_store[config_token] = cfg
+            # Also save to extension slot
+            ext = config_store.get("__extension__", {})
+            ext["trakt_token"] = result["access_token"]
+            config_store["__extension__"] = ext
+
+        return JSONResponse({
+            "success": True,
+            "access_token": result["access_token"],
+            "refresh_token": result.get("refresh_token", ""),
+        })
+
+    return JSONResponse(result)
 
 
 # ── Service Verification ────────────────────────────────────
