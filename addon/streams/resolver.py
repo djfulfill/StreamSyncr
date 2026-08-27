@@ -1,21 +1,39 @@
 import json
 import os
 import time
+import logging
 from typing import List, Dict
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 
 from .torrent_search import TorrentSearchClient
+from .sootio_client import resolve_via_sootio
+
+logger = logging.getLogger("streamsyncr")
 
 
 async def resolve_streams(media_type: str, item_id: str, user_config: dict) -> List[Dict]:
     """Resolve streams for an IMDB ID.
 
-    1. Search for torrents via Zilean/Jackett
-    2. Add magnet to user's debrid service
-    3. Get streaming URL
+    Strategy:
+    1. Try Sootio backend (7 debrid providers, 14+ scrapers, smart scoring)
+    2. Fall back to built-in resolver (Torrentio/Jackett → 3 debrid providers)
     """
+    # ── Primary: Sootio backend ──────────────────────────
+    if user_config.get("sootio_enabled", True):
+        streams = resolve_via_sootio(media_type, item_id, user_config)
+        if streams:
+            return streams
+        # None means Sootio was unavailable or returned no streams;
+        # fall through to built-in resolver
+
+    # ── Fallback: built-in resolver ──────────────────────
+    return await _resolve_builtin(media_type, item_id, user_config)
+
+
+async def _resolve_builtin(media_type: str, item_id: str, user_config: dict) -> List[Dict]:
+    """Built-in resolver: Torrentio/Jackett search → debrid magnet resolution."""
     streams = []
 
     # Search for torrents
@@ -23,7 +41,7 @@ async def resolve_streams(media_type: str, item_id: str, user_config: dict) -> L
     try:
         torrents = searcher.search_by_imdb(item_id, limit=10)
     except Exception as e:
-        print(f"[StreamSyncr] Torrent search error: {e}")
+        logger.warning(f"Torrent search error: {e}")
         torrents = []
 
     if not torrents:
@@ -57,7 +75,7 @@ async def _check_existing_torrents(item_id: str, user_config: dict) -> List[Dict
             client = RealDebridClient(user_config["realdebrid_key"])
             streams.extend(client.resolve_imdb(item_id))
         except Exception as e:
-            print(f"[StreamSyncr] RD existing check error: {e}")
+            logger.warning(f" RD existing check error: {e}")
 
     return streams
 
@@ -79,7 +97,7 @@ async def _resolve_realdebrid(torrents: list, api_key: str) -> List[Dict]:
             if streams:
                 break  # Got results from first torrent
         except Exception as e:
-            print(f"[StreamSyncr] RD resolve error for {torrent.get('title', '?')}: {e}")
+            logger.warning(f" RD resolve error for {torrent.get('title', '?')}: {e}")
             continue
 
     return streams
@@ -102,7 +120,7 @@ async def _resolve_torbox(torrents: list, api_key: str) -> List[Dict]:
             if streams:
                 break
         except Exception as e:
-            print(f"[StreamSyncr] TorBox resolve error: {e}")
+            logger.warning(f" TorBox resolve error: {e}")
             continue
 
     return streams
@@ -125,7 +143,7 @@ async def _resolve_alldebrid(torrents: list, api_key: str) -> List[Dict]:
             if streams:
                 break
         except Exception as e:
-            print(f"[StreamSyncr] AD resolve error: {e}")
+            logger.warning(f" AD resolve error: {e}")
             continue
 
     return streams

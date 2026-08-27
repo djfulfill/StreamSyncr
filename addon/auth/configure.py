@@ -115,6 +115,31 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             </div>
         </div>
 
+        <!-- Sootio Stream Backend -->
+        <div class="section">
+            <div class="section-header" onclick="toggleSection(this)">
+                <span class="icon">🚀</span>
+                <h2>Sootio Stream Backend</h2>
+                <span class="badge optional">Optional — Enhanced Streams</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="field">
+                    <label>Sootio URL</label>
+                    <input type="text" id="sootio_url" placeholder="http://localhost:7000">
+                    <div class="help">URL of your local Sootio addon server. Leave blank to use default (http://localhost:7000).</div>
+                </div>
+                <div class="field">
+                    <label>Enable Sootio Backend</label>
+                    <select id="sootio_enabled">
+                        <option value="true">Enabled (use Sootio for stream resolution, fall back to built-in)</option>
+                        <option value="false">Disabled (use built-in Torrentio/Jackett resolver only)</option>
+                    </select>
+                    <div class="help">Sootio provides 7 debrid providers, 14+ scrapers, and smart quality scoring. Debrid keys above are passed to Sootio automatically.</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tracking Services -->
         <div class="section">
             <div class="section-header" onclick="toggleSection(this)">
@@ -338,6 +363,7 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
 
         const FIELDS = [
             'realdebrid_key', 'torbox_key', 'alldebrid_key',
+            'sootio_url', 'sootio_enabled',
             'trakt_token', 'trakt_client_id', 'simkl_client_id', 'anilist_token',
             'tmdb_api_key', 'imdb_api_key',
             'mdblist_api_key',
@@ -558,6 +584,7 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             realdebrid: { name: 'Real-Debrid', icon: '⚡', fields: ['realdebrid_key'] },
             torbox: { name: 'TorBox', icon: '📦', fields: ['torbox_key'] },
             alldebrid: { name: 'AllDebrid', icon: '🌐', fields: ['alldebrid_key'] },
+            sootio: { name: 'Sootio', icon: '🚀', fields: ['sootio_url'], optional: true },
             trakt: { name: 'Trakt', icon: '📊', fields: ['trakt_token', 'trakt_client_id'], requireAll: true },
             tmdb: { name: 'TMDB', icon: '🎬', fields: ['tmdb_api_key'] },
             simkl: { name: 'Simkl', icon: '📺', fields: ['simkl_client_id'] },

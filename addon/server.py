@@ -119,6 +119,10 @@ async def get_config_status(token: str):
             "torbox": has("torbox_key"),
             "alldebrid": has("alldebrid_key"),
         },
+        "stream_backend": {
+            "sootio_enabled": has("sootio_enabled") and user_config.get("sootio_enabled", "true") != "false",
+            "sootio_url": has("sootio_url"),
+        },
         "tracking": {
             "trakt": has("trakt_token"),
             "wetrakr": has("wetrakr_access_token"),
@@ -729,6 +733,20 @@ async def verify_services(request: Request):
             results["alldebrid"] = {"status": "error", "error": str(e)}
     else:
         results["alldebrid"] = {"status": "not_configured"}
+
+    # ── Sootio Stream Backend ────────────────────────────
+
+    sootio_url = (config.get("sootio_url") or "http://localhost:7000").rstrip("/")
+    try:
+        async with httpx.AsyncClient() as c:
+            resp = await c.get(f"{sootio_url}/manifest.json", timeout=5.0)
+            if resp.status_code == 200:
+                m = resp.json()
+                results["sootio"] = {"status": "ok", "name": m.get("name", "Sootio"), "version": m.get("version", "?")}
+            else:
+                results["sootio"] = {"status": "error", "error": f"HTTP {resp.status_code}"}
+    except Exception as e:
+        results["sootio"] = {"status": "offline", "error": str(e)}
 
     # ── Tracking Services (OAuth / token auth) ────────────
 
