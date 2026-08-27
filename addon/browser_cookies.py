@@ -237,12 +237,11 @@ def trakt_device_flow(client_id: str) -> dict:
 
     data = urlencode({"client_id": client_id}).encode()
     req = Request(
-        "https://api.trakt.tv/oauth/device/code",
+        "https://auth.trakt.tv/oauth/device/code",
         data=data,
         headers={
             "Content-Type": "application/x-www-form-urlencoded",
-            "trakt-api-version": "2",
-            "trakt-api-key": client_id,
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
         },
         method="POST",
     )
@@ -252,13 +251,18 @@ def trakt_device_flow(client_id: str) -> dict:
 
 def trakt_device_poll(client_id: str, client_secret: str, device_code: str) -> dict:
     """Poll for a Trakt device-code token. Returns dict with access_token
-    on success, or {"error": "..."} if still pending or failed."""
+    on success, or {"error": "..."} if still pending or failed.
+
+    Note: Trakt's device token endpoint requires client_secret. For apps
+    that don't have a separate secret, the client_id (API key) is used
+    as both client_id and client_secret.
+    """
     import json as _json
     from urllib.request import Request, urlopen
     from urllib.error import HTTPError
 
     req = Request(
-        "https://api.trakt.tv/oauth/device/token",
+        "https://auth.trakt.tv/oauth/device/token",
         data=_json.dumps({
             "code": device_code,
             "client_id": client_id,
@@ -266,8 +270,7 @@ def trakt_device_poll(client_id: str, client_secret: str, device_code: str) -> d
         }).encode(),
         headers={
             "Content-Type": "application/json",
-            "trakt-api-version": "2",
-            "trakt-api-key": client_id,
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
         },
         method="POST",
     )
@@ -275,9 +278,9 @@ def trakt_device_poll(client_id: str, client_secret: str, device_code: str) -> d
         with urlopen(req) as resp:
             return _json.loads(resp.read())
     except HTTPError as e:
-        body = e.read().decode()
         if e.code == 400:
-            return {"error": "pending"}  # User hasn't entered code yet
+            return {"error": "pending"}
+        body = e.read().decode()
         return {"error": f"{e.code}: {body}"}
 
 
