@@ -42,7 +42,7 @@ def _extract_year(item: dict) -> Optional[int]:
 
 # ── TMDB ─────────────────────────────────────────────────────
 
-def enrich_tmdb(tmdb_id: int, media_type: str = "movie", api_key: str = None) -> Optional[dict]:
+def enrich_tmdb(tmdb_id: int, media_type: str = "movie", api_key: str = None, language: str = None) -> Optional[dict]:
     """Enrich using TMDB as the metadata source."""
     from tmdb_api import TMDBClient
     tmdb = TMDBClient(api_key=api_key or os.environ.get("TMDB_API_KEY", ""))
@@ -50,10 +50,11 @@ def enrich_tmdb(tmdb_id: int, media_type: str = "movie", api_key: str = None) ->
     if not tmdb.api_key:
         return None
 
+    params = {"language": language} if language else None
     if media_type == "movie":
-        base = tmdb.movie(tmdb_id)
+        base = tmdb._get(f"/movie/{tmdb_id}", params=params)
     else:
-        base = tmdb.tv(tmdb_id)
+        base = tmdb._get(f"/tv/{tmdb_id}", params=params)
 
     if not base:
         return None
@@ -217,7 +218,8 @@ def _try_provider(provider: str, item_id: str, media_type: str, user_config: dic
             return None
         tmdb_id = resolve_id(item_id, "tmdb", user_config)
         if tmdb_id:
-            return enrich_tmdb(int(tmdb_id), "series" if media_type in ("series", "anime") else "movie", tmdb_key)
+            language = user_config.get("meta_language") or None
+            return enrich_tmdb(int(tmdb_id), "series" if media_type in ("series", "anime") else "movie", tmdb_key, language)
 
     elif provider == "anilist":
         if item_id.startswith("anilist:"):

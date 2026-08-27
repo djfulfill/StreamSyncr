@@ -60,6 +60,14 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
 .btn-connect { padding: 10px 16px; background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--dark-border); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; font-family: 'Inter', sans-serif; }
 .btn-connect:hover { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; border-color: transparent; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
 .btn-connect.connected { background: linear-gradient(135deg, #55efc4, #00b859); color: #fff; border-color: transparent; box-shadow: 0 0 15px rgba(85, 239, 196, 0.3); }
+
+/* Tab navigation */
+.tab-bar { display: flex; gap: 4px; max-width: 640px; margin: 0 auto; padding: 0 24px; flex-wrap: wrap; position: sticky; top: 0; z-index: 10; background: var(--dark); border-bottom: 1px solid rgba(59, 130, 246, 0.15); padding-top: 12px; padding-bottom: 8px; }
+.tab-btn { padding: 8px 14px; border: 1px solid var(--dark-border); border-radius: 8px 8px 0 0; background: rgba(3, 7, 18, 0.5); color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); border-color: rgba(59, 130, 246, 0.3); }
+.tab-btn.active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(168, 85, 247, 0.15)); color: var(--text); border-color: var(--blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.15); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 </style>
 
 </head>
@@ -69,7 +77,17 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         <p>Configure your streaming addon — all keys are stored locally in your browser</p>
     </div>
 
-    <!-- Service Status Dashboard -->
+    <!-- Tab Navigation -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('general')">General</button>
+        <button class="tab-btn" onclick="switchTab('catalogs')">Catalogs</button>
+        <button class="tab-btn" onclick="switchTab('providers')">Providers</button>
+        <button class="tab-btn" onclick="switchTab('search')">Search</button>
+        <button class="tab-btn" onclick="switchTab('integrations')">Integrations</button>
+        <button class="tab-btn" onclick="switchTab('preview')">Preview</button>
+    </div>
+
+    <!-- Service Status Dashboard (always visible above tabs) -->
     <div class="container" id="status-dashboard" style="display:none; padding-bottom: 0;">
         <div class="section">
             <div class="section-header" onclick="toggleSection(this)">
@@ -87,7 +105,185 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         </div>
     </div>
 
-    <div class="container">
+    <!-- ═══ Tab: General ═══ -->
+    <div class="tab-panel active" id="tab-general">
+        <div class="container">
+            <div class="section">
+                <div class="section-header open" onclick="toggleSection(this)">
+                    <span class="icon">🌐</span>
+                    <h2>General Settings</h2>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-body open">
+                    <div class="field">
+                        <label>Display Language</label>
+                        <select id="meta_language">
+                            <option value="">English (default)</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ru">Russian</option>
+                            <option value="hi">Hindi</option>
+                            <option value="ar">Arabic</option>
+                            <option value="tr">Turkish</option>
+                            <option value="pl">Polish</option>
+                            <option value="nl">Dutch</option>
+                            <option value="sv">Swedish</option>
+                            <option value="no">Norwegian</option>
+                            <option value="da">Danish</option>
+                            <option value="fi">Finnish</option>
+                        </select>
+                        <div class="help">Language for metadata descriptions, titles, and posters. Falls back to English if unavailable.</div>
+                    </div>
+                    <div class="field">
+                        <label>Poster Quality</label>
+                        <select id="poster_quality">
+                            <option value="w500">Standard (500px)</option>
+                            <option value="w342">Compact (342px)</option>
+                            <option value="w780">High (780px)</option>
+                            <option value="original">Original (full resolution)</option>
+                        </select>
+                        <div class="help">Higher quality posters use more bandwidth.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="icon">📁</span>
+                    <h2>Import / Export Configuration</h2>
+                    <span class="badge optional">Backup</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-body">
+                    <div class="help" style="margin-bottom:12px;">Export your full configuration as a JSON file for backup, or import a previously saved config.</div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-secondary" onclick="exportConfigFile()" style="flex:1;">Export Config File</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('import-config-file').click()" style="flex:1;">Import Config File</button>
+                        <input type="file" id="import-config-file" accept=".json" style="display:none" onchange="importConfigFile(event)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
+                <button class="btn btn-secondary" onclick="exportData()" style="background:#2ecc71;color:#fff">Export Data</button>
+                <button class="btn btn-secondary" onclick="generatePreview()" style="background:#6366f1;color:#fff">Preview</button>
+                <button class="btn btn-primary" onclick="saveConfig()">Save & Install</button>
+            </div>
+            <div class="status" id="status"></div>
+        </div>
+    </div>
+
+    <!-- ═══ Tab: Catalogs ═══ -->
+    <div class="tab-panel" id="tab-catalogs">
+        <div class="container">
+        <!-- Catalog Builder -->
+        <div class="section">
+            <div class="section-header open" onclick="toggleSection(this)">
+                <span class="icon">📋</span>
+                <h2>Catalog Builder</h2>
+                <span class="badge optional">Customize</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body open">
+                <div class="help" style="margin-bottom:12px;">Drag to reorder catalogs. Uncheck to hide. Changes apply after saving.</div>
+                <div id="catalog-builder-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- ═══ Tab: Providers ═══ -->
+    <div class="tab-panel" id="tab-providers">
+        <div class="container">
+        <!-- Metadata Providers -->
+        <div class="section">
+            <div class="section-header open" onclick="toggleSection(this)">
+                <span class="icon">🎨</span>
+                <h2>Metadata Providers</h2>
+                <span class="badge optional">Customize</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body open">
+                <div class="help" style="margin-bottom:12px;">Choose your preferred metadata source for each content type. Falls back to other providers if the preferred source is unavailable.</div>
+                <div class="field">
+                    <label>Movie Metadata Provider</label>
+                    <select id="meta_provider_movie">
+                        <option value="">TMDB (default)</option>
+                        <option value="simkl">Simkl</option>
+                        <option value="imdb">IMDb (requires cookies)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Series Metadata Provider</label>
+                    <select id="meta_provider_series">
+                        <option value="">TMDB (default)</option>
+                        <option value="simkl">Simkl</option>
+                        <option value="imdb">IMDb (requires cookies)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Anime Metadata Provider</label>
+                    <select id="meta_provider_anime">
+                        <option value="">AniList (default)</option>
+                        <option value="simkl">Simkl</option>
+                        <option value="tmdb">TMDB</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- ═══ Tab: Search ═══ -->
+    <div class="tab-panel" id="tab-search">
+        <div class="container">
+        <div class="section">
+            <div class="section-header open" onclick="toggleSection(this)">
+                <span class="icon">🔍</span>
+                <h2>Search Engines</h2>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-body open">
+                <div class="help" style="margin-bottom:12px;">Enable or disable search per content type. When enabled, Stremio search queries are routed through the selected catalog's search endpoint.</div>
+                <div class="field">
+                    <label>Movie Search</label>
+                    <select id="search_movie">
+                        <option value="tmdb-trending">TMDB Search (default)</option>
+                        <option value="trakt-trending">Trakt Search</option>
+                        <option value="mdblist-search">MDBList Search</option>
+                        <option value="" disabled>Disabled</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Series Search</label>
+                    <select id="search_series">
+                        <option value="tmdb-trending-tv">TMDB TV Search (default)</option>
+                        <option value="" disabled>Disabled</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Anime Search</label>
+                    <select id="search_anime">
+                        <option value="" disabled>Disabled (default)</option>
+                        <option value="anilist-trending">AniList Search</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- ═══ Tab: Integrations ═══ -->
+    <div class="tab-panel" id="tab-integrations">
+        <div class="container">
         <!-- Debrid Services -->
         <div class="section">
             <div class="section-header open" onclick="toggleSection(this)">
@@ -343,100 +539,54 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
             </div>
         </div>
 
-        <!-- Metadata Providers -->
-        <div class="section">
-            <div class="section-header" onclick="toggleSection(this)">
-                <span class="icon">🎨</span>
-                <h2>Metadata Providers</h2>
-                <span class="badge optional">Customize</span>
-                <span class="chevron">▼</span>
+    </div><!-- /tab-integrations -->
+
+    <!-- ═══ Tab: Preview ═══ -->
+    <div class="tab-panel" id="tab-preview">
+        <div class="container">
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
+                <button class="btn btn-secondary" onclick="exportData()" style="background:#2ecc71;color:#fff">Export Data</button>
+                <button class="btn btn-secondary" onclick="generatePreview()" style="background:#6366f1;color:#fff">Refresh Preview</button>
+                <button class="btn btn-primary" onclick="saveConfig()">Save & Install</button>
             </div>
-            <div class="section-body">
-                <div class="help" style="margin-bottom:12px;">Choose your preferred metadata source for each content type. Falls back to other providers if the preferred source is unavailable.</div>
-                <div class="field">
-                    <label>Movie Metadata Provider</label>
-                    <select id="meta_provider_movie">
-                        <option value="">TMDB (default)</option>
-                        <option value="simkl">Simkl</option>
-                        <option value="imdb">IMDb (requires cookies)</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label>Series Metadata Provider</label>
-                    <select id="meta_provider_series">
-                        <option value="">TMDB (default)</option>
-                        <option value="simkl">Simkl</option>
-                        <option value="imdb">IMDb (requires cookies)</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label>Anime Metadata Provider</label>
-                    <select id="meta_provider_anime">
-                        <option value="">AniList (default)</option>
-                        <option value="simkl">Simkl</option>
-                        <option value="tmdb">TMDB</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+            <div class="status" id="status"></div>
 
-        <!-- Catalog Builder -->
-        <div class="section">
-            <div class="section-header" onclick="toggleSection(this)">
-                <span class="icon">📋</span>
-                <h2>Catalog Builder</h2>
-                <span class="badge optional">Customize</span>
-                <span class="chevron">▼</span>
-            </div>
-            <div class="section-body">
-                <div class="help" style="margin-bottom:12px;">Drag to reorder catalogs. Uncheck to hide. Changes apply after saving.</div>
-                <div id="catalog-builder-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="actions">
-            <button class="btn btn-secondary" onclick="resetConfig()">Reset</button>
-            <button class="btn btn-secondary" onclick="exportData()" style="background:#2ecc71;color:#fff">Export Data</button>
-            <button class="btn btn-secondary" onclick="generatePreview()" style="background:#6366f1;color:#fff">Preview</button>
-            <button class="btn btn-primary" onclick="saveConfig()">Save & Install</button>
-        </div>
-
-        <div class="status" id="status"></div>
-
-        <!-- Live Preview -->
-        <div id="preview-panel" style="display:none;margin-top:16px;">
-            <div class="section">
-                <div class="section-header open" onclick="toggleSection(this)">
-                    <span class="icon">👁️</span>
-                    <h2>Live Preview</h2>
-                    <span class="badge" id="preview-badge">—</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="section-body open">
-                    <div class="help" style="margin-bottom:12px;">This is what Stremio will display with your current configuration.</div>
-
-                    <!-- Manifest summary -->
-                    <div id="preview-manifest" style="margin-bottom:16px;"></div>
-
-                    <!-- Catalog grid preview -->
-                    <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;">Catalogs</div>
-                    <div id="preview-catalogs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;"></div>
-
-                    <!-- Sample meta preview -->
-                    <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;">Sample Metadata (first catalog, first item)</div>
-                    <div id="preview-meta" style="display:flex;gap:12px;padding:12px;background:var(--card);border-radius:8px;min-height:120px;align-items:flex-start;">
-                        <div style="color:var(--text-muted);font-size:13px;">Click Preview to load...</div>
+            <!-- Live Preview -->
+            <div id="preview-panel" style="display:none;margin-top:16px;">
+                <div class="section">
+                    <div class="section-header open" onclick="toggleSection(this)">
+                        <span class="icon">👁️</span>
+                        <h2>Live Preview</h2>
+                        <span class="badge" id="preview-badge">—</span>
+                        <span class="chevron">▼</span>
                     </div>
+                    <div class="section-body open">
+                        <div class="help" style="margin-bottom:12px;">This is what Stremio will display with your current configuration.</div>
 
-                    <!-- Stream resolution preview -->
-                    <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;margin-top:16px;">Stream Resolution</div>
-                    <div id="preview-streams" style="padding:12px;background:var(--card);border-radius:8px;min-height:60px;">
-                        <div style="color:var(--text-muted);font-size:13px;">Resolves after metadata loads...</div>
+                        <!-- Manifest summary -->
+                        <div id="preview-manifest" style="margin-bottom:16px;"></div>
+
+                        <!-- Catalog grid preview -->
+                        <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;">Catalogs</div>
+                        <div id="preview-catalogs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;"></div>
+
+                        <!-- Sample meta preview -->
+                        <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;">Sample Metadata (first catalog, first item)</div>
+                        <div id="preview-meta" style="display:flex;gap:12px;padding:12px;background:var(--card);border-radius:8px;min-height:120px;align-items:flex-start;">
+                            <div style="color:var(--text-muted);font-size:13px;">Click Refresh Preview to load...</div>
+                        </div>
+
+                        <!-- Stream resolution preview -->
+                        <div style="margin-bottom:8px;font-size:13px;font-weight:600;opacity:0.8;margin-top:16px;">Stream Resolution</div>
+                        <div id="preview-streams" style="padding:12px;background:var(--card);border-radius:8px;min-height:60px;">
+                            <div style="color:var(--text-muted);font-size:13px;">Resolves after metadata loads...</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div><!-- /tab-preview -->
     </div>
 
     <div class="footer">
@@ -447,10 +597,63 @@ body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--t
         const STORAGE_KEY = 'streamsyncr_config';
         const BASE_URL = window.location.origin;
 
+        // ── Tab Navigation ─────────────────────────────────
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.toLowerCase() === tabId);
+            if (btn) btn.classList.add('active');
+            const panel = document.getElementById('tab-' + tabId);
+            if (panel) panel.classList.add('active');
+            // Auto-load preview when switching to preview tab
+            if (tabId === 'preview') {
+                generatePreview();
+            }
+        }
+
+        // ── Import / Export Config File ────────────────────
+
+        function exportConfigFile() {
+            const config = getConfig();
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'streamsyncr-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importConfigFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+                    // Fill form fields
+                    FIELDS.forEach(key => {
+                        const el = document.getElementById(key);
+                        if (el && config[key]) el.value = config[key];
+                    });
+                    updateServiceStatusGrid();
+                    renderCatalogBuilder();
+                    alert('Configuration imported successfully!');
+                } catch (err) {
+                    alert('Failed to import config: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
         const FIELDS = [
             'realdebrid_key', 'torbox_key', 'alldebrid_key',
             'sootio_url', 'sootio_enabled',
+            'meta_language', 'poster_quality',
             'meta_provider_movie', 'meta_provider_series', 'meta_provider_anime',
+            'search_movie', 'search_series', 'search_anime',
             'trakt_token', 'trakt_client_id', 'simkl_client_id', 'anilist_token',
             'tmdb_api_key', 'imdb_api_key',
             'mdblist_api_key',
