@@ -368,25 +368,31 @@ async def _handle_catalog(catalog_type: str, catalog_id: str, request: Request, 
 
 
 async def _trakt_user_catalog(catalog_type: str, catalog_id: str, skip: int, sort: str, user_config: dict):
-    token = user_config.get("trakt_token")
     api_key = user_config.get("trakt_client_id", os.environ.get("TRAKT_API_KEY", ""))
-    if not token:
-        return JSONResponse({"metas": [], "error": "Trakt token not configured"}, status_code=400)
+    token = user_config.get("trakt_token", "")
+    username = user_config.get("trakt_username", "")
+
     if not api_key:
         return JSONResponse({"metas": [], "error": "Trakt client_id not configured — add trakt_client_id to config or set TRAKT_API_KEY env var"}, status_code=400)
 
     try:
         from trakt_api import TraktClient
-        client = TraktClient(api_key=api_key, token=token)
+        # When using username-based endpoints (public), don't send the
+        # OAuth token — it may be expired and cause 401. The API key
+        # alone is sufficient for /users/{username}/watchlist etc.
+        if username:
+            client = TraktClient(api_key=api_key, token=None)
+        else:
+            client = TraktClient(api_key=api_key, token=token or None)
 
         if catalog_id == "trakt-watchlist":
-            items = client.watchlist(media_type="movies")
+            items = client.watchlist(media_type="movies", username=username or None)
             media_type = "movie"
         elif catalog_id == "trakt-favorites":
-            items = client.get_favorites()
+            items = client.get_favorites(username=username or None)
             media_type = "movie"
         else:
-            items = client.watchlist(media_type="shows")
+            items = client.watchlist(media_type="shows", username=username or None)
             media_type = "series"
 
         if sort and items:

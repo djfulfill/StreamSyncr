@@ -202,9 +202,15 @@ class TraktClient:
 
     # ── Watchlist ────────────────────────────────────────────
 
-    def watchlist(self, media_type: str = None) -> List[dict]:
-        """Get watchlist. media_type: 'movies', 'shows'."""
-        path = "/users/me/watchlist"
+    def watchlist(self, media_type: str = None, username: str = None) -> List[dict]:
+        """Get watchlist. media_type: 'movies', 'shows'.
+
+        If username is provided, uses /users/{username}/watchlist (public,
+        works with just the API key). Otherwise uses /users/me/watchlist
+        (requires OAuth token).
+        """
+        user = username or "me"
+        path = f"/users/{user}/watchlist"
         if media_type:
             path += f"/{media_type}"
         return self._get(path)
@@ -329,9 +335,15 @@ class TraktClient:
 
     # ── Favorites ────────────────────────────────────────────
 
-    def get_favorites(self) -> List[dict]:
-        """Get favorites list."""
-        return self._get("/users/me/favorites", limit=5000)
+    def get_favorites(self, username: str = None) -> List[dict]:
+        """Get favorites list.
+
+        If username is provided, uses /users/{username}/favorites (public,
+        works with just the API key). Otherwise uses /users/me/favorites
+        (requires OAuth token).
+        """
+        user = username or "me"
+        return self._get(f"/users/{user}/favorites", limit=5000)
 
     def favorite(self, movies: List[int] = None, shows: List[int] = None) -> dict:
         """Add to favorites."""
