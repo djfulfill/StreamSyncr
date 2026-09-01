@@ -1,6 +1,7 @@
 import json
 import os
 import secrets
+import sys
 import threading
 import logging
 from urllib.parse import parse_qs
@@ -24,9 +25,20 @@ from auth.oauth import (
 from export import export_all
 from db import config_store, resume_store
 
+# ── Core Platform (addon/plugin registry) ───────────────────
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from core.registry import registry as core_registry
+
 logger = logging.getLogger("streamsyncr")
 
 app = FastAPI(title="StreamSyncr Stremio Addon", cors_origins=["http://localhost:3030", "http://127.0.0.1:3030"])
+
+
+@app.on_event("startup")
+async def _discover_addons():
+    """Discover and register all addon packages on startup."""
+    core_registry.discover()
+    logger.info(f"Core registry: {len(core_registry.addons)} addons loaded")
 
 # Persistent config store (SQLite-backed, survives restarts)
 _store_lock = threading.Lock()
@@ -62,6 +74,112 @@ async def export_data(token: str):
 
     result = export_all(user_config)
     return JSONResponse(result)
+
+
+# ── Core Platform Registry Endpoints ────────────────────────
+
+@app.get("/api/registry/addons")
+async def list_addons():
+    """List all discovered addons and their capabilities."""
+    addons = []
+    for addon in core_registry.addons:
+        info = {
+            "name": addon.name,
+            "slug": addon.slug,
+            "description": addon.description,
+            "capabilities": [],
+        }
+        if addon.catalogs:
+            info["capabilities"].append("catalogs")
+            info["catalogs"] = [{"id": c.id, "label": c.label, "auth": c.auth}
+                                for c in addon.catalogs]
+        if addon.scrobbler:
+            info["capabilities"].append("scrobbler")
+        if addon.sync_source:
+            info["capabilities"].append("sync")
+        if addon.exporter:
+            info["capabilities"].append("export")
+        if addon.metadata:
+            info["capabilities"].append("metadata")
+        addons.append(info)
+    return JSONResponse({"addons": addons, "total": len(addons)})
+
+
+@app.post("/api/registry/verify")
+async def registry_verify(request: Request):
+    """Verify credentials for all configured addons (registry-powered)."""
+    body = await request.json()
+    cfg = body.get("config", {})
+    results = core_registry.verify_all(cfg)
+    serialized = {}
+    for slug, result in results.items():
+        serialized[slug] = {
+            "status": result.status,
+            "error": result.error,
+            "details": result.details,
+        }
+    return JSONResponse(serialized)
+
+
+@app.post("/api/registry/export")
+async def registry_export(request: Request):
+    """Export data from all configured addons (registry-powered)."""
+    body = await request.json()
+    cfg = body.get("config", {})
+    result = core_registry.export_all(cfg)
+    return JSONResponse(result)
+
+
+@app.get("/api/registry/catalogs/{config_token}")
+async def registry_catalogs(config_token: str, request: Request):
+    """Get dynamic catalog list from all configured addons."""
+    user_config = _resolve_user_config(config_token, request)
+    catalogs = core_registry.build_manifest_catalogs(user_config)
+    return JSONResponse({"catalogs": catalogs})
+
+
+@app.post("/api/registry/scrobble")
+async def registry_scrobble(request: Request):
+    """Scrobble via registry (replaces hardcoded fan-out)."""
+    body = await request.json()
+    cfg = body.get("config", {})
+    from core.addons.base import ScrobbleEvent
+    event = ScrobbleEvent(
+        action=body.get("action", "stop"),
+        item_id=body.get("item_id", ""),
+        media_type=body.get("media_type", "movie"),
+        progress=body.get("progress", 0),
+        title=body.get("title", ""),
+        year=body.get("year"),
+        season=body.get("season"),
+        episode=body.get("episode"),
+        client_type=body.get("client_type", "api"),
+        imdb_id=body.get("imdb_id"),
+        tmdb_id=body.get("tmdb_id"),
+        trakt_id=body.get("trakt_id"),
+    )
+    results = await core_registry.scrobble(event, cfg)
+    return JSONResponse(results)
+
+
+@app.post("/api/registry/sync/pull")
+async def registry_sync_pull(request: Request):
+    """Pull items from all configured sync sources."""
+    body = await request.json()
+    cfg = body.get("config", {})
+    items = core_registry.sync_pull(cfg)
+    result = []
+    for item in items:
+        result.append({
+            "imdb_id": item.imdb_id,
+            "tmdb_id": item.tmdb_id,
+            "title": item.title,
+            "year": item.year,
+            "media_type": item.media_type,
+            "service_ids": item.service_ids,
+            "service_states": item.service_states,
+        })
+    return JSONResponse({"items": result, "total": len(result)})
 
 
 @app.get("/api/debug/imdb/{token}")
