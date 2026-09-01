@@ -28,6 +28,7 @@ from db import config_store, resume_store
 # ── Core Platform (addon/plugin registry) ───────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.registry import registry as core_registry
+from addon.standalone import router as standalone_router
 
 logger = logging.getLogger("streamsyncr")
 
@@ -39,6 +40,10 @@ async def _discover_addons():
     """Discover and register all addon packages on startup."""
     core_registry.discover()
     logger.info(f"Core registry: {len(core_registry.addons)} addons loaded")
+
+
+# ── Standalone REST API (no Stremio required) ───────────────
+app.include_router(standalone_router)
 
 # Persistent config store (SQLite-backed, survives restarts)
 _store_lock = threading.Lock()
