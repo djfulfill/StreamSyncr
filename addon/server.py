@@ -221,6 +221,33 @@ async def list_plugins():
     return JSONResponse(plugins)
 
 
+@app.get("/api/plugins/installed")
+async def list_installed_plugins():
+    """List externally installed plugins."""
+    from core.plugins.installer import plugin_installer
+    return JSONResponse({"plugins": plugin_installer.list_installed()})
+
+
+@app.post("/api/plugins/install")
+async def install_plugin(request: Request):
+    """Install an external plugin from a URL."""
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        return JSONResponse({"error": "Missing url"}, status_code=400)
+    from core.plugins.installer import plugin_installer
+    result = plugin_installer.install(url)
+    return JSONResponse(result)
+
+
+@app.delete("/api/plugins/{name}")
+async def uninstall_plugin(name: str):
+    """Uninstall an external plugin."""
+    from core.plugins.installer import plugin_installer
+    result = plugin_installer.uninstall(name)
+    return JSONResponse(result)
+
+
 @app.get("/api/debug/imdb/{token}")
 async def debug_imdb(token: str):
     """Debug IMDb credentials."""

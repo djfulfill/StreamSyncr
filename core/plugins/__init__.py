@@ -55,6 +55,13 @@ class PluginRegistry:
         except Exception as e:
             logger.warning(f"Failed to initialize stream resolver: {e}")
 
+        # Discover external plugins from ~/.streamsyncr/plugins/
+        try:
+            from .installer import plugin_installer
+            plugin_installer.register_all(self)
+        except Exception as e:
+            logger.warning(f"Failed to discover external plugins: {e}")
+
     def register(self, plugin: Plugin):
         """Manually register a plugin instance."""
         self._plugins[plugin.name] = plugin
