@@ -182,6 +182,45 @@ async def registry_sync_pull(request: Request):
     return JSONResponse({"items": result, "total": len(result)})
 
 
+@app.post("/api/registry/streams")
+async def registry_streams(request: Request):
+    """Resolve streams via the plugin-based resolver."""
+    body = await request.json()
+    cfg = body.get("config", {})
+    media_type = body.get("type", "movie")
+    item_id = body.get("id", "")
+    streams = core_registry.resolve_streams(media_type, item_id, cfg)
+    result = []
+    for s in streams:
+        result.append({
+            "name": s.name,
+            "title": s.title,
+            "url": s.url,
+            "duration": s.duration,
+            "behaviorHints": s.behavior_hints,
+        })
+    return JSONResponse({"streams": result})
+
+
+@app.get("/api/registry/plugins")
+async def list_plugins():
+    """List all discovered plugins (scrapers, debrid, resolver)."""
+    plugins = {
+        "scrapers": [
+            {"name": s.name, "category": s.category, "enabled": getattr(s, "enabled", True)}
+            for s in core_registry.plugins.scrapers
+        ],
+        "debrid_providers": [
+            {"name": p.name}
+            for p in core_registry.plugins.debrid_providers.values()
+        ],
+        "resolver": None,
+    }
+    if core_registry.plugins.resolver:
+        plugins["resolver"] = core_registry.plugins.resolver.health()
+    return JSONResponse(plugins)
+
+
 @app.get("/api/debug/imdb/{token}")
 async def debug_imdb(token: str):
     """Debug IMDb credentials."""
