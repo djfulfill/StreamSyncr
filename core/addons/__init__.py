@@ -56,35 +56,35 @@ class AddonRegistry:
         """Return addons that have catalogs and are configured."""
         return [
             a for a in self._addons.values()
-            if a.catalogs and a.is_configured(config)
+            if getattr(a, "catalogs", None) and a.is_configured(config)
         ]
 
     def with_scrobbler(self, config: dict) -> list[Addon]:
         """Return addons that have a scrobbler and are configured."""
         return [
             a for a in self._addons.values()
-            if a.scrobbler and a.is_configured(config)
+            if getattr(a, "scrobbler", None) and a.is_configured(config)
         ]
 
     def with_sync_source(self, config: dict) -> list[Addon]:
         """Return addons that have a sync source and are configured."""
         return [
             a for a in self._addons.values()
-            if a.sync_source and a.is_configured(config)
+            if getattr(a, "sync_source", None) and a.is_configured(config)
         ]
 
     def with_exporter(self, config: dict) -> list[Addon]:
         """Return addons that have an exporter and are configured."""
         return [
             a for a in self._addons.values()
-            if a.exporter and a.is_configured(config)
+            if getattr(a, "exporter", None) and a.is_configured(config)
         ]
 
     def with_metadata(self, config: dict) -> list[Addon]:
         """Return addons that have a metadata source and are configured."""
         return [
             a for a in self._addons.values()
-            if a.metadata and a.is_configured(config)
+            if getattr(a, "metadata", None) and a.is_configured(config)
         ]
 
     def __iter__(self) -> Iterator[Addon]:
