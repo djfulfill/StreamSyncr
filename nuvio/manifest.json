@@ -1,0 +1,69 @@
+{
+  "id": "com.streamsyncr.providers",
+  "name": "StreamSyncr Providers",
+  "description": "Unified streaming providers — scrapers, metadata, and catalogs from 11+ services",
+  "version": "2.0.0",
+  "author": "StreamSyncr",
+  "logo": "https://raw.githubusercontent.com/djfulfill/StreamSyncr/master/StreamSyncr-logo.png",
+  "providers": [
+    {
+      "id": "streamsyncr-torrentio",
+      "name": "StreamSyncr • Torrentio",
+      "description": "Multi-source torrent search via Torrentio (14+ scrapers built-in)",
+      "version": "2.0.0",
+      "author": "StreamSyncr",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/torrentio.js",
+      "enabled": true,
+      "formats": ["mkv", "mp4"],
+      "contentLanguage": ["en"]
+    },
+    {
+      "id": "streamsyncr-jackett",
+      "name": "StreamSyncr • Jackett",
+      "description": "Search via self-hosted Jackett instance",
+      "version": "2.0.0",
+      "author": "StreamSyncr",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/jackett.js",
+      "enabled": false,
+      "formats": ["mkv", "mp4"],
+      "contentLanguage": ["en"]
+    },
+    {
+      "id": "streamsyncr-btdig",
+      "name": "StreamSyncr • BTDigg",
+      "description": "DHT search engine — free, no auth required",
+      "version": "2.0.0",
+      "author": "StreamSyncr",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/btdig.js",
+      "enabled": true,
+      "formats": ["mkv", "mp4"],
+      "contentLanguage": ["en"]
+    },
+    {
+      "id": "streamsyncr-magnetdl",
+      "name": "StreamSyncr • MagnetDL",
+      "description": "Magnet link aggregator — free, no auth required",
+      "version": "2.0.0",
+      "author": "StreamSyncr",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/magnetdl.js",
+      "enabled": true,
+      "formats": ["mkv", "mp4"],
+      "contentLanguage": ["en"]
+    },
+    {
+      "id": "streamsyncr-metadata",
+      "name": "StreamSyncr • Metadata",
+      "description": "Enriched metadata from TMDB, AniList, and Simkl",
+      "version": "2.0.0",
+      "author": "StreamSyncr",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/metadata.js",
+      "enabled": true,
+      "contentLanguage": ["en"]
+    }
+  ]
+}

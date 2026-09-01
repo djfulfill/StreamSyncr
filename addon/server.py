@@ -29,6 +29,7 @@ from db import config_store, resume_store
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.registry import registry as core_registry
 from addon.standalone import router as standalone_router
+from nuvio.api import router as nuvio_router
 
 logger = logging.getLogger("streamsyncr")
 
@@ -44,6 +45,9 @@ async def _discover_addons():
 
 # ── Standalone REST API (no Stremio required) ───────────────
 app.include_router(standalone_router)
+
+# ── Nuvio Cross-Compatibility ──────────────────────────────
+app.include_router(nuvio_router)
 
 # Persistent config store (SQLite-backed, survives restarts)
 _store_lock = threading.Lock()
